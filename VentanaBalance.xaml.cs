@@ -381,17 +381,17 @@ namespace Yes_Gestor
             this.Close(); // o this.Hide() si quiere mantener ambas
         }
 
-        private void AgregarMovimiento_Click(object sender, RoutedEventArgs e)
+        private async void AgregarMovimiento_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new VentanaMovimientoDialogo();
             if (dialog.ShowDialog() == true)
             {
-                var nuevoMov = dialog.Movimiento;
-                if (nuevoMov != null)
+                if (dialog.Movimientos != null && dialog.Movimientos.Count > 0)
                 {
-                    App.Datos.Movimientos.Add(nuevoMov);
-                    _ = App.Servicio.GuardarAsync(App.Datos);
-                    CargarDatosReales(); // refrescar la pantalla actual (debe existir)
+                    foreach (var mov in dialog.Movimientos)
+                        App.Datos.Movimientos.Add(mov);
+                    await App.Servicio.GuardarAsync(App.Datos);
+                    CargarDatosReales(); // Refrescar las tarjetas y tablas del Balance
                 }
             }
         }

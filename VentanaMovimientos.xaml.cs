@@ -97,16 +97,16 @@ namespace Yes_Gestor
         {
             var btn = sender as Button;
             if (btn == null) return;
-            btn.IsEnabled = false;  // ← DESHABILITAR MIENTRAS TANTO
+            btn.IsEnabled = false;
             try
             {
                 var dialog = new VentanaMovimientoDialogo();
                 if (dialog.ShowDialog() == true)
                 {
-                    var nuevoMov = dialog.Movimiento;
-                    if (nuevoMov != null)
+                    if (dialog.Movimientos != null && dialog.Movimientos.Count > 0)
                     {
-                        datos.Movimientos.Add(nuevoMov);
+                        foreach (var mov in dialog.Movimientos)
+                            datos.Movimientos.Add(mov);
                         await App.Servicio.GuardarAsync(datos);
                         AplicarFiltros();
                     }
@@ -114,9 +114,11 @@ namespace Yes_Gestor
             }
             finally
             {
-                btn.IsEnabled = true;  // ← REHABILITAR
+                btn.IsEnabled = true;
             }
         }
+
+
 
         // Clase auxiliar para el DataGrid
         public class MovimientoViewModel

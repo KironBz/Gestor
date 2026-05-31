@@ -74,6 +74,8 @@ namespace Yes_Gestor.Models
         [JsonPropertyName("referenciaAuto")]
         public string ReferenciaAuto { get; set; }
 
+
+
         // Constructor para deserialización
         public Movimiento() { }
 

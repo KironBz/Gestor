@@ -11,14 +11,13 @@ namespace Yes_Gestor
 {
     public partial class VentanaMovimientoDialogo : Window
     {
-        public Movimiento Movimiento { get; private set; }
-        private bool _guardando = false; // Evita doble guardado
+        public List<Movimiento> Movimientos { get; private set; }  // ← NUEVA PROPIEDAD
+        private bool _guardando = false;
 
         public VentanaMovimientoDialogo()
         {
             InitializeComponent();
             CargarCombos();
-            // Suscribir eventos de cambio (ya están en XAML, pero por seguridad)
             cbTipo.SelectionChanged += TipoCategoria_SelectionChanged;
             cbCategoria.SelectionChanged += TipoCategoria_SelectionChanged;
         }
@@ -27,102 +26,116 @@ namespace Yes_Gestor
         {
             // Cuentas
             cbCuenta.ItemsSource = App.Datos.Cuentas;
-            // Categorías
             cbCategoria.ItemsSource = App.Datos.Categorias;
 
-            // Personas: crear una lista que incluya una opción "Ninguna" como objeto Persona
+            // Cuentas para transferencia
+            cbCuentaOrigen.ItemsSource = App.Datos.Cuentas;
+            cbCuentaDestino.ItemsSource = App.Datos.Cuentas;
+
+            // Personas: lista con opción "(Ninguna)"
             var listaPersonas = new List<Persona>();
-            listaPersonas.Add(new Persona("(Ninguna)", "Ninguno") { Id = "" }); // elemento vacío
+            listaPersonas.Add(new Persona("(Ninguna)", "Ninguno") { Id = "" });
             listaPersonas.AddRange(App.Datos.Personas);
             cbPersona.ItemsSource = listaPersonas;
             cbPersona.DisplayMemberPath = "Nombre";
             cbPersona.SelectedValuePath = "Id";
         }
 
-        // Manejador unificado para cambios en Tipo y Categoría (muestra/oculta panel de préstamo)
         private void TipoCategoria_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string tipo = (cbTipo.SelectedItem as ComboBoxItem)?.Tag as string;
             Categoria categoria = cbCategoria.SelectedItem as Categoria;
             string categoriaNombre = categoria?.Nombre ?? "";
 
-            bool mostrarPanel = (tipo == "Ingreso" && categoriaNombre == "Préstamo") ||
-                                (tipo == "Egreso" && categoriaNombre == "Cargo");
+            bool esPrestamoCargo = (tipo == "Ingreso" && categoriaNombre == "Préstamo") ||
+                                   (tipo == "Egreso" && categoriaNombre == "Cargo");
+            bool esTransferencia = (tipo == "Transferencia");
 
-            pnlPrestamo.Visibility = mostrarPanel ? Visibility.Visible : Visibility.Collapsed;
+            pnlPrestamo.Visibility = esPrestamoCargo ? Visibility.Visible : Visibility.Collapsed;
+            pnlTransferencia.Visibility = esTransferencia ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private async void Guardar_Click(object sender, RoutedEventArgs e)
         {
-            if (_guardando) return; // Evita ejecución múltiple
+            if (_guardando) return;
             _guardando = true;
             try
             {
                 // Validaciones comunes
                 if (cbTipo.SelectedItem == null) throw new Exception("Seleccione un tipo.");
-                if (cbCuenta.SelectedItem == null) throw new Exception("Seleccione una cuenta.");
-                if (cbCategoria.SelectedItem == null) throw new Exception("Seleccione una categoría.");
                 if (!decimal.TryParse(txtMonto.Text, out decimal monto) || monto <= 0)
                     throw new Exception("Monto inválido.");
 
                 string tipo = (cbTipo.SelectedItem as ComboBoxItem).Tag as string;
-                Cuenta cuenta = cbCuenta.SelectedItem as Cuenta;
-                Categoria categoria = cbCategoria.SelectedItem as Categoria;
-                Persona personaSel = cbPersona.SelectedItem as Persona;
-                string personaId = (personaSel != null && personaSel.Id != "") ? personaSel.Id : null;
                 DateTime fecha = dpFecha.SelectedDate ?? DateTime.Today;
+                string descripcion = txtDescripcion.Text;
 
-                // Determinar el tipo de operación
-                bool esPrestamoRecibido = (tipo == "Ingreso" && categoria.Nombre == "Préstamo");
-                bool esCargo = (tipo == "Egreso" && categoria.Nombre == "Cargo");
+                var movimientosGenerados = new List<Movimiento>();
 
-                decimal? montoFinal = null;
-                int? plazos = null;
-
-                if (esPrestamoRecibido)
+                if (tipo == "Transferencia")
                 {
-                    // Obligatorio: monto final y plazos
-                    if (!decimal.TryParse(txtMontoFinal.Text, out decimal mf) || mf <= 0)
-                        throw new Exception("Monto final inválido.");
-                    if (!int.TryParse(txtPlazos.Text, out int p) || p <= 0)
-                        throw new Exception("Plazos inválidos.");
-                    montoFinal = mf;
-                    plazos = p;
+                    // validaciones transferencia...
+                    if (cbCuentaOrigen.SelectedItem == null || cbCuentaDestino.SelectedItem == null)
+                        throw new Exception("Seleccione cuenta origen y destino.");
+                    if (cbCuentaOrigen.SelectedItem == cbCuentaDestino.SelectedItem)
+                        throw new Exception("La cuenta origen y destino no pueden ser la misma.");
+
+                    Cuenta cuentaOrigen = cbCuentaOrigen.SelectedItem as Cuenta;
+                    Cuenta cuentaDestino = cbCuentaDestino.SelectedItem as Cuenta;
+
+                    var movOrigen = new Movimiento(fecha, "Egreso", "Transferencia", cuentaOrigen.Id, null, monto, null, descripcion, null, null);
+                    var movDestino = new Movimiento(fecha, "Ingreso", "Transferencia", cuentaDestino.Id, null, monto, null, descripcion, null, null);
+                    movimientosGenerados.Add(movOrigen);
+                    movimientosGenerados.Add(movDestino);
                 }
-                else if (esCargo)
+                else
                 {
-                    // Opcional: si se llenaron, los tomamos; si no, quedan nulos
-                    if (!string.IsNullOrWhiteSpace(txtMontoFinal.Text))
+                    // movimientos normales o préstamos/cargos
+                    if (cbCuenta.SelectedItem == null) throw new Exception("Seleccione una cuenta.");
+                    if (cbCategoria.SelectedItem == null) throw new Exception("Seleccione una categoría.");
+
+                    Cuenta cuenta = cbCuenta.SelectedItem as Cuenta;
+                    Categoria categoria = cbCategoria.SelectedItem as Categoria;
+                    Persona personaSel = cbPersona.SelectedItem as Persona;
+                    string personaId = (personaSel != null && personaSel.Id != "") ? personaSel.Id : null;
+
+                    bool esPrestamoRecibido = (tipo == "Ingreso" && categoria.Nombre == "Préstamo");
+                    bool esCargo = (tipo == "Egreso" && categoria.Nombre == "Cargo");
+
+                    decimal? montoFinal = null;
+                    int? plazos = null;
+
+                    if (esPrestamoRecibido)
                     {
                         if (!decimal.TryParse(txtMontoFinal.Text, out decimal mf) || mf <= 0)
-                            throw new Exception("Monto final inválido (debe ser mayor a cero).");
-                        montoFinal = mf;
-                    }
-                    if (!string.IsNullOrWhiteSpace(txtPlazos.Text))
-                    {
+                            throw new Exception("Monto final inválido.");
                         if (!int.TryParse(txtPlazos.Text, out int p) || p <= 0)
-                            throw new Exception("Plazos inválidos (deben ser mayor a cero).");
+                            throw new Exception("Plazos inválidos.");
+                        montoFinal = mf;
                         plazos = p;
                     }
+                    else if (esCargo)
+                    {
+                        if (!string.IsNullOrWhiteSpace(txtMontoFinal.Text))
+                        {
+                            if (!decimal.TryParse(txtMontoFinal.Text, out decimal mf) || mf <= 0)
+                                throw new Exception("Monto final inválido.");
+                            montoFinal = mf;
+                        }
+                        if (!string.IsNullOrWhiteSpace(txtPlazos.Text))
+                        {
+                            if (!int.TryParse(txtPlazos.Text, out int p) || p <= 0)
+                                throw new Exception("Plazos inválidos.");
+                            plazos = p;
+                        }
+                    }
+
+                    var movimiento = new Movimiento(fecha, tipo, categoria.Nombre, cuenta.Id, categoria.Id, monto, personaId, descripcion, montoFinal, plazos);
+                    movimientosGenerados.Add(movimiento);
                 }
 
-                // Crear el movimiento (NO LO AGREGAMOS AQUÍ, solo lo devolvemos)
-                var movimiento = new Movimiento(
-                    fechaOcurrido: fecha,
-                    tipo: tipo,
-                    categoria: categoria.Nombre,
-                    cuentaId: cuenta.Id,
-                    categoriaId: categoria.Id,
-                    monto: monto,
-                    personaId: personaId,
-                    descripcion: txtDescripcion.Text,
-                    montoFinal: montoFinal,
-                    plazos: plazos
-                );
-
-                // 🔥 IMPORTANTE: NO agregar movimiento aquí, ni guardar.
-                // Solo asignamos la propiedad y cerramos el diálogo.
-                Movimiento = movimiento;
+                // 🔥 NO agregamos aquí a App.Datos, solo devolvemos la lista
+                Movimientos = movimientosGenerados;
                 DialogResult = true;
                 Close();
             }
@@ -247,7 +260,7 @@ namespace Yes_Gestor
                 App.Datos.Personas.Remove(persona);
                 await App.Servicio.GuardarAsync(App.Datos);
                 CargarCombos();
-                cbPersona.SelectedIndex = 0; // selecciona "(Ninguna)"
+                cbPersona.SelectedIndex = 0;
                 MessageBox.Show("Persona eliminada correctamente.", "Eliminado", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }

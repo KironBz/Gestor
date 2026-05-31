@@ -113,7 +113,7 @@ namespace Yes_Gestor.Models
             }
         }
 
-        private void GenerarReferenciaAuto()
+        public void GenerarReferenciaAuto()
         {
             string prefijo = (Tipo == "Ingreso" && Categoria == "Préstamo") ? "PRE" : "CAR";
             string fechaStr = FechaOcurrido.ToString("yyyyMMdd");

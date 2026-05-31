@@ -6,7 +6,7 @@ namespace Yes_Gestor.Models
     public class Persona
     {
         [JsonPropertyName("id")]
-        public int Id { get; set; }
+        public string Id { get; set; }
 
         private string _nombre;
         [JsonPropertyName("nombre")]
@@ -15,7 +15,8 @@ namespace Yes_Gestor.Models
             get => _nombre;
             set
             {
-                if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("Nombre no puede estar vacío.");
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("Nombre no puede estar vacío.");
                 _nombre = value.Trim();
             }
         }
@@ -34,8 +35,10 @@ namespace Yes_Gestor.Models
         }
 
         public Persona() { }
+
         public Persona(string nombre, string tipo)
         {
+            Id = Guid.NewGuid().ToString();
             Nombre = nombre;
             Tipo = tipo;
         }

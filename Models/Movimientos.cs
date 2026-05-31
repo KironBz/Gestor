@@ -7,15 +7,10 @@ namespace Yes_Gestor.Models
     public class Movimiento
     {
         [JsonPropertyName("id")]
-        public int Id { get; set; }
+        public string Id { get; set; }
 
-        private DateTime _fechaOcurrido;
         [JsonPropertyName("fechaOcurrido")]
-        public DateTime FechaOcurrido
-        {
-            get => _fechaOcurrido;
-            set => _fechaOcurrido = value.Date;
-        }
+        public DateTime FechaOcurrido { get; set; }
 
         [JsonPropertyName("fechaRegistro")]
         public DateTime FechaRegistro { get; private set; }
@@ -47,13 +42,13 @@ namespace Yes_Gestor.Models
         }
 
         [JsonPropertyName("cuentaId")]
-        public int CuentaId { get; set; }
+        public string CuentaId { get; set; }
 
         [JsonPropertyName("categoriaId")]
-        public int CategoriaId { get; set; }
+        public string CategoriaId { get; set; }
 
         [JsonPropertyName("personaId")]
-        public int? PersonaId { get; set; }
+        public string PersonaId { get; set; }
 
         [JsonPropertyName("descripcion")]
         public string Descripcion { get; set; }
@@ -79,22 +74,23 @@ namespace Yes_Gestor.Models
         [JsonPropertyName("referenciaAuto")]
         public string ReferenciaAuto { get; set; }
 
-        // Constructor para deserialización (obligatorio)
+        // Constructor para deserialización
         public Movimiento() { }
 
-        // Constructor principal (sin Id)
+        // Constructor para crear nuevo movimiento
         public Movimiento(
             DateTime? fechaOcurrido,
             string tipo,
             string categoria,
-            int cuentaId,
-            int categoriaId,
+            string cuentaId,
+            string categoriaId,
             decimal monto,
-            int? personaId = null,
+            string personaId = null,
             string descripcion = null,
             decimal? montoFinal = null,
             int? plazos = null)
         {
+            Id = Guid.NewGuid().ToString();
             FechaOcurrido = fechaOcurrido ?? DateTime.Today;
             FechaRegistro = DateTime.Now;
             Tipo = tipo;
@@ -127,6 +123,6 @@ namespace Yes_Gestor.Models
 
         public int Signo() => Tipo == "Ingreso" ? 1 : (Tipo == "Egreso" ? -1 : 0);
 
-        public override string ToString() => $"[{FechaOcurrido:dd-MMM-yyyy}] {Tipo} - {Categoria} - {Monto:C} - CuentaId:{CuentaId}";
+        public override string ToString() => $"[{FechaOcurrido:dd-MMM-yyyy}] {Tipo} - {Categoria} - {Monto:C} - CuentaId:{CuentaId?.Substring(0, 5)}...";
     }
 }

@@ -199,28 +199,30 @@ namespace Yes_Gestor
                 Debug.WriteLine($"Usando carpeta: {carpetaPrueba}");
                 var service = new ArchivoService(carpetaPrueba);
 
+                // Crear datos de prueba con GUIDs automáticos
                 var datos = new DatosApp();
 
-                // Agregar cuentas
-                datos.Cuentas.Add(new Cuenta("Principal", "Corriente", 1000m));
-                datos.Cuentas.Add(new Cuenta("Ahorro 10", "Oculto", 500m));
+                var cuenta1 = new Cuenta("Principal", "Corriente", 1000m);
+                var cuenta2 = new Cuenta("Ahorro 10", "Oculto", 500m);
+                datos.Cuentas.Add(cuenta1);
+                datos.Cuentas.Add(cuenta2);
 
-                // Categorías
-                datos.Categorias.Add(new Categoria("Préstamo", "Ingreso"));
-                datos.Categorias.Add(new Categoria("Cargo", "Egreso"));
+                var cat1 = new Categoria("Préstamo", "Ingreso");
+                var cat2 = new Categoria("Cargo", "Egreso");
+                datos.Categorias.Add(cat1);
+                datos.Categorias.Add(cat2);
 
-                // Personas
-                datos.Personas.Add(new Persona("Mamá", "Acreedor"));
+                var persona1 = new Persona("Mamá", "Acreedor");
+                datos.Personas.Add(persona1);
 
-                // Movimiento
                 var mov = new Movimiento(
                     fechaOcurrido: DateTime.Today,
                     tipo: "Ingreso",
                     categoria: "Préstamo",
-                    cuentaId: 1,
-                    categoriaId: 1,
+                    cuentaId: cuenta1.Id,
+                    categoriaId: cat1.Id,
                     monto: 500m,
-                    personaId: 1,
+                    personaId: persona1.Id,
                     descripcion: "Préstamo de prueba",
                     montoFinal: 550m,
                     plazos: 3
@@ -230,7 +232,7 @@ namespace Yes_Gestor
                 await service.GuardarAsync(datos);
                 Debug.WriteLine($"Guardado en: {Path.Combine(carpetaPrueba, "yes_gestor_data.json")}");
 
-                // Leer el JSON para verificar
+                // Mostrar JSON
                 string json = await File.ReadAllTextAsync(Path.Combine(carpetaPrueba, "yes_gestor_data.json"));
                 Debug.WriteLine("Contenido del JSON:");
                 Debug.WriteLine(json);
@@ -247,6 +249,8 @@ namespace Yes_Gestor
             catch (Exception ex)
             {
                 Debug.WriteLine($"Error: {ex.Message}");
+                if (ex.InnerException != null)
+                    Debug.WriteLine($"Detalle: {ex.InnerException.Message}");
             }
         }
     }

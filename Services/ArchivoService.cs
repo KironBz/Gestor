@@ -16,19 +16,20 @@ namespace Yes_Gestor.Services
         {
             WriteIndented = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true   // CLAVE: ignora mayúsculas/minúsculas
+            PropertyNameCaseInsensitive = true
         };
 
         public ArchivoService(string carpetaDatos)
         {
             if (string.IsNullOrWhiteSpace(carpetaDatos))
-                throw new ArgumentException("Carpeta inválida");
+                throw new ArgumentException("La carpeta de datos no puede estar vacía.");
             _carpetaDatos = carpetaDatos;
             Directory.CreateDirectory(_carpetaDatos);
         }
 
         public async Task GuardarAsync(DatosApp datos)
         {
+            if (datos == null) throw new ArgumentNullException(nameof(datos));
             string json = JsonSerializer.Serialize(datos, _jsonOptions);
             await File.WriteAllTextAsync(RutaCompleta, json);
         }

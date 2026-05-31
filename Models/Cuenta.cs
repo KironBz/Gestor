@@ -6,7 +6,7 @@ namespace Yes_Gestor.Models
     public class Cuenta
     {
         [JsonPropertyName("id")]
-        public int Id { get; set; }
+        public string Id { get; set; }
 
         private string _nombre;
         [JsonPropertyName("nombre")]
@@ -15,7 +15,8 @@ namespace Yes_Gestor.Models
             get => _nombre;
             set
             {
-                if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("El nombre no puede estar vacío.");
+                if (string.IsNullOrWhiteSpace(value))
+                    throw new ArgumentException("El nombre no puede estar vacío.");
                 _nombre = value.Trim();
             }
         }
@@ -37,8 +38,10 @@ namespace Yes_Gestor.Models
         public decimal SaldoInicial { get; set; }
 
         public Cuenta() { }
+
         public Cuenta(string nombre, string visibilidad, decimal saldoInicial = 0)
         {
+            Id = Guid.NewGuid().ToString();
             Nombre = nombre;
             Visibilidad = visibilidad;
             SaldoInicial = saldoInicial;

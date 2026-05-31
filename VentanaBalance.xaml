@@ -14,66 +14,67 @@
             <!-- derecha: tablas -->
         </Grid.ColumnDefinitions>
 
+        <!-- ASDFGASDG -->
 
         <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
-            <!-- COLUMNA IZQUIERDA (tarjetas) -->
-        <StackPanel Grid.Column="0" Margin="5">
-            <!-- Tarjeta Dinero disponible -->
-            <Border Background="#2E8B57" CornerRadius="10" Margin="0,0,0,10" Padding="10" Effect="{StaticResource DropShadow}">
-                <StackPanel>
-                    <TextBlock Text="Dinero disponible" Foreground="White" FontSize="14"/>
-                    <TextBlock x:Name="txtDineroDisponible" Text="$12,500.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
-                </StackPanel>
-            </Border>
+                <!-- COLUMNA IZQUIERDA (tarjetas) -->
+            <StackPanel Grid.Column="0" Margin="5">
+                <!-- Tarjeta Dinero disponible -->
+                <Border Background="#2E8B57" CornerRadius="10" Margin="0,0,0,10" Padding="10" Effect="{StaticResource DropShadow}">
+                    <StackPanel>
+                        <TextBlock Text="Dinero disponible" Foreground="White" FontSize="14"/>
+                        <TextBlock x:Name="txtDineroDisponible"  Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
 
-            <!-- Tarjeta Dinero oculto -->
-            <Border Background="#4682B4" CornerRadius="10" Margin="0,0,0,10" Padding="10">
-                <StackPanel>
-                    <TextBlock Text="Dinero oculto" Foreground="White" FontSize="14"/>
-                    <TextBlock x:Name="txtDineroOculto" Text="$3,200.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
-                </StackPanel>
-            </Border>
+                <!-- Tarjeta Dinero oculto -->
+                <Border Background="#4682B4" CornerRadius="10" Margin="0,0,0,10" Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="Dinero oculto" Foreground="White" FontSize="14"/>
+                        <TextBlock x:Name="txtDineroOculto"  Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
 
-            <!-- Tarjeta Cuentas por cobrar (me deben) -->
-            <Border Background="#CD853F" CornerRadius="10" Margin="0,0,0,10" Padding="10">
-                <StackPanel>
-                    <TextBlock Text="Cuentas por cobrar" Foreground="White" FontSize="14"/>
-                    <TextBlock x:Name="txtCuentasPorCobrar" Text="$1,200.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
-                </StackPanel>
-            </Border>
+                <!-- Tarjeta Cuentas por cobrar (me deben) -->
+                <Border Background="#CD853F" CornerRadius="10" Margin="0,0,0,10" Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="Cuentas por cobrar" Foreground="White" FontSize="14"/>
+                        <TextBlock x:Name="txtCuentasPorCobrar" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
 
-            <!-- Tarjeta Cuentas por pagar (debo) -->
-            <Border Background="#B22222" CornerRadius="10" Margin="0,0,0,10" Padding="10">
-                <StackPanel>
-                    <TextBlock Text="Cuentas por pagar" Foreground="White" FontSize="14"/>
-                    <TextBlock x:Name="txtCuentasPorPagar" Text="$4,500.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
-                </StackPanel>
-            </Border>
+                <!-- Tarjeta Cuentas por pagar (debo) -->
+                <Border Background="#B22222" CornerRadius="10" Margin="0,0,0,10" Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="Cuentas por pagar" Foreground="White" FontSize="14"/>
+                        <TextBlock x:Name="txtCuentasPorPagar"  Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
 
-            <!-- Tarjeta Total global -->
-            <Border Background="#2F4F4F" CornerRadius="10" Margin="0,0,0,10" Padding="10">
-                <StackPanel>
-                    <TextBlock Text="Total global" Foreground="White" FontSize="14"/>
-                    <TextBlock x:Name="txtTotalGlobal" Text="$12,400.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
-                </StackPanel>
-            </Border>
+                <!-- Tarjeta Total global -->
+                <Border Background="#2F4F4F" CornerRadius="10" Margin="0,0,0,10" Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="Total global" Foreground="White" FontSize="14"/>
+                        <TextBlock x:Name="txtTotalGlobal"  Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
 
-            <!-- Tarjeta Transporte -->
-            <Border Background="#18278C" CornerRadius="10" Margin="0,0,0,10" Padding="10">
-                <StackPanel>
-                    <TextBlock Text="Transporte" Foreground="White" FontSize="14"/>
-                    <TextBlock x:Name="txtTransporte" Text="$0.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
-                </StackPanel>
-            </Border>
+                <!-- Tarjeta Transporte -->
+                <Border Background="#18278C" CornerRadius="10" Margin="0,0,0,10" Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="Transporte" Foreground="White" FontSize="14"/>
+                        <TextBlock x:Name="txtTransporte"  Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
 
-            <!-- Tarjeta Ajeno (dinero en custodia) -->
-            <Border Background="#D549E3" CornerRadius="10" Margin="0,0,0,10" Padding="10">
-                <StackPanel>
-                    <TextBlock Text="Ajeno" Foreground="White" FontSize="14"/>
-                    <TextBlock x:Name="txtAjeno" Text="$0.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+                <!-- Tarjeta Ajeno (dinero en custodia) -->
+                <Border Background="#D549E3" CornerRadius="10" Margin="0,0,0,10" Padding="10">
+                    <StackPanel>
+                        <TextBlock Text="Ajeno" Foreground="White" FontSize="14"/>
+                        <TextBlock x:Name="txtAjeno" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
         </ScrollViewer>
 
         <!-- COLUMNA DERECHA (tablas) -->
@@ -81,20 +82,20 @@
             <TextBlock Text="Deudores (me deben)" FontWeight="Bold" FontSize="16" Margin="0,0,0,5"/>
             <DataGrid x:Name="dgDeudores" AutoGenerateColumns="False" Height="200" Margin="0,0,0,15">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Contraparte" Binding="{Binding Persona}" Width="*"/>
-                    <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoOriginal}" Width="*"/>
-                    <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado}" Width="*"/>
-                    <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding Pendiente}" Width="*"/>
+                    <DataGridTextColumn Header="Contraparte" Binding="{Binding Contraparte}" Width="*"/>
+                    <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="*"/>
+                    <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="*"/>
+                    <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="*"/>
                 </DataGrid.Columns>
             </DataGrid>
 
             <TextBlock Text="Acreedores (debo)" FontWeight="Bold" FontSize="16" Margin="0,0,0,5"/>
             <DataGrid x:Name="dgAcreedores" AutoGenerateColumns="False" Height="200">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Contraparte" Binding="{Binding Persona}" Width="*"/>
-                    <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoOriginal}" Width="*"/>
-                    <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado}" Width="*"/>
-                    <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding Pendiente}" Width="*"/>
+                    <DataGridTextColumn Header="Contraparte" Binding="{Binding Contraparte}" Width="*"/>
+                    <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="*"/>
+                    <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="*"/>
+                    <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="*"/>
                 </DataGrid.Columns>
             </DataGrid>
         </StackPanel>

@@ -142,8 +142,14 @@ namespace Yes_Gestor
             }
 
             await Servicio.GuardarAsync(Datos);
+            
+            /*
             var balance = new VentanaBalance();
             balance.Show();
+            */
+
+            var movimientos = new VentanaMovimientos();
+            movimientos.Show();
         }
     }
 }

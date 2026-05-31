@@ -35,24 +35,24 @@ namespace Yes_Gestor
 
         private void AplicarFiltros()
         {
-            // Obtener fecha inicio (si no, tomar mínimo histórico)
             DateTime fechaDesde = dpFechaDesde.SelectedDate ?? DateTime.MinValue;
             DateTime fechaHasta = dpFechaHasta.SelectedDate ?? DateTime.MaxValue;
 
             string cuentaId = cbCuentaFiltro.SelectedValue as string;
             string categoriaId = cbCategoriaFiltro.SelectedValue as string;
 
-            var lista = from m in datos.Movimientos
-                        where m.FechaOcurrido >= fechaDesde && m.FechaOcurrido <= fechaHasta
-                        select m;
+            // Filtrar movimientos: eliminar nulos, aplicar fecha, cuenta y categoría
+            var listaFiltrada = datos.Movimientos
+                .Where(m => m != null)
+                .Where(m => m.FechaOcurrido >= fechaDesde && m.FechaOcurrido <= fechaHasta);
 
             if (!string.IsNullOrEmpty(cuentaId))
-                lista = lista.Where(m => m.CuentaId == cuentaId);
+                listaFiltrada = listaFiltrada.Where(m => m.CuentaId == cuentaId);
             if (!string.IsNullOrEmpty(categoriaId))
-                lista = lista.Where(m => m.CategoriaId == categoriaId);
+                listaFiltrada = listaFiltrada.Where(m => m.CategoriaId == categoriaId);
 
             // Convertir a ViewModel para mostrar nombres en lugar de IDs
-            movimientosView = lista.Select(m => new MovimientoViewModel
+            movimientosView = listaFiltrada.Select(m => new MovimientoViewModel
             {
                 Id = m.Id,
                 FechaOcurrido = m.FechaOcurrido,
@@ -95,14 +95,26 @@ namespace Yes_Gestor
 
         private async void AgregarMovimiento_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new VentanaMovimientoDialogo();
-            if (dialog.ShowDialog() == true)
+            var btn = sender as Button;
+            if (btn == null) return;
+            btn.IsEnabled = false;  // ← DESHABILITAR MIENTRAS TANTO
+            try
             {
-                var nuevoMov = dialog.Movimiento;
-                // El constructor ya asigna Id y FechaRegistro. Solo lo agregamos.
-                datos.Movimientos.Add(nuevoMov);
-                await App.Servicio.GuardarAsync(datos);
-                AplicarFiltros();
+                var dialog = new VentanaMovimientoDialogo();
+                if (dialog.ShowDialog() == true)
+                {
+                    var nuevoMov = dialog.Movimiento;
+                    if (nuevoMov != null)
+                    {
+                        datos.Movimientos.Add(nuevoMov);
+                        await App.Servicio.GuardarAsync(datos);
+                        AplicarFiltros();
+                    }
+                }
+            }
+            finally
+            {
+                btn.IsEnabled = true;  // ← REHABILITAR
             }
         }
 

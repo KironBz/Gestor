@@ -40,25 +40,35 @@
             <ScrollViewer Grid.Row="1" Margin="10">
                 <StackPanel>
                     <TextBlock Text="Fecha:" Margin="0,5,0,0"/>
-                    <DatePicker x:Name="dpFecha" SelectedDate="{Binding FechaOcurrido}"/>
+                    <DatePicker x:Name="dpFecha"/>
 
                     <TextBlock Text="Tipo:" Margin="0,10,0,0"/>
-                    <ComboBox x:Name="cbTipo" Style="{StaticResource ComboRedondo}" SelectedValuePath="Tag">
+                    <ComboBox x:Name="cbTipo" Style="{StaticResource ComboRedondo}" SelectedValuePath="Tag" SelectionChanged="TipoCategoria_SelectionChanged">
                         <ComboBoxItem Tag="Ingreso">Ingreso</ComboBoxItem>
                         <ComboBoxItem Tag="Egreso">Egreso</ComboBoxItem>
                         <ComboBoxItem Tag="Transferencia">Transferencia</ComboBoxItem>
                     </ComboBox>
 
                     <TextBlock Text="Cuenta:" Margin="0,10,0,0"/>
-                    <ComboBox x:Name="cbCuenta" Style="{StaticResource ComboRedondo}" DisplayMemberPath="Nombre" SelectedValuePath="Id"/>
+                    <StackPanel Orientation="Horizontal">
+                        <ComboBox x:Name="cbCuenta" Style="{StaticResource ComboRedondo}" DisplayMemberPath="Nombre" SelectedValuePath="Id" Width="300"/>
+                        <Button Content="+" Height="27" Width="27" Margin="13,0,0,0" Click="AgregarCuenta_Click" Cursor="Hand" Foreground="Blue" FontWeight="Bold"/>
+                        <Button Content="-" Height="27" Width="27" Margin="12,0,0,0" Click="EliminarCuenta_Click" Cursor="Hand" Foreground="Red" FontWeight="Bold"/>
+                    </StackPanel>
 
                     <TextBlock Text="Categoría:" Margin="0,10,0,0"/>
-                    <ComboBox x:Name="cbCategoria" Style="{StaticResource ComboRedondo}" DisplayMemberPath="Nombre" SelectedValuePath="Id"/>
+                    <StackPanel Orientation="Horizontal">
+                        <ComboBox x:Name="cbCategoria" Style="{StaticResource ComboRedondo}" DisplayMemberPath="Nombre" SelectedValuePath="Id" Width="300" SelectionChanged="TipoCategoria_SelectionChanged"/>
+                        <Button Content="+" Height="27" Width="27" Margin="13,0,0,0" Click="AgregarCategoria_Click" Cursor="Hand" Foreground="Blue" FontWeight="Bold"/>
+                        <Button Content="-" Height="27" Width="27" Margin="13,0,0,0" Click="EliminarCategoria_Click" Cursor="Hand" Foreground="Red" FontWeight="Bold"/>
+                    </StackPanel>
 
                     <TextBlock Text="Persona:" Margin="0,10,0,0"/>
-                    <ComboBox x:Name="cbPersona" Style="{StaticResource ComboRedondo}" DisplayMemberPath="Nombre" SelectedValuePath="Id">
-                        <ComboBoxItem Tag="">(Ninguna)</ComboBoxItem>
-                    </ComboBox>
+                    <StackPanel Orientation="Horizontal">
+                        <ComboBox x:Name="cbPersona" Style="{StaticResource ComboRedondo}" DisplayMemberPath="Nombre" SelectedValuePath="Id" Width="300"/>
+                        <Button Content="+" Height="27" Width="27" Margin="13,0,0,0" Click="AgregarPersona_Click" Cursor="Hand" Foreground="Blue" FontWeight="Bold"/>
+                        <Button Content="-" Height="27" Width="27" Margin="13,0,0,0" Click="EliminarPersona_Click" Cursor="Hand" Foreground="Red" FontWeight="Bold"/>
+                    </StackPanel>
 
                     <TextBlock Text="Descripción:" Margin="0,10,0,0"/>
                     <TextBox x:Name="txtDescripcion" Style="{StaticResource CampoRedondo}" Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
@@ -74,7 +84,7 @@
                         <TextBox x:Name="txtPlazos" Style="{StaticResource CampoRedondo}"/>
                     </StackPanel>
 
-                    <!-- Botones redondeados mediante Border -->
+                    <!-- Botones -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,25,0,15">
                         <Button Width="100" Height="35" Background="#2E8B57" Foreground="White" BorderThickness="0"
                                 Cursor="Hand" Click="Guardar_Click">

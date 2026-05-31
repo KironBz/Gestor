@@ -13,7 +13,7 @@ namespace Yes_Gestor.Models
         public DateTime FechaOcurrido { get; set; }
 
         [JsonPropertyName("fechaRegistro")]
-        public DateTime FechaRegistro { get; private set; }
+        public DateTime FechaRegistro { get; set; }
 
         private string _tipo;
         [JsonPropertyName("tipo")]
@@ -101,15 +101,28 @@ namespace Yes_Gestor.Models
             PersonaId = personaId;
             Descripcion = descripcion;
 
-            bool esPrestamoOCargo = (tipo == "Ingreso" && categoria == "Préstamo") ||
-                                     (tipo == "Egreso" && categoria == "Cargo");
-            if (esPrestamoOCargo)
+            bool esPrestamoRecibido = (tipo == "Ingreso" && categoria == "Préstamo");
+            bool esCargoCompleto = (tipo == "Egreso" && categoria == "Cargo" && montoFinal != null && plazos != null);
+
+            if (esPrestamoRecibido)
             {
                 if (montoFinal == null || plazos == null)
-                    throw new ArgumentException("Para préstamos o cargos, MontoFinal y Plazos son obligatorios.");
+                    throw new ArgumentException("Para préstamos recibidos, MontoFinal y Plazos son obligatorios.");
                 MontoFinal = montoFinal;
                 Plazos = plazos;
                 GenerarReferenciaAuto();
+            }
+            else if (esCargoCompleto)
+            {
+                MontoFinal = montoFinal;
+                Plazos = plazos;
+                GenerarReferenciaAuto();
+            }
+            else
+            {
+                // Para cargos simples o movimientos normales, no se genera referencia
+                MontoFinal = null;
+                Plazos = null;
             }
         }
 
@@ -117,7 +130,17 @@ namespace Yes_Gestor.Models
         {
             string prefijo = (Tipo == "Ingreso" && Categoria == "Préstamo") ? "PRE" : "CAR";
             string fechaStr = FechaOcurrido.ToString("yyyyMMdd");
-            string descLimpia = string.IsNullOrEmpty(Descripcion) ? "NA" : Regex.Replace(Descripcion, "[^a-zA-Z0-9]", "").Substring(0, Math.Min(5, Descripcion.Length));
+
+            string descLimpia = "NA";
+            if (!string.IsNullOrEmpty(Descripcion))
+            {
+                descLimpia = Regex.Replace(Descripcion, "[^a-zA-Z0-9]", "");
+                if (string.IsNullOrEmpty(descLimpia))
+                    descLimpia = "NA";
+                else if (descLimpia.Length > 5)
+                    descLimpia = descLimpia.Substring(0, 5);
+            }
+
             ReferenciaAuto = $"{prefijo}-{fechaStr}-{descLimpia}-{Monto}";
         }
 

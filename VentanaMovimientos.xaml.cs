@@ -138,5 +138,12 @@ namespace Yes_Gestor
         {
             this.DragMove();
         }
+
+        private void AbrirBalance_Click(object sender, RoutedEventArgs e)
+        {
+            var balance = new VentanaBalance();
+            balance.Show();
+            this.Close();
+        }
     }
 }

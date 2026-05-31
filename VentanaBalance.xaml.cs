@@ -186,6 +186,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 using Yes_Gestor.Models;
 
 namespace Yes_Gestor
@@ -254,8 +255,9 @@ namespace Yes_Gestor
                 dgDeudores.ItemsSource = porCobrar;
                 dgAcreedores.ItemsSource = porPagar;
 
-                // Mensaje de confirmación (opcional, puede comentarlo después)
+                /* Mensaje de confirmación (opcional, puede comentarlo después)
                 MessageBox.Show($"Datos cargados correctamente.\nDinero disponible: {totalCorriente:C}\nTotal Global: {totalGlobal:C}", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
+                */
             }
             catch (Exception ex)
             {
@@ -365,6 +367,33 @@ namespace Yes_Gestor
                 .Where(m => m.Tipo == "Egreso" && m.Categoria == "Transporte" &&
                             m.FechaOcurrido >= inicioMes && m.FechaOcurrido <= finMes)
                 .Sum(m => m.Monto);
+        }
+
+        private void MoverVentana_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            this.DragMove();
+        }
+
+        private void AbrirMovimientos_Click(object sender, RoutedEventArgs e)
+        {
+            var movimientos = new VentanaMovimientos();
+            movimientos.Show();
+            this.Close(); // o this.Hide() si quiere mantener ambas
+        }
+
+        private void AgregarMovimiento_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new VentanaMovimientoDialogo();
+            if (dialog.ShowDialog() == true)
+            {
+                var nuevoMov = dialog.Movimiento;
+                if (nuevoMov != null)
+                {
+                    App.Datos.Movimientos.Add(nuevoMov);
+                    _ = App.Servicio.GuardarAsync(App.Datos);
+                    CargarDatosReales(); // refrescar la pantalla actual (debe existir)
+                }
+            }
         }
     }
 

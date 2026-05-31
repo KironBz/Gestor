@@ -28,8 +28,8 @@ namespace Yes_Gestor.Models
             get => _tipo;
             set
             {
-                if (value != "Deudor" && value != "Acreedor" && value != "Ambos")
-                    throw new ArgumentException("Tipo debe ser Deudor, Acreedor o Ambos.");
+                if (value != "Deudor" && value != "Acreedor" && value != "Ambos" && value != "Ninguno")
+                    throw new ArgumentException("Tipo debe ser Deudor, Acreedor, Ambos o Ninguno.");
                 _tipo = value;
             }
         }

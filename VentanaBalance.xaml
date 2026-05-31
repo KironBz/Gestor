@@ -1,12 +1,117 @@
 ﻿<Window x:Class="Yes_Gestor.VentanaBalance"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Yes_Gestor"
-        mc:Ignorable="d"
-        Title="VentanaBalance" Height="450" Width="800">
-    <Grid>
+        Title="Balance General" Height="700" Width="1000"
+        WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <DropShadowEffect x:Key="DropShadow" BlurRadius="8" ShadowDepth="2" Opacity="0.3"/>
+    </Window.Resources>
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <!-- izquierda: tarjetas -->
+            <ColumnDefinition Width="3*"/>
+            <!-- derecha: tablas -->
+        </Grid.ColumnDefinitions>
+
+
+        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+            <!-- COLUMNA IZQUIERDA (tarjetas) -->
+        <StackPanel Grid.Column="0" Margin="5">
+            <!-- Tarjeta Dinero disponible -->
+            <Border Background="#2E8B57" CornerRadius="10" Margin="0,0,0,10" Padding="10" Effect="{StaticResource DropShadow}">
+                <StackPanel>
+                    <TextBlock Text="Dinero disponible" Foreground="White" FontSize="14"/>
+                    <TextBlock x:Name="txtDineroDisponible" Text="$12,500.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Tarjeta Dinero oculto -->
+            <Border Background="#4682B4" CornerRadius="10" Margin="0,0,0,10" Padding="10">
+                <StackPanel>
+                    <TextBlock Text="Dinero oculto" Foreground="White" FontSize="14"/>
+                    <TextBlock x:Name="txtDineroOculto" Text="$3,200.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Tarjeta Cuentas por cobrar (me deben) -->
+            <Border Background="#CD853F" CornerRadius="10" Margin="0,0,0,10" Padding="10">
+                <StackPanel>
+                    <TextBlock Text="Cuentas por cobrar" Foreground="White" FontSize="14"/>
+                    <TextBlock x:Name="txtCuentasPorCobrar" Text="$1,200.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Tarjeta Cuentas por pagar (debo) -->
+            <Border Background="#B22222" CornerRadius="10" Margin="0,0,0,10" Padding="10">
+                <StackPanel>
+                    <TextBlock Text="Cuentas por pagar" Foreground="White" FontSize="14"/>
+                    <TextBlock x:Name="txtCuentasPorPagar" Text="$4,500.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Tarjeta Total global -->
+            <Border Background="#2F4F4F" CornerRadius="10" Margin="0,0,0,10" Padding="10">
+                <StackPanel>
+                    <TextBlock Text="Total global" Foreground="White" FontSize="14"/>
+                    <TextBlock x:Name="txtTotalGlobal" Text="$12,400.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Tarjeta Transporte -->
+            <Border Background="#18278C" CornerRadius="10" Margin="0,0,0,10" Padding="10">
+                <StackPanel>
+                    <TextBlock Text="Transporte" Foreground="White" FontSize="14"/>
+                    <TextBlock x:Name="txtTransporte" Text="$0.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Tarjeta Ajeno (dinero en custodia) -->
+            <Border Background="#D549E3" CornerRadius="10" Margin="0,0,0,10" Padding="10">
+                <StackPanel>
+                    <TextBlock Text="Ajeno" Foreground="White" FontSize="14"/>
+                    <TextBlock x:Name="txtAjeno" Text="$0.00" Foreground="White" FontSize="24" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        </ScrollViewer>
+
+        <!-- COLUMNA DERECHA (tablas) -->
+        <StackPanel Grid.Column="1" Margin="5">
+            <TextBlock Text="Deudores (me deben)" FontWeight="Bold" FontSize="16" Margin="0,0,0,5"/>
+            <DataGrid x:Name="dgDeudores" AutoGenerateColumns="False" Height="200" Margin="0,0,0,15">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Contraparte" Binding="{Binding Persona}" Width="*"/>
+                    <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoOriginal}" Width="*"/>
+                    <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado}" Width="*"/>
+                    <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding Pendiente}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <TextBlock Text="Acreedores (debo)" FontWeight="Bold" FontSize="16" Margin="0,0,0,5"/>
+            <DataGrid x:Name="dgAcreedores" AutoGenerateColumns="False" Height="200">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Contraparte" Binding="{Binding Persona}" Width="*"/>
+                    <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoOriginal}" Width="*"/>
+                    <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado}" Width="*"/>
+                    <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding Pendiente}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </StackPanel>
         
+
+        <!-- Botón flotante (FAB) - esquina inferior derecha -->
+        <Button Grid.ColumnSpan="2" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,20,20"
+        Width="50" Height="50" Background="#FF5722" Foreground="White" FontSize="24" FontWeight="Bold"
+        BorderThickness="0" ToolTip="Agregar movimiento">
+            <Button.Template>
+                <ControlTemplate TargetType="Button">
+                    <Border Background="{TemplateBinding Background}" CornerRadius="25">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Button.Template>
+            +
+        </Button>
     </Grid>
 </Window>

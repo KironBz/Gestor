@@ -265,16 +265,16 @@ namespace Yes_Gestor
 
         private List<CuentaSaldo> CalcularSaldosCuentas(DatosApp datos)
         {
-            // Inicializar todas las cuentas con saldo 0
+            // Inicializar con todas las cuentas, usando su SaldoInicial
             var dict = datos.Cuentas.ToDictionary(c => c.Id, c => new CuentaSaldo
             {
                 Id = c.Id,
                 Nombre = c.Nombre,
                 Visibilidad = c.Visibilidad,
-                Saldo = 0
+                Saldo = c.SaldoInicial   // ← Aquí está la clave: partir del saldo inicial
             });
 
-            // Sumar movimientos
+            // Sumar/restar los movimientos
             foreach (var mov in datos.Movimientos)
             {
                 if (!dict.ContainsKey(mov.CuentaId)) continue;
@@ -282,7 +282,10 @@ namespace Yes_Gestor
                     dict[mov.CuentaId].Saldo += mov.Monto;
                 else if (mov.Tipo == "Egreso")
                     dict[mov.CuentaId].Saldo -= mov.Monto;
-                // Las transferencias ya se representan con dos movimientos opuestos, así que no se tratan aparte
+                // Nota: las transferencias se representan con dos movimientos opuestos
+                // (uno en origen con signo negativo, otro en destino con positivo),
+                // por lo que ya están cubiertas por los casos Ingreso/Egreso.
+                // Si usa un solo movimiento de tipo Transferencia, debería tratarse aparte.
             }
 
             return dict.Values.ToList();

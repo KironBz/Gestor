@@ -217,6 +217,12 @@ namespace Yes_Gestor
             }
         }
 
+        private void AbrirConfiguracion_Click(object sender, RoutedEventArgs e)
+        {
+            new VentanaConfiguracion().Show();
+            this.Close();
+        }
+
         // ================== NAVEGACIÓN ==================
         private void AbrirBalance_Click(object sender, RoutedEventArgs e) { new VentanaBalance().Show(); this.Close(); }
         private void AbrirMovimientos_Click(object sender, RoutedEventArgs e) { new VentanaMovimientos().Show(); this.Close(); }

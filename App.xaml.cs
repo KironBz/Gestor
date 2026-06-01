@@ -10,7 +10,7 @@ namespace Yes_Gestor
     public partial class App : Application
     {
         public static DatosApp Datos { get; private set; }
-        public static ArchivoService Servicio { get; private set; }
+        public static ArchivoService Servicio { get; set; }
 
         protected override async void OnStartup(StartupEventArgs e)
         {

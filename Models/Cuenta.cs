@@ -37,6 +37,9 @@ namespace Yes_Gestor.Models
         [JsonPropertyName("saldoInicial")]
         public decimal SaldoInicial { get; set; }
 
+        [JsonIgnore]
+        public decimal SaldoActual { get; set; }
+
         public Cuenta() { }
 
         public Cuenta(string nombre, string visibilidad, decimal saldoInicial = 0)

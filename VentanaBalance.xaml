@@ -30,6 +30,8 @@
                             Click="AbrirDashboard_Click" FontSize="14" Margin="10,0,20,0"/>
                     <Button Content="Metas" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand" 
                             Click="AbrirMetas_Click" FontSize="14" Margin="10,0,20,0"/>
+                    <Button Content="Configuración" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand" 
+                            Click="AbrirConfiguracion_Click" FontSize="14" Margin="10,0,20,0"/>
                 </StackPanel>
             </Border>
 

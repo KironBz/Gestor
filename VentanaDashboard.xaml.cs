@@ -272,5 +272,11 @@ namespace Yes_Gestor
             new VentanaMetas().Show();
             this.Close();
         }
+
+        private void AbrirConfiguracion_Click(object sender, RoutedEventArgs e)
+        {
+            new VentanaConfiguracion().Show();
+            this.Close();
+        }
     }
 }

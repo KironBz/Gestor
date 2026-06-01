@@ -1,0 +1,115 @@
+﻿<Window x:Class="Yes_Gestor.VentanaConfiguracion"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configuración" Height="700" Width="900"
+        WindowStartupLocation="CenterOwner"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent">
+
+    <Border Background="White" CornerRadius="20" Padding="10" BorderBrush="#DDD" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Barra de título con navegación -->
+            <Border Grid.Row="0" Background="#2E8B57" CornerRadius="15,15,0,0" Height="40"
+                    MouseLeftButtonDown="MoverVentana_MouseLeftButtonDown">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Button Content="Balance" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand" 
+                            Click="AbrirBalance_Click" FontSize="14" Margin="0,0,20,0"/>
+                    <Button Content="Movimientos" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand" 
+                            Click="AbrirMovimientos_Click" FontSize="14" Margin="0,0,20,0"/>
+                    <Button Content="Préstamos" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand" 
+                            Click="AbrirPrestamos_Click" FontSize="14" Margin="0,0,20,0"/>
+                    <Button Content="Dashboard" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand" 
+                            Click="AbrirDashboard_Click" FontSize="14" Margin="0,0,20,0"/>
+                    <Button Content="Metas" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand" 
+                            Click="AbrirMetas_Click" FontSize="14" Margin="0,0,20,0"/>
+                    <TextBlock Text="Configuración" Foreground="White" FontSize="16" FontWeight="Bold"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Contenido principal con pestañas -->
+            <TabControl Grid.Row="1" Margin="10" BorderThickness="0">
+                <!-- Pestaña Cuentas -->
+                <TabItem Header="Cuentas">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <DataGrid x:Name="dgCuentas" AutoGenerateColumns="False" IsReadOnly="True" 
+                                  SelectionMode="Single" SelectionUnit="FullRow" Margin="0,0,0,10">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="150"/>
+                                <DataGridTextColumn Header="Visibilidad" Binding="{Binding Visibilidad}" Width="100"/>
+                                <DataGridTextColumn Header="Saldo inicial" Binding="{Binding SaldoInicial, StringFormat=C}" Width="120"/>
+                                <DataGridTextColumn Header="Saldo actual" Binding="{Binding SaldoActual, StringFormat=C}" Width="120" IsReadOnly="True"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="Agregar" Width="80" Margin="5" Click="AgregarCuenta_Click" Style="{StaticResource BotonRedondo}"/>
+                            <Button Content="Editar" Width="80" Margin="5" Click="EditarCuenta_Click" Style="{StaticResource BotonRedondo}"/>
+                            <Button Content="Eliminar" Width="80" Margin="5" Click="EliminarCuenta_Click" Style="{StaticResource BotonRedondo}" Background="#B22222"/>
+                            <Button Content="Ajustar saldo" Width="100" Margin="5" Click="AjustarSaldoCuenta_Click" Style="{StaticResource BotonRedondo}" Background="#4682B4"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
+                <!-- Pestaña Categorías -->
+                <TabItem Header="Categorías">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <DataGrid x:Name="dgCategorias" AutoGenerateColumns="False" IsReadOnly="True" 
+                                  SelectionMode="Single" SelectionUnit="FullRow" Margin="0,0,0,10">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="150"/>
+                                <DataGridTextColumn Header="Tipo permitido" Binding="{Binding TipoPermitido}" Width="150"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="Agregar" Width="80" Margin="5" Click="AgregarCategoria_Click" Style="{StaticResource BotonRedondo}"/>
+                            <Button Content="Editar" Width="80" Margin="5" Click="EditarCategoria_Click" Style="{StaticResource BotonRedondo}"/>
+                            <Button Content="Eliminar" Width="80" Margin="5" Click="EliminarCategoria_Click" Style="{StaticResource BotonRedondo}" Background="#B22222"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
+                <!-- Pestaña Personas -->
+                <TabItem Header="Personas">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <DataGrid x:Name="dgPersonas" AutoGenerateColumns="False" IsReadOnly="True" 
+                                  SelectionMode="Single" SelectionUnit="FullRow" Margin="0,0,0,10">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="150"/>
+                                <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="150"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button Content="Agregar" Width="80" Margin="5" Click="AgregarPersona_Click" Style="{StaticResource BotonRedondo}"/>
+                            <Button Content="Editar" Width="80" Margin="5" Click="EditarPersona_Click" Style="{StaticResource BotonRedondo}"/>
+                            <Button Content="Eliminar" Width="80" Margin="5" Click="EliminarPersona_Click" Style="{StaticResource BotonRedondo}" Background="#B22222"/>
+                        </StackPanel>
+                    </Grid>
+                </TabItem>
+
+                <!-- Pestaña Opciones -->
+                <TabItem Header="Opciones">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Carpeta de sincronización (Drive)" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <TextBlock x:Name="txtCarpetaActual" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <Button Content="Cambiar carpeta" Width="150" Click="CambiarCarpeta_Click" Style="{StaticResource BotonRedondo}"/>
+                    </StackPanel>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </Border>
+</Window>

@@ -1,4 +1,6 @@
-App Usable
+App Usable												(v 1.4.0)	... 01/06/2026 --- 16:31 
 	Configuracion por defecto terminada
 
-toca Configuracion implementar
+App con configuraicon hecha								(v 1.5.0)	... 01/06/2026 --- 17:44 
+ 
+Toca centrar las pantallas

@@ -188,6 +188,12 @@ namespace Yes_Gestor
         private void AbrirMetas_Click(object sender, RoutedEventArgs e) { new VentanaMetas().Show(); this.Close(); }
         private void MoverVentana_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => this.DragMove();
 
+        private void AbrirConfiguracion_Click(object sender, RoutedEventArgs e)
+        {
+            new VentanaConfiguracion().Show();
+            this.Close();
+        }
+
         public class MovimientoViewModel
         {
             public string Id { get; set; }

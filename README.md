@@ -1,2 +1,4 @@
-Dashboard terminados
-toca proyectos (recopilar ideas de funcionamiento)
+App Usable
+	Configuracion por defecto terminada
+
+toca Configuracion implementar

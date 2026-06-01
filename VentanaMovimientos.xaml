@@ -5,25 +5,7 @@
         WindowStartupLocation="CenterOwner"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent">
 
-    <Window.Resources>
-        <!-- Estilo base para botones redondeados -->
-        <Style x:Key="BotonRedondo" TargetType="Button">
-            <Setter Property="Background" Value="#2E8B57"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" CornerRadius="15" Padding="10,5">
-                            <ContentPresenter HorizontalAlignment="Center"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-    </Window.Resources>
+    <!-- Se elimina la definición local de BotonRedondo (ahora está en App.xaml) -->
 
     <Border Background="White" CornerRadius="20" Padding="10" BorderBrush="#DDD" BorderThickness="1">
         <Grid>
@@ -34,11 +16,13 @@
 
             <!-- Barra de título -->
             <Border Grid.Row="0" Background="#2E8B57" CornerRadius="15,15,0,0" Height="40"
-        MouseLeftButtonDown="MoverVentana_MouseLeftButtonDown">
+                    MouseLeftButtonDown="MoverVentana_MouseLeftButtonDown">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Button Content="Balance" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand" 
-                Click="AbrirBalance_Click" FontSize="14" Margin="0,0,20,0"/>
-                    <TextBlock Text="Movimientos" Foreground="White" FontSize="16" FontWeight="Bold"/>
+                            Click="AbrirBalance_Click" FontSize="14" Margin="0,0,20,0"/>
+                    <TextBlock Text="Movimientos" Foreground="White" FontSize="16" FontWeight="Bold" Margin="10,0,20,0"/>
+                    <Button Content="Préstamos" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand" 
+                            Click="AbrirPrestamos_Click" FontSize="14" Margin="10,0,20,0"/>
                 </StackPanel>
             </Border>
 

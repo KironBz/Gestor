@@ -118,6 +118,13 @@ namespace Yes_Gestor
             }
         }
 
+        private void AbrirPrestamos_Click(object sender, RoutedEventArgs e)
+        {
+            var prestamos = new VentanaPrestamos();
+            prestamos.Show();
+            this.Close(); // o Hide()
+        }
+
 
 
         // Clase auxiliar para el DataGrid

@@ -395,6 +395,13 @@ namespace Yes_Gestor
                 }
             }
         }
+
+        private void AbrirPrestamos_Click(object sender, RoutedEventArgs e)
+        {
+            var prestamos = new VentanaPrestamos();
+            prestamos.Show();
+            this.Close(); // o Hide()
+        }
     }
 
     // Clases auxiliares (pueden ir dentro del mismo archivo o en archivos separados)
@@ -404,13 +411,5 @@ namespace Yes_Gestor
         public string Nombre { get; set; }
         public string Visibilidad { get; set; }
         public decimal Saldo { get; set; }
-    }
-
-    public class DeudaPendiente
-    {
-        public string Contraparte { get; set; }
-        public decimal MontoTotal { get; set; }
-        public decimal Pagado { get; set; }
-        public decimal SaldoPendiente { get; set; }
     }
 }

@@ -99,7 +99,6 @@ namespace Yes_Gestor
                 return;
             }
 
-            // Registrar pago para deudor (me debe) -> movimiento de tipo Ingreso con categoría Abono
             var dialog = new VentanaRegistroPagoDialogo(deuda);
             if (dialog.ShowDialog() == true)
             {
@@ -108,7 +107,7 @@ namespace Yes_Gestor
                 {
                     App.Datos.Movimientos.Add(pago);
                     await App.Servicio.GuardarAsync(App.Datos);
-                    CargarDeudas(); // refrescar
+                    CargarDeudas();
                 }
             }
         }
@@ -122,7 +121,6 @@ namespace Yes_Gestor
                 return;
             }
 
-            // Registrar pago para acreedor (debo) -> movimiento de tipo Egreso con categoría Pago
             var dialog = new VentanaRegistroPagoDialogo(deuda, esPagoPropio: true);
             if (dialog.ShowDialog() == true)
             {
@@ -131,9 +129,24 @@ namespace Yes_Gestor
                 {
                     App.Datos.Movimientos.Add(pago);
                     await App.Servicio.GuardarAsync(App.Datos);
-                    CargarDeudas(); // refrescar
+                    CargarDeudas();
                 }
             }
+        }
+
+        // ================== NAVEGACIÓN ==================
+        private void AbrirBalance_Click(object sender, RoutedEventArgs e)
+        {
+            var balance = new VentanaBalance();
+            balance.Show();
+            this.Close();
+        }
+
+        private void AbrirMovimientos_Click(object sender, RoutedEventArgs e)
+        {
+            var movimientos = new VentanaMovimientos();
+            movimientos.Show();
+            this.Close();
         }
 
         private void MoverVentana_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

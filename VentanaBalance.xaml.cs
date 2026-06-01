@@ -210,39 +210,30 @@ namespace Yes_Gestor
                     return;
                 }
 
-                System.Diagnostics.Debug.WriteLine("=== Cargando datos reales ===");
-                System.Diagnostics.Debug.WriteLine($"Número de cuentas: {datos.Cuentas.Count}");
-                System.Diagnostics.Debug.WriteLine($"Número de movimientos: {datos.Movimientos.Count}");
-                System.Diagnostics.Debug.WriteLine($"Número de categorías: {datos.Categorias.Count}");
-                System.Diagnostics.Debug.WriteLine($"Número de personas: {datos.Personas.Count}");
-
                 // 1. Calcular saldos de cuentas
                 var saldos = CalcularSaldosCuentas(datos);
-                decimal totalCorriente = saldos.Where(c => c.Visibilidad == "Corriente").Sum(c => c.Saldo);
-                decimal totalOculto = saldos.Where(c => c.Visibilidad == "Oculto").Sum(c => c.Saldo);
-                decimal totalAjeno = saldos.Where(c => c.Visibilidad == "Ajeno").Sum(c => c.Saldo);
+                var cuentasCorrientes = saldos.Where(c => c.Visibilidad == "Corriente").ToList();
+                var cuentasOcultas = saldos.Where(c => c.Visibilidad == "Oculto").ToList();
+                var cuentasAjenas = saldos.Where(c => c.Visibilidad == "Ajeno").ToList();
 
-                System.Diagnostics.Debug.WriteLine($"Total Corriente (suma saldos): {totalCorriente:C}");
-                System.Diagnostics.Debug.WriteLine($"Total Oculto: {totalOculto:C}");
-                System.Diagnostics.Debug.WriteLine($"Total Ajeno: {totalAjeno:C}");
+                decimal totalCorriente = cuentasCorrientes.Sum(c => c.Saldo);
+                decimal totalOculto = cuentasOcultas.Sum(c => c.Saldo);
+                decimal totalAjeno = cuentasAjenas.Sum(c => c.Saldo);
 
-                // 2. Calcular deudas
+                // 2. Calcular deudas (si las necesita, pero no se mostrarán en la derecha)
                 var (porCobrar, porPagar) = CalcularDeudas(datos);
                 decimal totalPorCobrar = porCobrar.Sum(d => d.SaldoPendiente);
                 decimal totalPorPagar = porPagar.Sum(d => d.SaldoPendiente);
 
-                System.Diagnostics.Debug.WriteLine($"Total Por Cobrar (me deben): {totalPorCobrar:C}");
-                System.Diagnostics.Debug.WriteLine($"Total Por Pagar (debo): {totalPorPagar:C}");
-
-                // 3. Total global
+                // 3. Total global = corriente + oculto + ajeno (ignoro deudas, pero puedo mantener fórmula)
+                // Si prefiere incluir deudas, use:
                 decimal totalGlobal = totalCorriente + totalOculto + totalPorCobrar - totalPorPagar;
-                System.Diagnostics.Debug.WriteLine($"Total Global: {totalGlobal:C}");
+                //decimal totalGlobal = totalCorriente + totalOculto + totalAjeno;
 
                 // 4. Gasto transporte del mes actual
                 decimal gastoTransporte = CalcularGastoTransporte(datos);
-                System.Diagnostics.Debug.WriteLine($"Gasto Transporte mes actual: {gastoTransporte:C}");
 
-                // 5. Actualizar tarjetas
+                // 5. Actualizar tarjetas izquierdas
                 txtDineroDisponible.Text = totalCorriente.ToString("C");
                 txtDineroOculto.Text = totalOculto.ToString("C");
                 txtCuentasPorCobrar.Text = totalPorCobrar.ToString("C");
@@ -251,13 +242,10 @@ namespace Yes_Gestor
                 txtTransporte.Text = gastoTransporte.ToString("C");
                 txtAjeno.Text = totalAjeno.ToString("C");
 
-                // 6. Actualizar tablas
-                dgDeudores.ItemsSource = porCobrar;
-                dgAcreedores.ItemsSource = porPagar;
-
-                /* Mensaje de confirmación (opcional, puede comentarlo después)
-                MessageBox.Show($"Datos cargados correctamente.\nDinero disponible: {totalCorriente:C}\nTotal Global: {totalGlobal:C}", "Éxito", MessageBoxButton.OK, MessageBoxImage.Information);
-                */
+                // 6. Actualizar listas derechas
+                lbCuentasCorrientes.ItemsSource = cuentasCorrientes;
+                lbCuentasOcultas.ItemsSource = cuentasOcultas;
+                lbCuentasAjenas.ItemsSource = cuentasAjenas;
             }
             catch (Exception ex)
             {
@@ -273,7 +261,7 @@ namespace Yes_Gestor
                 Id = c.Id,
                 Nombre = c.Nombre,
                 Visibilidad = c.Visibilidad,
-                Saldo = c.SaldoInicial   // ← Aquí está la clave: partir del saldo inicial
+                Saldo = c.SaldoInicial
             });
 
             // Sumar/restar los movimientos
@@ -284,10 +272,6 @@ namespace Yes_Gestor
                     dict[mov.CuentaId].Saldo += mov.Monto;
                 else if (mov.Tipo == "Egreso")
                     dict[mov.CuentaId].Saldo -= mov.Monto;
-                // Nota: las transferencias se representan con dos movimientos opuestos
-                // (uno en origen con signo negativo, otro en destino con positivo),
-                // por lo que ya están cubiertas por los casos Ingreso/Egreso.
-                // Si usa un solo movimiento de tipo Transferencia, debería tratarse aparte.
             }
 
             return dict.Values.ToList();
@@ -295,10 +279,10 @@ namespace Yes_Gestor
 
         private (List<DeudaPendiente> porCobrar, List<DeudaPendiente> porPagar) CalcularDeudas(DatosApp datos)
         {
-            var porCobrar = new List<DeudaPendiente>(); // me deben
-            var porPagar = new List<DeudaPendiente>();  // debo
+            var porCobrar = new List<DeudaPendiente>();
+            var porPagar = new List<DeudaPendiente>();
 
-            // Préstamos recibidos (debo): Ingreso + categoría Préstamo
+            // Préstamos recibidos (debo)
             var prestamosRecibidos = datos.Movimientos
                 .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null)
                 .ToList();
@@ -326,7 +310,7 @@ namespace Yes_Gestor
                 }
             }
 
-            // Préstamos otorgados (me deben): Egreso + categoría Cargo
+            // Préstamos otorgados (me deben)
             var prestamosOtorgados = datos.Movimientos
                 .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null)
                 .ToList();
@@ -378,7 +362,7 @@ namespace Yes_Gestor
         {
             var movimientos = new VentanaMovimientos();
             movimientos.Show();
-            this.Close(); // o this.Hide() si quiere mantener ambas
+            this.Close();
         }
 
         private async void AgregarMovimiento_Click(object sender, RoutedEventArgs e)
@@ -391,7 +375,7 @@ namespace Yes_Gestor
                     foreach (var mov in dialog.Movimientos)
                         App.Datos.Movimientos.Add(mov);
                     await App.Servicio.GuardarAsync(App.Datos);
-                    CargarDatosReales(); // Refrescar las tarjetas y tablas del Balance
+                    CargarDatosReales();
                 }
             }
         }
@@ -400,7 +384,7 @@ namespace Yes_Gestor
         {
             var prestamos = new VentanaPrestamos();
             prestamos.Show();
-            this.Close(); // o Hide()
+            this.Close();
         }
 
         private void AbrirDashboard_Click(object sender, RoutedEventArgs e)
@@ -408,6 +392,7 @@ namespace Yes_Gestor
             new VentanaDashboard().Show();
             this.Close();
         }
+
         private void AbrirMetas_Click(object sender, RoutedEventArgs e)
         {
             new VentanaMetas().Show();
@@ -415,7 +400,7 @@ namespace Yes_Gestor
         }
     }
 
-    // Clases auxiliares (pueden ir dentro del mismo archivo o en archivos separados)
+    // Clases auxiliares (mantenerlas como estaban)
     public class CuentaSaldo
     {
         public string Id { get; set; }
@@ -423,4 +408,5 @@ namespace Yes_Gestor
         public string Visibilidad { get; set; }
         public decimal Saldo { get; set; }
     }
+
 }

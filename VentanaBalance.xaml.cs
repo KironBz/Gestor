@@ -402,6 +402,12 @@ namespace Yes_Gestor
             prestamos.Show();
             this.Close(); // o Hide()
         }
+
+        private void AbrirDashboard_Click(object sender, RoutedEventArgs e)
+        {
+            new VentanaDashboard().Show();
+            this.Close();
+        }
     }
 
     // Clases auxiliares (pueden ir dentro del mismo archivo o en archivos separados)

@@ -175,5 +175,11 @@ namespace Yes_Gestor
                 CargarDeudas(); // refrescar
             }
         }
+
+        private void AbrirDashboard_Click(object sender, RoutedEventArgs e)
+        {
+            new VentanaDashboard().Show();
+            this.Close();
+        }
     }
 }

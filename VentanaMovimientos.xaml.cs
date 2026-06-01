@@ -154,5 +154,11 @@ namespace Yes_Gestor
             balance.Show();
             this.Close();
         }
+
+        private void AbrirDashboard_Click(object sender, RoutedEventArgs e)
+        {
+            new VentanaDashboard().Show();
+            this.Close();
+        }
     }
 }

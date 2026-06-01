@@ -408,6 +408,11 @@ namespace Yes_Gestor
             new VentanaDashboard().Show();
             this.Close();
         }
+        private void AbrirMetas_Click(object sender, RoutedEventArgs e)
+        {
+            new VentanaMetas().Show();
+            this.Close();
+        }
     }
 
     // Clases auxiliares (pueden ir dentro del mismo archivo o en archivos separados)

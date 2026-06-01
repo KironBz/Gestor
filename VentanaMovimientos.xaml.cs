@@ -160,5 +160,11 @@ namespace Yes_Gestor
             new VentanaDashboard().Show();
             this.Close();
         }
+
+        private void AbrirMetas_Click(object sender, RoutedEventArgs e)
+        {
+            new VentanaMetas().Show();
+            this.Close();
+        }
     }
 }

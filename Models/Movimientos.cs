@@ -74,12 +74,14 @@ namespace Yes_Gestor.Models
         [JsonPropertyName("referenciaAuto")]
         public string ReferenciaAuto { get; set; }
 
-
+        // NUEVO: ID de la meta de ahorro (opcional)
+        [JsonPropertyName("metaId")]
+        public string MetaId { get; set; }
 
         // Constructor para deserialización
         public Movimiento() { }
 
-        // Constructor para crear nuevo movimiento
+        // Constructor principal (con MetaId opcional al final)
         public Movimiento(
             DateTime? fechaOcurrido,
             string tipo,
@@ -90,7 +92,8 @@ namespace Yes_Gestor.Models
             string personaId = null,
             string descripcion = null,
             decimal? montoFinal = null,
-            int? plazos = null)
+            int? plazos = null,
+            string metaId = null)
         {
             Id = Guid.NewGuid().ToString();
             FechaOcurrido = fechaOcurrido ?? DateTime.Today;
@@ -102,9 +105,8 @@ namespace Yes_Gestor.Models
             Monto = monto;
             PersonaId = personaId;
             Descripcion = descripcion;
+            MetaId = metaId;
 
-
-            ////////////////
             bool esPrestamoRecibido = (tipo == "Ingreso" && categoria == "Préstamo");
             bool esCargoCompleto = (tipo == "Egreso" && categoria == "Cargo" && montoFinal != null && plazos != null);
 
@@ -115,24 +117,15 @@ namespace Yes_Gestor.Models
                 MontoFinal = montoFinal;
                 Plazos = plazos;
                 GenerarReferenciaAuto();
-                if (string.IsNullOrEmpty(Descripcion))
-                    Descripcion = ReferenciaAuto;
-                else
-                    Descripcion = $"{Descripcion} (Ref: {ReferenciaAuto})";
             }
-            else if (tipo == "Egreso" && categoria == "Cargo")
+            else if (esCargoCompleto)
             {
-                MontoFinal = montoFinal; // puede ser null
+                MontoFinal = montoFinal;
                 Plazos = plazos;
-                GenerarReferenciaAuto(); // siempre generar referencia para cargos
-                if (string.IsNullOrEmpty(Descripcion))
-                    Descripcion = ReferenciaAuto;
-                else
-                    Descripcion = $"{Descripcion} (Ref: {ReferenciaAuto})";
+                GenerarReferenciaAuto();
             }
             else
             {
-                // Movimientos normales (sin referencia)
                 MontoFinal = null;
                 Plazos = null;
             }
@@ -142,17 +135,9 @@ namespace Yes_Gestor.Models
         {
             string prefijo = (Tipo == "Ingreso" && Categoria == "Préstamo") ? "PRE" : "CAR";
             string fechaStr = FechaOcurrido.ToString("yyyyMMdd");
-
-            string descLimpia = "NA";
-            if (!string.IsNullOrEmpty(Descripcion))
-            {
-                descLimpia = Regex.Replace(Descripcion, "[^a-zA-Z0-9]", "");
-                if (string.IsNullOrEmpty(descLimpia))
-                    descLimpia = "NA";
-                else if (descLimpia.Length > 5)
-                    descLimpia = descLimpia.Substring(0, 5);
-            }
-
+            string descLimpia = string.IsNullOrEmpty(Descripcion) ? "NA" : Regex.Replace(Descripcion, "[^a-zA-Z0-9]", "");
+            if (string.IsNullOrEmpty(descLimpia)) descLimpia = "NA";
+            else if (descLimpia.Length > 5) descLimpia = descLimpia.Substring(0, 5);
             ReferenciaAuto = $"{prefijo}-{fechaStr}-{descLimpia}-{Monto}";
         }
 

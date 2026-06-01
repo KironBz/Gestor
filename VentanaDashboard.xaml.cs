@@ -266,5 +266,11 @@ namespace Yes_Gestor
         {
             this.DragMove();
         }
+
+        private void AbrirMetas_Click(object sender, RoutedEventArgs e)
+        {
+            new VentanaMetas().Show();
+            this.Close();
+        }
     }
 }

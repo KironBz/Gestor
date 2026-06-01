@@ -126,6 +126,7 @@ namespace Yes_Gestor
                 Datos.Cuentas.Add(new Cuenta("Revolut", "Corriente", 0m));
                 Datos.Cuentas.Add(new Cuenta("Ahorro 10", "Oculto", 0m));
                 Datos.Cuentas.Add(new Cuenta("Dinero de Mamá", "Ajeno", 0m));
+                Datos.Cuentas.Add(new Cuenta("Nu", "Ajeno", 0m));
             }
             if (Datos.Categorias.Count == 0)
             {
@@ -139,6 +140,12 @@ namespace Yes_Gestor
             {
                 Datos.Personas.Add(new Persona("Mamá", "Acreedor"));
                 Datos.Personas.Add(new Persona("Ali", "Deudor"));
+            }
+            if (Datos.Metas.Count == 0)
+            {
+                Datos.Metas.Add(new Meta("Nueva PC", 25000m, 1));   // prioridad 1 (más urgente)
+                Datos.Metas.Add(new Meta("Vacaciones", 8000m, 2));
+                Datos.Metas.Add(new Meta("Fondo de emergencia", 5000m, 3));
             }
 
             await Servicio.GuardarAsync(Datos);

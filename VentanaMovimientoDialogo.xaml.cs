@@ -11,7 +11,7 @@ namespace Yes_Gestor
 {
     public partial class VentanaMovimientoDialogo : Window
     {
-        public List<Movimiento> Movimientos { get; private set; }  // ← NUEVA PROPIEDAD
+        public List<Movimiento> Movimientos { get; private set; }
         private bool _guardando = false;
 
         public VentanaMovimientoDialogo()
@@ -20,6 +20,7 @@ namespace Yes_Gestor
             CargarCombos();
             cbTipo.SelectionChanged += TipoCategoria_SelectionChanged;
             cbCategoria.SelectionChanged += TipoCategoria_SelectionChanged;
+            cbCuenta.SelectionChanged += cbCuenta_SelectionChanged; // Asegurar evento
         }
 
         private void CargarCombos()
@@ -39,8 +40,18 @@ namespace Yes_Gestor
             cbPersona.ItemsSource = listaPersonas;
             cbPersona.DisplayMemberPath = "Nombre";
             cbPersona.SelectedValuePath = "Id";
+
+            // Metas de ahorro (solo activas, ordenadas por prioridad)
+            // Metas activas = no completadas y no archivadas, ordenadas por prioridad y fecha
+            var metasActivas = App.Datos.Metas?
+                .Where(m => !m.Completada && !m.Archivada)
+                .OrderBy(m => m.Prioridad)
+                .ThenBy(m => m.FechaCreacion)
+                .ToList();
+            cbMeta.ItemsSource = metasActivas;
         }
 
+        // ================== MOSTRAR/OCULTAR PANELES ==================
         private void TipoCategoria_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string tipo = (cbTipo.SelectedItem as ComboBoxItem)?.Tag as string;
@@ -55,13 +66,38 @@ namespace Yes_Gestor
             pnlTransferencia.Visibility = esTransferencia ? Visibility.Visible : Visibility.Collapsed;
         }
 
+        private void cbCuenta_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var cuenta = cbCuenta.SelectedItem as Cuenta;
+            bool esCuentaAhorro = (cuenta?.Nombre == "Nu"); // Ajuste según nombre exacto de su cuenta de ahorros
+
+            if (esCuentaAhorro)
+            {
+                // Forzar categoría "Ahorro"
+                var categoriaAhorro = App.Datos.Categorias.FirstOrDefault(c => c.Nombre == "Ahorro");
+                if (categoriaAhorro != null)
+                    cbCategoria.SelectedItem = categoriaAhorro;
+                cbCategoria.IsEnabled = false;
+
+                // Mostrar panel de meta y recargar metas por si acaso
+                pnlMeta.Visibility = Visibility.Visible;
+                CargarCombos(); // refrescar lista de metas (por si se agregó una nueva)
+            }
+            else
+            {
+                cbCategoria.IsEnabled = true;
+                pnlMeta.Visibility = Visibility.Collapsed;
+                cbMeta.SelectedItem = null;
+            }
+        }
+
+        // ================== GUARDAR ==================
         private async void Guardar_Click(object sender, RoutedEventArgs e)
         {
             if (_guardando) return;
             _guardando = true;
             try
             {
-                // Validaciones comunes
                 if (cbTipo.SelectedItem == null) throw new Exception("Seleccione un tipo.");
                 if (!decimal.TryParse(txtMonto.Text, out decimal monto) || monto <= 0)
                     throw new Exception("Monto inválido.");
@@ -74,7 +110,6 @@ namespace Yes_Gestor
 
                 if (tipo == "Transferencia")
                 {
-                    // validaciones transferencia...
                     if (cbCuentaOrigen.SelectedItem == null || cbCuentaDestino.SelectedItem == null)
                         throw new Exception("Seleccione cuenta origen y destino.");
                     if (cbCuentaOrigen.SelectedItem == cbCuentaDestino.SelectedItem)
@@ -83,14 +118,13 @@ namespace Yes_Gestor
                     Cuenta cuentaOrigen = cbCuentaOrigen.SelectedItem as Cuenta;
                     Cuenta cuentaDestino = cbCuentaDestino.SelectedItem as Cuenta;
 
-                    var movOrigen = new Movimiento(fecha, "Egreso", "Transferencia", cuentaOrigen.Id, null, monto, null, descripcion, null, null);
-                    var movDestino = new Movimiento(fecha, "Ingreso", "Transferencia", cuentaDestino.Id, null, monto, null, descripcion, null, null);
+                    var movOrigen = new Movimiento(fecha, "Egreso", "Transferencia", cuentaOrigen.Id, null, monto, null, descripcion);
+                    var movDestino = new Movimiento(fecha, "Ingreso", "Transferencia", cuentaDestino.Id, null, monto, null, descripcion);
                     movimientosGenerados.Add(movOrigen);
                     movimientosGenerados.Add(movDestino);
                 }
                 else
                 {
-                    // movimientos normales o préstamos/cargos
                     if (cbCuenta.SelectedItem == null) throw new Exception("Seleccione una cuenta.");
                     if (cbCategoria.SelectedItem == null) throw new Exception("Seleccione una categoría.");
 
@@ -98,6 +132,16 @@ namespace Yes_Gestor
                     Categoria categoria = cbCategoria.SelectedItem as Categoria;
                     Persona personaSel = cbPersona.SelectedItem as Persona;
                     string personaId = (personaSel != null && personaSel.Id != "") ? personaSel.Id : null;
+
+                    // Validación de meta si es cuenta de ahorro
+                    bool esCuentaAhorro = (cuenta?.Nombre == "Nu");
+                    string metaId = null;
+                    if (esCuentaAhorro)
+                    {
+                        if (cbMeta.SelectedItem == null)
+                            throw new Exception("Debe seleccionar una meta de ahorro para esta cuenta.");
+                        metaId = (cbMeta.SelectedItem as Meta)?.Id;
+                    }
 
                     bool esPrestamoRecibido = (tipo == "Ingreso" && categoria.Nombre == "Préstamo");
                     bool esCargo = (tipo == "Egreso" && categoria.Nombre == "Cargo");
@@ -130,11 +174,12 @@ namespace Yes_Gestor
                         }
                     }
 
-                    var movimiento = new Movimiento(fecha, tipo, categoria.Nombre, cuenta.Id, categoria.Id, monto, personaId, descripcion, montoFinal, plazos);
+                    var movimiento = new Movimiento(
+                        fecha, tipo, categoria.Nombre, cuenta.Id, categoria.Id,
+                        monto, personaId, descripcion, montoFinal, plazos, metaId);
                     movimientosGenerados.Add(movimiento);
                 }
 
-                // 🔥 NO agregamos aquí a App.Datos, solo devolvemos la lista
                 Movimientos = movimientosGenerados;
                 DialogResult = true;
                 Close();
@@ -155,7 +200,7 @@ namespace Yes_Gestor
             Close();
         }
 
-        // ================== AGREGAR ==================
+        // ================== AGREGAR / ELIMINAR (CUENTAS, CATEGORÍAS, PERSONAS) ==================
         private async void AgregarCuenta_Click(object sender, RoutedEventArgs e)
         {
             var nombre = Interaction.InputBox("Ingrese el nombre de la nueva cuenta:", "Nueva cuenta", "");
@@ -195,15 +240,10 @@ namespace Yes_Gestor
             }
         }
 
-        // ================== ELIMINAR ==================
         private async void EliminarCuenta_Click(object sender, RoutedEventArgs e)
         {
             var cuenta = cbCuenta.SelectedItem as Cuenta;
-            if (cuenta == null)
-            {
-                MessageBox.Show("Seleccione una cuenta para eliminar.", "Eliminar cuenta", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            if (cuenta == null) return;
             if (App.Datos.Movimientos.Any(m => m.CuentaId == cuenta.Id))
             {
                 MessageBox.Show($"No se puede eliminar la cuenta '{cuenta.Nombre}' porque tiene movimientos asociados.", "Eliminar cuenta", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -215,18 +255,13 @@ namespace Yes_Gestor
                 await App.Servicio.GuardarAsync(App.Datos);
                 CargarCombos();
                 cbCuenta.SelectedIndex = -1;
-                MessageBox.Show("Cuenta eliminada correctamente.", "Eliminado", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
         private async void EliminarCategoria_Click(object sender, RoutedEventArgs e)
         {
             var categoria = cbCategoria.SelectedItem as Categoria;
-            if (categoria == null)
-            {
-                MessageBox.Show("Seleccione una categoría para eliminar.", "Eliminar categoría", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            if (categoria == null) return;
             if (App.Datos.Movimientos.Any(m => m.CategoriaId == categoria.Id))
             {
                 MessageBox.Show($"No se puede eliminar la categoría '{categoria.Nombre}' porque tiene movimientos asociados.", "Eliminar categoría", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -238,18 +273,13 @@ namespace Yes_Gestor
                 await App.Servicio.GuardarAsync(App.Datos);
                 CargarCombos();
                 cbCategoria.SelectedIndex = -1;
-                MessageBox.Show("Categoría eliminada correctamente.", "Eliminado", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
         private async void EliminarPersona_Click(object sender, RoutedEventArgs e)
         {
             var persona = cbPersona.SelectedItem as Persona;
-            if (persona == null || string.IsNullOrEmpty(persona.Id) || persona.Nombre == "(Ninguna)")
-            {
-                MessageBox.Show("Seleccione una persona válida para eliminar.", "Eliminar persona", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+            if (persona == null || string.IsNullOrEmpty(persona.Id) || persona.Nombre == "(Ninguna)") return;
             if (App.Datos.Movimientos.Any(m => m.PersonaId == persona.Id))
             {
                 MessageBox.Show($"No se puede eliminar a '{persona.Nombre}' porque tiene movimientos asociados.", "Eliminar persona", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -261,13 +291,9 @@ namespace Yes_Gestor
                 await App.Servicio.GuardarAsync(App.Datos);
                 CargarCombos();
                 cbPersona.SelectedIndex = 0;
-                MessageBox.Show("Persona eliminada correctamente.", "Eliminado", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
-        private void MoverVentana_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            this.DragMove();
-        }
+        private void MoverVentana_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => this.DragMove();
     }
 }

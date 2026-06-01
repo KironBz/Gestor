@@ -13,27 +13,39 @@ namespace Yes_Gestor
     {
         public List<Movimiento> Movimientos { get; private set; }
         private bool _guardando = false;
+        private Movimiento _movimientoOriginal; // para edición
+        private bool _editando = false;
 
+        // Constructor para NUEVO movimiento
         public VentanaMovimientoDialogo()
         {
             InitializeComponent();
             CargarCombos();
             cbTipo.SelectionChanged += TipoCategoria_SelectionChanged;
             cbCategoria.SelectionChanged += TipoCategoria_SelectionChanged;
-            cbCuenta.SelectionChanged += cbCuenta_SelectionChanged; // Asegurar evento
+            cbCuenta.SelectionChanged += cbCuenta_SelectionChanged;
+        }
+
+        // Constructor para EDITAR movimiento existente
+        public VentanaMovimientoDialogo(Movimiento movimiento)
+        {
+            InitializeComponent();
+            _movimientoOriginal = movimiento;
+            _editando = true;
+            CargarCombos();
+            CargarDatosDesdeMovimiento(movimiento);
+            cbTipo.SelectionChanged += TipoCategoria_SelectionChanged;
+            cbCategoria.SelectionChanged += TipoCategoria_SelectionChanged;
+            cbCuenta.SelectionChanged += cbCuenta_SelectionChanged;
         }
 
         private void CargarCombos()
         {
-            // Cuentas
             cbCuenta.ItemsSource = App.Datos.Cuentas;
             cbCategoria.ItemsSource = App.Datos.Categorias;
-
-            // Cuentas para transferencia
             cbCuentaOrigen.ItemsSource = App.Datos.Cuentas;
             cbCuentaDestino.ItemsSource = App.Datos.Cuentas;
 
-            // Personas: lista con opción "(Ninguna)"
             var listaPersonas = new List<Persona>();
             listaPersonas.Add(new Persona("(Ninguna)", "Ninguno") { Id = "" });
             listaPersonas.AddRange(App.Datos.Personas);
@@ -41,27 +53,54 @@ namespace Yes_Gestor
             cbPersona.DisplayMemberPath = "Nombre";
             cbPersona.SelectedValuePath = "Id";
 
-            // Metas de ahorro (solo activas, ordenadas por prioridad)
-            // Metas activas = no completadas y no archivadas, ordenadas por prioridad y fecha
-            var metasActivas = App.Datos.Metas?
-                .Where(m => !m.Completada && !m.Archivada)
-                .OrderBy(m => m.Prioridad)
-                .ThenBy(m => m.FechaCreacion)
-                .ToList();
+            var metasActivas = App.Datos.Metas?.Where(m => !m.Completada && !m.Archivada)
+                .OrderBy(m => m.Prioridad).ThenBy(m => m.FechaCreacion).ToList();
             cbMeta.ItemsSource = metasActivas;
+            cbMeta.DisplayMemberPath = "Nombre";
+            cbMeta.SelectedValuePath = "Id";
         }
 
-        // ================== MOSTRAR/OCULTAR PANELES ==================
+        private void CargarDatosDesdeMovimiento(Movimiento mov)
+        {
+            dpFecha.SelectedDate = mov.FechaOcurrido;
+            // Seleccionar tipo
+            foreach (ComboBoxItem item in cbTipo.Items)
+            {
+                if (item.Tag.ToString() == mov.Tipo)
+                {
+                    cbTipo.SelectedItem = item;
+                    break;
+                }
+            }
+            // Seleccionar cuenta
+            if (!string.IsNullOrEmpty(mov.CuentaId))
+                cbCuenta.SelectedItem = App.Datos.Cuentas.FirstOrDefault(c => c.Id == mov.CuentaId);
+            // Seleccionar categoría
+            if (!string.IsNullOrEmpty(mov.CategoriaId))
+                cbCategoria.SelectedItem = App.Datos.Categorias.FirstOrDefault(c => c.Id == mov.CategoriaId);
+            // Seleccionar persona
+            if (!string.IsNullOrEmpty(mov.PersonaId))
+                cbPersona.SelectedItem = App.Datos.Personas.FirstOrDefault(p => p.Id == mov.PersonaId) ?? cbPersona.Items.OfType<Persona>().FirstOrDefault(p => p.Nombre == "(Ninguna)");
+            else
+                cbPersona.SelectedItem = cbPersona.Items.OfType<Persona>().FirstOrDefault(p => p.Nombre == "(Ninguna)");
+            txtDescripcion.Text = mov.Descripcion;
+            txtMonto.Text = mov.Monto.ToString();
+            if (mov.MontoFinal.HasValue)
+                txtMontoFinal.Text = mov.MontoFinal.Value.ToString();
+            if (mov.Plazos.HasValue)
+                txtPlazos.Text = mov.Plazos.Value.ToString();
+            if (!string.IsNullOrEmpty(mov.MetaId))
+                cbMeta.SelectedItem = App.Datos.Metas.FirstOrDefault(m => m.Id == mov.MetaId);
+        }
+
         private void TipoCategoria_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string tipo = (cbTipo.SelectedItem as ComboBoxItem)?.Tag as string;
             Categoria categoria = cbCategoria.SelectedItem as Categoria;
             string categoriaNombre = categoria?.Nombre ?? "";
-
             bool esPrestamoCargo = (tipo == "Ingreso" && categoriaNombre == "Préstamo") ||
                                    (tipo == "Egreso" && categoriaNombre == "Cargo");
             bool esTransferencia = (tipo == "Transferencia");
-
             pnlPrestamo.Visibility = esPrestamoCargo ? Visibility.Visible : Visibility.Collapsed;
             pnlTransferencia.Visibility = esTransferencia ? Visibility.Visible : Visibility.Collapsed;
         }
@@ -69,19 +108,15 @@ namespace Yes_Gestor
         private void cbCuenta_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var cuenta = cbCuenta.SelectedItem as Cuenta;
-            bool esCuentaAhorro = (cuenta?.Nombre == "Nu"); // Ajuste según nombre exacto de su cuenta de ahorros
-
+            bool esCuentaAhorro = (cuenta?.Nombre == "Nu");
             if (esCuentaAhorro)
             {
-                // Forzar categoría "Ahorro"
                 var categoriaAhorro = App.Datos.Categorias.FirstOrDefault(c => c.Nombre == "Ahorro");
                 if (categoriaAhorro != null)
                     cbCategoria.SelectedItem = categoriaAhorro;
                 cbCategoria.IsEnabled = false;
-
-                // Mostrar panel de meta y recargar metas por si acaso
                 pnlMeta.Visibility = Visibility.Visible;
-                CargarCombos(); // refrescar lista de metas (por si se agregó una nueva)
+                CargarCombos(); // refrescar metas
             }
             else
             {
@@ -91,7 +126,6 @@ namespace Yes_Gestor
             }
         }
 
-        // ================== GUARDAR ==================
         private async void Guardar_Click(object sender, RoutedEventArgs e)
         {
             if (_guardando) return;
@@ -133,7 +167,6 @@ namespace Yes_Gestor
                     Persona personaSel = cbPersona.SelectedItem as Persona;
                     string personaId = (personaSel != null && personaSel.Id != "") ? personaSel.Id : null;
 
-                    // Validación de meta si es cuenta de ahorro
                     bool esCuentaAhorro = (cuenta?.Nombre == "Nu");
                     string metaId = null;
                     if (esCuentaAhorro)
@@ -174,9 +207,11 @@ namespace Yes_Gestor
                         }
                     }
 
-                    var movimiento = new Movimiento(
-                        fecha, tipo, categoria.Nombre, cuenta.Id, categoria.Id,
-                        monto, personaId, descripcion, montoFinal, plazos, metaId);
+                    var movimiento = new Movimiento(fecha, tipo, categoria.Nombre, cuenta.Id, categoria.Id, monto, personaId, descripcion, montoFinal, plazos, metaId);
+                    if (_editando && _movimientoOriginal != null)
+                    {
+                        movimiento.Id = _movimientoOriginal.Id; // conservar el mismo ID para reemplazar
+                    }
                     movimientosGenerados.Add(movimiento);
                 }
 
@@ -194,13 +229,12 @@ namespace Yes_Gestor
             }
         }
 
-        private void Cancelar_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-            Close();
-        }
+        private void Cancelar_Click(object sender, RoutedEventArgs e) { DialogResult = false; Close(); }
+        private void MoverVentana_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => this.DragMove();
 
         // ================== AGREGAR / ELIMINAR (CUENTAS, CATEGORÍAS, PERSONAS) ==================
+        // ... (mantenga aquí todos los métodos que ya tenía, como AgregarCuenta_Click, EliminarCuenta_Click, etc.)
+        // Si no los tiene, los incluyo a continuación:
         private async void AgregarCuenta_Click(object sender, RoutedEventArgs e)
         {
             var nombre = Interaction.InputBox("Ingrese el nombre de la nueva cuenta:", "Nueva cuenta", "");
@@ -213,7 +247,6 @@ namespace Yes_Gestor
                 cbCuenta.SelectedItem = nuevaCuenta;
             }
         }
-
         private async void AgregarCategoria_Click(object sender, RoutedEventArgs e)
         {
             var nombre = Interaction.InputBox("Ingrese el nombre de la nueva categoría:", "Nueva categoría", "");
@@ -226,7 +259,6 @@ namespace Yes_Gestor
                 cbCategoria.SelectedItem = nuevaCategoria;
             }
         }
-
         private async void AgregarPersona_Click(object sender, RoutedEventArgs e)
         {
             var nombre = Interaction.InputBox("Ingrese el nombre de la nueva persona:", "Nueva persona", "");
@@ -239,7 +271,6 @@ namespace Yes_Gestor
                 cbPersona.SelectedItem = nuevaPersona;
             }
         }
-
         private async void EliminarCuenta_Click(object sender, RoutedEventArgs e)
         {
             var cuenta = cbCuenta.SelectedItem as Cuenta;
@@ -257,7 +288,6 @@ namespace Yes_Gestor
                 cbCuenta.SelectedIndex = -1;
             }
         }
-
         private async void EliminarCategoria_Click(object sender, RoutedEventArgs e)
         {
             var categoria = cbCategoria.SelectedItem as Categoria;
@@ -275,7 +305,6 @@ namespace Yes_Gestor
                 cbCategoria.SelectedIndex = -1;
             }
         }
-
         private async void EliminarPersona_Click(object sender, RoutedEventArgs e)
         {
             var persona = cbPersona.SelectedItem as Persona;
@@ -293,7 +322,5 @@ namespace Yes_Gestor
                 cbPersona.SelectedIndex = 0;
             }
         }
-
-        private void MoverVentana_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => this.DragMove();
     }
 }

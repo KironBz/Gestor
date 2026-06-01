@@ -144,5 +144,23 @@ namespace Yes_Gestor.Models
         public int Signo() => Tipo == "Ingreso" ? 1 : (Tipo == "Egreso" ? -1 : 0);
 
         public override string ToString() => $"[{FechaOcurrido:dd-MMM-yyyy}] {Tipo} - {Categoria} - {Monto:C} - CuentaId:{CuentaId?.Substring(0, 5)}...";
+
+    public Movimiento(Movimiento original)
+            {
+                Id = original.Id;
+                FechaOcurrido = original.FechaOcurrido;
+                FechaRegistro = original.FechaRegistro;
+                Tipo = original.Tipo;
+                Categoria = original.Categoria;
+                CuentaId = original.CuentaId;
+                CategoriaId = original.CategoriaId;
+                PersonaId = original.PersonaId;
+                Descripcion = original.Descripcion;
+                Monto = original.Monto;
+                MontoFinal = original.MontoFinal;
+                Plazos = original.Plazos;
+                ReferenciaAuto = original.ReferenciaAuto;
+                MetaId = original.MetaId;
+            }
     }
 }

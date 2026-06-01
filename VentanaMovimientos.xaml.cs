@@ -41,18 +41,16 @@ namespace Yes_Gestor
             string cuentaId = cbCuentaFiltro.SelectedValue as string;
             string categoriaId = cbCategoriaFiltro.SelectedValue as string;
 
-            // Filtrar movimientos: eliminar nulos, aplicar fecha, cuenta y categoría
-            var listaFiltrada = datos.Movimientos
+            var lista = datos.Movimientos
                 .Where(m => m != null)
                 .Where(m => m.FechaOcurrido >= fechaDesde && m.FechaOcurrido <= fechaHasta);
 
             if (!string.IsNullOrEmpty(cuentaId))
-                listaFiltrada = listaFiltrada.Where(m => m.CuentaId == cuentaId);
+                lista = lista.Where(m => m.CuentaId == cuentaId);
             if (!string.IsNullOrEmpty(categoriaId))
-                listaFiltrada = listaFiltrada.Where(m => m.CategoriaId == categoriaId);
+                lista = lista.Where(m => m.CategoriaId == categoriaId);
 
-            // Convertir a ViewModel para mostrar nombres en lugar de IDs
-            movimientosView = listaFiltrada.Select(m => new MovimientoViewModel
+            movimientosView = lista.Select(m => new MovimientoViewModel
             {
                 Id = m.Id,
                 FechaOcurrido = m.FechaOcurrido,
@@ -93,6 +91,7 @@ namespace Yes_Gestor
             AplicarFiltros();
         }
 
+        // ================== AGREGAR ==================
         private async void AgregarMovimiento_Click(object sender, RoutedEventArgs e)
         {
             var btn = sender as Button;
@@ -118,16 +117,77 @@ namespace Yes_Gestor
             }
         }
 
-        private void AbrirPrestamos_Click(object sender, RoutedEventArgs e)
+        // ================== EDITAR ==================
+        private MovimientoViewModel ObtenerMovimientoSeleccionado()
         {
-            var prestamos = new VentanaPrestamos();
-            prestamos.Show();
-            this.Close(); // o Hide()
+            return dgMovimientos.SelectedItem as MovimientoViewModel;
         }
 
+        private async void EditarMovimiento_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = ObtenerMovimientoSeleccionado();
+            if (vm == null)
+            {
+                MessageBox.Show("Seleccione un movimiento para editar.", "Editar", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
+            var movimientoOriginal = datos.Movimientos.FirstOrDefault(m => m.Id == vm.Id);
+            if (movimientoOriginal == null) return;
 
-        // Clase auxiliar para el DataGrid
+            // No soportamos edición de transferencias (por simplicidad)
+            if (movimientoOriginal.Tipo == "Transferencia")
+            {
+                MessageBox.Show("La edición de transferencias no está soportada. Puede eliminarla y crearla de nuevo.", "No soportado", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var dialog = new VentanaMovimientoDialogo(movimientoOriginal);
+            if (dialog.ShowDialog() == true && dialog.Movimientos != null && dialog.Movimientos.Count > 0)
+            {
+                var movimientoEditado = dialog.Movimientos[0];
+                var index = datos.Movimientos.IndexOf(movimientoOriginal);
+                if (index >= 0)
+                    datos.Movimientos[index] = movimientoEditado;
+                await App.Servicio.GuardarAsync(datos);
+                AplicarFiltros();
+            }
+        }
+
+        private void dgMovimientos_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            EditarMovimiento_Click(sender, null);
+        }
+
+        // ================== ELIMINAR ==================
+        private async void EliminarMovimiento_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = ObtenerMovimientoSeleccionado();
+            if (vm == null)
+            {
+                MessageBox.Show("Seleccione un movimiento para eliminar.", "Eliminar", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var movimiento = datos.Movimientos.FirstOrDefault(m => m.Id == vm.Id);
+            if (movimiento == null) return;
+
+            var result = MessageBox.Show($"¿Eliminar el movimiento del {movimiento.FechaOcurrido:dd/MM/yyyy} - {movimiento.Descripcion} por {movimiento.Monto:C}?", "Confirmar eliminación", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                datos.Movimientos.Remove(movimiento);
+                await App.Servicio.GuardarAsync(datos);
+                AplicarFiltros();
+            }
+        }
+
+        // ================== NAVEGACIÓN ==================
+        private void AbrirBalance_Click(object sender, RoutedEventArgs e) { new VentanaBalance().Show(); this.Close(); }
+        private void AbrirPrestamos_Click(object sender, RoutedEventArgs e) { new VentanaPrestamos().Show(); this.Close(); }
+        private void AbrirDashboard_Click(object sender, RoutedEventArgs e) { new VentanaDashboard().Show(); this.Close(); }
+        private void AbrirMetas_Click(object sender, RoutedEventArgs e) { new VentanaMetas().Show(); this.Close(); }
+        private void MoverVentana_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) => this.DragMove();
+
         public class MovimientoViewModel
         {
             public string Id { get; set; }
@@ -141,30 +201,6 @@ namespace Yes_Gestor
             public string PersonaId { get; set; }
             public string NombreCuenta { get; set; }
             public string NombrePersona { get; set; }
-        }
-
-        private void MoverVentana_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            this.DragMove();
-        }
-
-        private void AbrirBalance_Click(object sender, RoutedEventArgs e)
-        {
-            var balance = new VentanaBalance();
-            balance.Show();
-            this.Close();
-        }
-
-        private void AbrirDashboard_Click(object sender, RoutedEventArgs e)
-        {
-            new VentanaDashboard().Show();
-            this.Close();
-        }
-
-        private void AbrirMetas_Click(object sender, RoutedEventArgs e)
-        {
-            new VentanaMetas().Show();
-            this.Close();
         }
     }
 }

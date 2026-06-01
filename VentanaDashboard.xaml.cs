@@ -13,10 +13,15 @@ namespace Yes_Gestor
     {
         public SeriesCollection Series { get; set; }
         public SeriesCollection PieSeries { get; set; }
+        public SeriesCollection LineSeries { get; set; }
+        public List<string> EtiquetasMeses { get; set; }
+        public List<string> EtiquetasGastosMeses { get; set; }
+        public Func<double, string> FormatterMoneda { get; set; }
 
         public VentanaDashboard()
         {
             InitializeComponent();
+            FormatterMoneda = value => value.ToString("C");
             CargarGraficos();
             this.DataContext = this;
         }
@@ -26,65 +31,107 @@ namespace Yes_Gestor
             var datos = App.Datos;
             if (datos == null) return;
 
-            // ===== GRÁFICO DE BARRAS: Ingresos vs Egresos por mes (últimos 12 meses) =====
-            var hoy = DateTime.Today;
-            var meses = Enumerable.Range(0, 12)
-                .Select(i => hoy.AddMonths(-i))
-                .OrderBy(m => m)
+            // Excluir transferencias
+            var movimientosReales = datos.Movimientos
+                .Where(m => m.Categoria != "Transferencia")
                 .ToList();
 
-            List<string> etiquetas = new List<string>();
-            List<decimal> ingresos = new List<decimal>();
-            List<decimal> egresos = new List<decimal>();
-
-            foreach (var mes in meses)
+            // ========== 1. GRÁFICO DE BARRAS (Ingresos vs Egresos por mes) ==========
+            // Obtener todos los meses con datos (desde el primer movimiento hasta el último)
+            if (!movimientosReales.Any())
             {
-                etiquetas.Add(mes.ToString("MMM yyyy"));
-                var inicioMes = new DateTime(mes.Year, mes.Month, 1);
-                var finMes = inicioMes.AddMonths(1).AddDays(-1);
-
-                var movimientosMes = datos.Movimientos
-                    .Where(m => m.FechaOcurrido >= inicioMes && m.FechaOcurrido <= finMes);
-
-                ingresos.Add(movimientosMes.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto));
-                egresos.Add(movimientosMes.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto));
+                Series = new SeriesCollection();
+                PieSeries = new SeriesCollection();
+                LineSeries = new SeriesCollection();
+                EtiquetasMeses = new List<string>();
+                EtiquetasGastosMeses = new List<string>();
+                return;
             }
 
-            Series = new SeriesCollection
+            var primeraFecha = movimientosReales.Min(m => m.FechaOcurrido);
+            var ultimaFecha = movimientosReales.Max(m => m.FechaOcurrido);
+            var listaMeses = new List<DateTime>();
+            var fechaActual = new DateTime(primeraFecha.Year, primeraFecha.Month, 1);
+            while (fechaActual <= ultimaFecha)
             {
-                new ColumnSeries
-                {
-                    Title = "Ingresos",
-                    Values = new ChartValues<decimal>(ingresos),
-                    DataLabels = true
-                },
-                new ColumnSeries
-                {
-                    Title = "Egresos",
-                    Values = new ChartValues<decimal>(egresos),
-                    DataLabels = true
-                }
-            };
+                listaMeses.Add(fechaActual);
+                fechaActual = fechaActual.AddMonths(1);
+            }
 
-            // ===== GRÁFICO DE PASTEL: Ingresos vs Egresos totales =====
-            decimal totalIngresos = datos.Movimientos.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto);
-            decimal totalEgresos = datos.Movimientos.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
+            EtiquetasMeses = listaMeses.Select(m => m.ToString("MMM yyyy")).ToList();
+            List<decimal> ingresosMensuales = new List<decimal>();
+            List<decimal> egresosMensuales = new List<decimal>();
 
-            PieSeries = new SeriesCollection
+            foreach (var mes in listaMeses)
             {
-                new PieSeries
-                {
-                    Title = "Ingresos",
-                    Values = new ChartValues<decimal> { totalIngresos },
-                    DataLabels = true
-                },
-                new PieSeries
-                {
-                    Title = "Egresos",
-                    Values = new ChartValues<decimal> { totalEgresos },
-                    DataLabels = true
-                }
+                var inicioMes = mes;
+                var finMes = inicioMes.AddMonths(1).AddDays(-1);
+                var movimientosMes = movimientosReales
+                    .Where(m => m.FechaOcurrido >= inicioMes && m.FechaOcurrido <= finMes);
+
+                ingresosMensuales.Add(movimientosMes.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto));
+                egresosMensuales.Add(movimientosMes.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto));
+            }
+
+            var barraIngresos = new ColumnSeries
+            {
+                Title = "Ingresos",
+                Values = new ChartValues<decimal>(ingresosMensuales),
+                DataLabels = true,
+                LabelPoint = point => point.Y.ToString("C")
             };
+            var barraEgresos = new ColumnSeries
+            {
+                Title = "Egresos",
+                Values = new ChartValues<decimal>(egresosMensuales),
+                DataLabels = true,
+                LabelPoint = point => point.Y.ToString("C")
+            };
+            Series = new SeriesCollection { barraIngresos, barraEgresos };
+
+            // ========== 2. GRÁFICO DE PASTEL (Ingresos vs Egresos totales) ==========
+            decimal totalIngresos = movimientosReales.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto);
+            decimal totalEgresos = movimientosReales.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
+
+            var pieIngresos = new PieSeries
+            {
+                Title = "Ingresos",
+                Values = new ChartValues<decimal> { totalIngresos },
+                DataLabels = true,
+                LabelPoint = point => point.Y.ToString("C")
+            };
+            var pieEgresos = new PieSeries
+            {
+                Title = "Egresos",
+                Values = new ChartValues<decimal> { totalEgresos },
+                DataLabels = true,
+                LabelPoint = point => point.Y.ToString("C")
+            };
+            PieSeries = new SeriesCollection { pieIngresos, pieEgresos };
+
+            // ========== 3. GRÁFICO DE LÍNEAS (Evolución de gastos mensuales) ==========
+            List<decimal> gastosMensuales = new List<decimal>();
+            foreach (var mes in listaMeses)
+            {
+                var inicioMes = mes;
+                var finMes = inicioMes.AddMonths(1).AddDays(-1);
+                var egresosMes = movimientosReales
+                    .Where(m => m.Tipo == "Egreso" && m.FechaOcurrido >= inicioMes && m.FechaOcurrido <= finMes)
+                    .Sum(m => m.Monto);
+                gastosMensuales.Add(egresosMes);
+            }
+
+            var lineSeries = new LineSeries
+            {
+                Title = "Gastos mensuales",
+                Values = new ChartValues<decimal>(gastosMensuales),
+                DataLabels = true,
+                LabelPoint = point => point.Y.ToString("C"),
+                PointGeometry = DefaultGeometries.Circle,
+                PointGeometrySize = 10
+            };
+            LineSeries = new SeriesCollection { lineSeries };
+            EtiquetasGastosMeses = listaMeses.Select(m => m.ToString("MMM yyyy")).ToList();
         }
 
         // ================== NAVEGACIÓN ==================

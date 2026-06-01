@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-        Title="Dashboard" Height="750" Width="1100"
+        Title="Dashboard" Height="900" Width="1200"
         WindowStartupLocation="CenterOwner"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent">
 
@@ -13,37 +13,63 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Barra de título con navegación -->
+            <!-- Barra de título con navegación y selectores de filtro -->
             <Border Grid.Row="0" Background="#2E8B57" CornerRadius="15,15,0,0" Height="40"
-                    MouseLeftButtonDown="MoverVentana_MouseLeftButtonDown">
+        MouseLeftButtonDown="MoverVentana_MouseLeftButtonDown">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Button Content="Balance" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand" 
-                            Click="AbrirBalance_Click" FontSize="14" Margin="0,0,20,0"/>
+                Click="AbrirBalance_Click" FontSize="14" Margin="0,0,20,0"/>
                     <Button Content="Movimientos" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand" 
-                            Click="AbrirMovimientos_Click" FontSize="14" Margin="0,0,20,0"/>
+                Click="AbrirMovimientos_Click" FontSize="14" Margin="0,0,20,0"/>
                     <Button Content="Préstamos" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand" 
-                            Click="AbrirPrestamos_Click" FontSize="14" Margin="0,0,20,0"/>
-                    <TextBlock Text="Dashboard" Foreground="White" FontSize="16" FontWeight="Bold"/>
+                Click="AbrirPrestamos_Click" FontSize="14" Margin="0,0,20,0"/>
+                    <TextBlock Text="Dashboard" Foreground="White" FontSize="16" FontWeight="Bold" Margin="0,0,20,0"/>
+
+                    <!-- Selector de año -->
+                    <TextBlock Text="Año:" Foreground="White" FontSize="12" VerticalAlignment="Center" Margin="15,0,5,0"/>
+                    <ComboBox x:Name="cbAnio" Width="80" Background="White" Foreground="Black" 
+                  SelectionChanged="Filtro_SelectionChanged" IsSynchronizedWithCurrentItem="True" Margin="0,0,5,0"/>
+
+                    <!-- Selector de período (mes específico, semestre o total) -->
+                    <TextBlock Text="Período:" Foreground="White" FontSize="12" VerticalAlignment="Center" Margin="15,0,5,0"/>
+                    <ComboBox x:Name="cbPeriodo" Width="100" Background="White" Foreground="Black" 
+                  SelectionChanged="Filtro_SelectionChanged" Margin="0,0,5,0">
+                        <ComboBoxItem Tag="total" IsSelected="True">Total histórico</ComboBoxItem>
+                        <ComboBoxItem Tag="semestre1">Semestre 1 (Ene-Jun)</ComboBoxItem>
+                        <ComboBoxItem Tag="semestre2">Semestre 2 (Jul-Dic)</ComboBoxItem>
+                        <ComboBoxItem Tag="mes1">Enero</ComboBoxItem>
+                        <ComboBoxItem Tag="mes2">Febrero</ComboBoxItem>
+                        <ComboBoxItem Tag="mes3">Marzo</ComboBoxItem>
+                        <ComboBoxItem Tag="mes4">Abril</ComboBoxItem>
+                        <ComboBoxItem Tag="mes5">Mayo</ComboBoxItem>
+                        <ComboBoxItem Tag="mes6">Junio</ComboBoxItem>
+                        <ComboBoxItem Tag="mes7">Julio</ComboBoxItem>
+                        <ComboBoxItem Tag="mes8">Agosto</ComboBoxItem>
+                        <ComboBoxItem Tag="mes9">Septiembre</ComboBoxItem>
+                        <ComboBoxItem Tag="mes10">Octubre</ComboBoxItem>
+                        <ComboBoxItem Tag="mes11">Noviembre</ComboBoxItem>
+                        <ComboBoxItem Tag="mes12">Diciembre</ComboBoxItem>
+                    </ComboBox>
                 </StackPanel>
             </Border>
 
             <!-- Contenido principal -->
             <ScrollViewer Grid.Row="1" Margin="10">
                 <StackPanel>
-                    <!-- Fila superior: gráfico de barras + pastel -->
+                    <!-- Fila superior: gráfico de barras absolutas + pastel totales -->
                     <Grid Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="2*"/>
                             <ColumnDefinition Width="1.2*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Gráfico de barras (Ingresos vs Egresos por mes) -->
+                        <!-- Gráfico de barras absolutas (Ingresos totales vs Egresos totales) -->
                         <Border Grid.Column="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,10,0">
                             <StackPanel>
-                                <TextBlock Text="Ingresos vs Egresos mensuales" FontWeight="Bold" FontSize="14" Margin="0,0,0,10" TextAlignment="Center"/>
-                                <lvc:CartesianChart Series="{Binding Series}" LegendLocation="Top" Height="300">
+                                <TextBlock Text="Ingresos vs Egresos totales" FontWeight="Bold" FontSize="14" Margin="0,0,0,10" TextAlignment="Center"/>
+                                <lvc:CartesianChart Series="{Binding AbsSeries}" LegendLocation="Top" Height="300">
                                     <lvc:CartesianChart.AxisX>
-                                        <lvc:Axis Title="Mes" Labels="{Binding EtiquetasMeses}"/>
+                                        <lvc:Axis Title="Tipo" Labels="{Binding EtiquetasAbs}"/>
                                     </lvc:CartesianChart.AxisX>
                                     <lvc:CartesianChart.AxisY>
                                         <lvc:Axis Title="Monto" LabelFormatter="{Binding FormatterMoneda}"/>
@@ -52,19 +78,43 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Gráfico de pastel (Ingresos totales vs Egresos totales) -->
+                        <!-- Gráfico de pastel (Ingresos vs Egresos totales) -->
                         <Border Grid.Column="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="10" Padding="10">
                             <StackPanel>
-                                <TextBlock Text="Ingresos vs Egresos totales" FontWeight="Bold" FontSize="14" Margin="0,0,0,10" TextAlignment="Center"/>
+                                <TextBlock Text="Proporción ingresos/egresos" FontWeight="Bold" FontSize="14" Margin="0,0,0,10" TextAlignment="Center"/>
                                 <lvc:PieChart Series="{Binding PieSeries}" Height="300" LegendLocation="Right"/>
                             </StackPanel>
                         </Border>
                     </Grid>
 
-                    <!-- Gráfico de líneas: Evolución de gastos mensuales -->
+                    <!-- Fila media: Gráficos de ingresos por categoría y egresos por categoría -->
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Ingresos por categoría -->
+                        <Border Grid.Column="0" BorderBrush="#DDD" BorderThickness="1" CornerRadius="10" Padding="10" Margin="0,0,10,0">
+                            <StackPanel>
+                                <TextBlock Text="Ingresos por categoría" FontWeight="Bold" FontSize="14" Margin="0,0,0,10" TextAlignment="Center"/>
+                                <lvc:PieChart Series="{Binding IngresosPorCategoriaSeries}" Height="300" LegendLocation="Right"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Egresos por categoría -->
+                        <Border Grid.Column="1" BorderBrush="#DDD" BorderThickness="1" CornerRadius="10" Padding="10">
+                            <StackPanel>
+                                <TextBlock Text="Egresos por categoría" FontWeight="Bold" FontSize="14" Margin="0,0,0,10" TextAlignment="Center"/>
+                                <lvc:PieChart Series="{Binding EgresosPorCategoriaSeries}" Height="300" LegendLocation="Right"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Fila inferior: Gráfico de líneas (evolución de gastos mensuales) -->
                     <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="10" Padding="10">
                         <StackPanel>
-                            <TextBlock Text="Evolución de gastos mensuales" FontWeight="Bold" FontSize="14" Margin="0,0,0,10" TextAlignment="Center"/>
+                            <TextBlock Text="Evolución de gastos mensuales (línea recta, sin suavizado)" FontWeight="Bold" FontSize="14" Margin="0,0,0,10" TextAlignment="Center"/>
                             <lvc:CartesianChart Series="{Binding LineSeries}" LegendLocation="Top" Height="300">
                                 <lvc:CartesianChart.AxisX>
                                     <lvc:Axis Title="Mes" Labels="{Binding EtiquetasGastosMeses}"/>

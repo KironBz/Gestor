@@ -1,3 +1,2 @@
-Prestamos terminados
-toca instalacion de nuget
-
+Dashboard terminados
+toca proyectos (recopilar ideas de funcionamiento)

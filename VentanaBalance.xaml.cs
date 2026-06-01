@@ -242,10 +242,10 @@ namespace Yes_Gestor
                 txtTransporte.Text = gastoTransporte.ToString("C");
                 txtAjeno.Text = totalAjeno.ToString("C");
 
-                // 6. Actualizar listas derechas
-                lbCuentasCorrientes.ItemsSource = cuentasCorrientes;
-                lbCuentasOcultas.ItemsSource = cuentasOcultas;
-                lbCuentasAjenas.ItemsSource = cuentasAjenas;
+                // 6. Actualizar tarjetas derechas (ItemsControl)
+                icCuentasCorrientes.ItemsSource = cuentasCorrientes;
+                icCuentasOcultas.ItemsSource = cuentasOcultas;
+                icCuentasAjenas.ItemsSource = cuentasAjenas;
             }
             catch (Exception ex)
             {

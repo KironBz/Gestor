@@ -103,6 +103,8 @@ namespace Yes_Gestor.Models
             PersonaId = personaId;
             Descripcion = descripcion;
 
+
+            ////////////////
             bool esPrestamoRecibido = (tipo == "Ingreso" && categoria == "Préstamo");
             bool esCargoCompleto = (tipo == "Egreso" && categoria == "Cargo" && montoFinal != null && plazos != null);
 
@@ -113,16 +115,24 @@ namespace Yes_Gestor.Models
                 MontoFinal = montoFinal;
                 Plazos = plazos;
                 GenerarReferenciaAuto();
+                if (string.IsNullOrEmpty(Descripcion))
+                    Descripcion = ReferenciaAuto;
+                else
+                    Descripcion = $"{Descripcion} (Ref: {ReferenciaAuto})";
             }
-            else if (esCargoCompleto)
+            else if (tipo == "Egreso" && categoria == "Cargo")
             {
-                MontoFinal = montoFinal;
+                MontoFinal = montoFinal; // puede ser null
                 Plazos = plazos;
-                GenerarReferenciaAuto();
+                GenerarReferenciaAuto(); // siempre generar referencia para cargos
+                if (string.IsNullOrEmpty(Descripcion))
+                    Descripcion = ReferenciaAuto;
+                else
+                    Descripcion = $"{Descripcion} (Ref: {ReferenciaAuto})";
             }
             else
             {
-                // Para cargos simples o movimientos normales, no se genera referencia
+                // Movimientos normales (sin referencia)
                 MontoFinal = null;
                 Plazos = null;
             }

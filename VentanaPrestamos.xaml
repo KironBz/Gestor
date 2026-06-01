@@ -1,7 +1,7 @@
 ﻿<Window x:Class="Yes_Gestor.VentanaPrestamos"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Préstamos y deudas" Height="600" Width="900"
+        Title="Préstamos y deudas" Height="625" Width="1000"
         WindowStartupLocation="CenterOwner"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent">
 
@@ -41,6 +41,15 @@
                                 <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="*"/>
                                 <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="*"/>
                                 <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="*"/>
+                                <DataGridTextColumn Header="Progreso" Width="80">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding StringFormat="{}{0}/{1}">
+                                            <Binding Path="PagosRealizados"/>
+                                            <Binding Path="PlazosTotales"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Cuota mensual" Binding="{Binding CuotaMensual, StringFormat=C}" Width="*"/>
                             </DataGrid.Columns>
                         </DataGrid>
                         <Button Content="Registrar pago" Style="{StaticResource BotonRedondo}" Margin="0,10,0,0" Click="RegistrarPagoDeudor_Click"/>
@@ -57,12 +66,35 @@
                                 <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="*"/>
                                 <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="*"/>
                                 <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="*"/>
+                                <DataGridTextColumn Header="Progreso" Width="80">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding StringFormat="{}{0}/{1}">
+                                            <Binding Path="PagosRealizados"/>
+                                            <Binding Path="PlazosTotales"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="Cuota mensual" Binding="{Binding CuotaMensual, StringFormat=C}" Width="*"/>
                             </DataGrid.Columns>
                         </DataGrid>
                         <Button Content="Registrar pago" Style="{StaticResource BotonRedondo}" Margin="0,10,0,0" Click="RegistrarPagoAcreedor_Click"/>
                     </StackPanel>
                 </Border>
             </Grid>
+            <!-- Botón flotante -->
+            <Button Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,20,20"
+                Width="50" Height="50" Background="#FF5722" Foreground="White" FontSize="24" FontWeight="Bold"
+                BorderThickness="0" ToolTip="Agregar movimiento" Click="AgregarMovimiento_Click">
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="25">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+                +
+            </Button>
         </Grid>
+       
     </Border>
 </Window>

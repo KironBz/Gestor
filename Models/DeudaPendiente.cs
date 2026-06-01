@@ -8,18 +8,8 @@
         public decimal SaldoPendiente { get; set; }
         public string ReferenciaAuto { get; set; }
         public string PersonaId { get; set; }
-
-
-
-
-
-
-
-
-
-
+        public int PagosRealizados { get; set; }   // ← nuevo
+        public int? PlazosTotales { get; set; }    // ← nuevo
+        public decimal? CuotaMensual { get; set; } // ← nuevo
     }
-
-
-
 }

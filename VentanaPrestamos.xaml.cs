@@ -24,10 +24,10 @@ namespace Yes_Gestor
 
         private (List<DeudaPendiente> porCobrar, List<DeudaPendiente> porPagar) CalcularDeudas(DatosApp datos)
         {
-            var porCobrar = new List<DeudaPendiente>();
-            var porPagar = new List<DeudaPendiente>();
+            var porCobrar = new List<DeudaPendiente>(); // me deben (préstamos otorgados)
+            var porPagar = new List<DeudaPendiente>();  // debo (préstamos recibidos)
 
-            // Préstamos recibidos (debo)
+            // ===== PRÉSTAMOS RECIBIDOS (DEBO) =====
             var prestamosRecibidos = datos.Movimientos
                 .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null)
                 .ToList();
@@ -40,6 +40,8 @@ namespace Yes_Gestor
                 decimal pagado = datos.Movimientos
                     .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
                     .Sum(m => m.Monto);
+                int pagosRealizados = datos.Movimientos
+                    .Count(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto);
 
                 decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
                 decimal pendiente = montoOriginal - pagado;
@@ -52,12 +54,15 @@ namespace Yes_Gestor
                         Pagado = pagado,
                         SaldoPendiente = pendiente,
                         ReferenciaAuto = prestamo.ReferenciaAuto,
-                        PersonaId = prestamo.PersonaId
+                        PersonaId = prestamo.PersonaId,
+                        PagosRealizados = pagosRealizados,
+                        PlazosTotales = prestamo.Plazos,
+                        CuotaMensual = prestamo.Plazos.HasValue && prestamo.Plazos > 0 ? montoOriginal / prestamo.Plazos.Value : (decimal?)null
                     });
                 }
             }
 
-            // Préstamos otorgados (me deben)
+            // ===== PRÉSTAMOS OTORGADOS (ME DEBEN) =====
             var prestamosOtorgados = datos.Movimientos
                 .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null)
                 .ToList();
@@ -67,22 +72,27 @@ namespace Yes_Gestor
                 var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
                 if (persona == null) continue;
 
-                decimal pagado = datos.Movimientos
+                decimal abonado = datos.Movimientos
                     .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
                     .Sum(m => m.Monto);
+                int abonosRealizados = datos.Movimientos
+                    .Count(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto);
 
                 decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
-                decimal pendiente = montoOriginal - pagado;
+                decimal pendiente = montoOriginal - abonado;
                 if (pendiente > 0)
                 {
                     porCobrar.Add(new DeudaPendiente
                     {
                         Contraparte = persona.Nombre,
                         MontoTotal = montoOriginal,
-                        Pagado = pagado,
+                        Pagado = abonado,
                         SaldoPendiente = pendiente,
                         ReferenciaAuto = prestamo.ReferenciaAuto,
-                        PersonaId = prestamo.PersonaId
+                        PersonaId = prestamo.PersonaId,
+                        PagosRealizados = abonosRealizados,
+                        PlazosTotales = prestamo.Plazos,
+                        CuotaMensual = prestamo.Plazos.HasValue && prestamo.Plazos > 0 ? montoOriginal / prestamo.Plazos.Value : (decimal?)null
                     });
                 }
             }
@@ -152,6 +162,18 @@ namespace Yes_Gestor
         private void MoverVentana_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             this.DragMove();
+        }
+
+        private void AgregarMovimiento_Click(object sender, RoutedEventArgs e)
+        {
+            var dialog = new VentanaMovimientoDialogo();
+            if (dialog.ShowDialog() == true && dialog.Movimientos != null)
+            {
+                foreach (var mov in dialog.Movimientos)
+                    App.Datos.Movimientos.Add(mov);
+                App.Servicio.GuardarAsync(App.Datos);
+                CargarDeudas(); // refrescar
+            }
         }
     }
 }

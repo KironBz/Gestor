@@ -121,11 +121,11 @@ namespace Yes_Gestor
             // Si no hay datos iniciales, crear unos de ejemplo (solo para que no esté vacío)
             if (Datos.Cuentas.Count == 0)
             {
-                Datos.Cuentas.Add(new Cuenta("Principal", "Corriente", 1000m));
-                Datos.Cuentas.Add(new Cuenta("MP", "Corriente", 200m));
+                Datos.Cuentas.Add(new Cuenta("Principal", "Corriente", 0m));
+                Datos.Cuentas.Add(new Cuenta("MP", "Corriente", 0m));
                 Datos.Cuentas.Add(new Cuenta("Revolut", "Corriente", 0m));
-                Datos.Cuentas.Add(new Cuenta("Ahorro 10", "Oculto", 500m));
-                Datos.Cuentas.Add(new Cuenta("Dinero de Mamá", "Ajeno", 300m));
+                Datos.Cuentas.Add(new Cuenta("Ahorro 10", "Oculto", 0m));
+                Datos.Cuentas.Add(new Cuenta("Dinero de Mamá", "Ajeno", 0m));
             }
             if (Datos.Categorias.Count == 0)
             {

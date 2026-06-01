@@ -107,6 +107,7 @@ namespace Yes_Gestor
             if (metaPrincipal == null) return;
 
             metaPrincipal.Completada = true;
+            metaPrincipal.FechaCompletada = DateTime.Now;   // ← ASIGNAR FECHA
             GuardarCambios();
         }
 
@@ -118,6 +119,7 @@ namespace Yes_Gestor
             if (metaPrincipal == null) return;
 
             metaPrincipal.Archivada = true;
+            metaPrincipal.FechaArchivada = DateTime.Now;    // ← ASIGNAR FECHA
             GuardarCambios();
         }
 
@@ -127,6 +129,7 @@ namespace Yes_Gestor
             var meta = btn?.Tag as Meta;
             if (meta == null) return;
             meta.Completada = true;
+            meta.FechaCompletada = DateTime.Now;   // ← ASIGNAR FECHA
             GuardarCambios();
         }
 
@@ -136,6 +139,7 @@ namespace Yes_Gestor
             var meta = btn?.Tag as Meta;
             if (meta == null) return;
             meta.Archivada = true;
+            meta.FechaArchivada = DateTime.Now;    // ← ASIGNAR FECHA
             GuardarCambios();
         }
 
@@ -146,6 +150,7 @@ namespace Yes_Gestor
             if (meta == null) return;
             meta.Completada = false;
             meta.Archivada = true;
+            meta.FechaArchivada = DateTime.Now;    // ← ASIGNAR FECHA (al archivar)
             GuardarCambios();
         }
 
@@ -156,6 +161,8 @@ namespace Yes_Gestor
             if (meta == null) return;
             meta.Archivada = false;
             meta.Completada = false;
+            meta.FechaArchivada = null;           // ← LIMPIAR
+            meta.FechaCompletada = null;          // ← LIMPIAR
             GuardarCambios();
         }
 
@@ -167,6 +174,46 @@ namespace Yes_Gestor
                 App.Datos.Metas.Add(dialog.Meta);
                 await App.Servicio.GuardarAsync(App.Datos);
                 CargarDatos();
+            }
+        }
+
+        private async void EliminarMeta_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as Button;
+            var meta = btn?.Tag as Meta;
+            if (meta == null) return;
+            if (MessageBox.Show($"¿Eliminar permanentemente la meta '{meta.Nombre}'? Esta acción no se puede deshacer.",
+                                "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                App.Datos.Metas.Remove(meta);
+                await App.Servicio.GuardarAsync(App.Datos);
+                CargarDatos();
+            }
+        }
+
+        private void EditarMeta_Click(object sender, RoutedEventArgs e)
+        {
+            var btn = sender as Button;
+            var meta = btn?.Tag as Meta;
+            if (meta == null) return;
+            var dialog = new DialogoMeta(meta);
+            if (dialog.ShowDialog() == true)
+            {
+                // El diálogo ya modificó las propiedades del objeto meta
+                GuardarCambios();
+            }
+        }
+
+        private void EditarMetaPrincipal_Click(object sender, RoutedEventArgs e)
+        {
+            var metasActivas = App.Datos.Metas.Where(m => !m.Completada && !m.Archivada)
+                .OrderBy(m => m.Prioridad).ThenBy(m => m.FechaCreacion).ToList();
+            var metaPrincipal = metasActivas.FirstOrDefault();
+            if (metaPrincipal == null) return;
+            var dialog = new DialogoMeta(metaPrincipal);
+            if (dialog.ShowDialog() == true)
+            {
+                GuardarCambios();
             }
         }
 

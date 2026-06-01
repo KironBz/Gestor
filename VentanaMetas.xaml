@@ -50,6 +50,7 @@
                                 <StackPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <Button Content="Completar" Width="100" Margin="0,5" Click="CompletarMetaPrincipal_Click" Style="{StaticResource BotonRedondo}"/>
                                     <Button Content="Archivar" Width="100" Margin="0,5" Click="ArchivarMetaPrincipal_Click" Style="{StaticResource BotonRedondo}" Background="#888"/>
+                                    <Button Content="Editar" Width="100" Margin="0,5" Click="EditarMetaPrincipal_Click" Style="{StaticResource BotonRedondo}" Background="#4682B4"/>
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
@@ -71,16 +72,18 @@
                             <DataGridTemplateColumn Header="Progreso" Width="*">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <ProgressBar Value="{Binding Porcentaje}" Height="15" Minimum="0" Maximum="100" Foreground="#2E8B57"/>
+                                        <ProgressBar Value="{Binding AhorradoActual}" Maximum="{Binding MontoObjetivo}" Height="15" Foreground="#2E8B57"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Acciones" Width="150">
+                            <DataGridTextColumn Header="Prioridad" Binding="{Binding Prioridad}" Width="70"/>
+                            <DataGridTemplateColumn Header="Acciones" Width="225">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
+                                        <StackPanel Orientation="Horizontal" Cursor="">
                                             <Button Content="Completar" Width="70" Tag="{Binding}" Click="CompletarMeta_Click" Style="{StaticResource BotonRedondo}" Margin="0,0,5,0"/>
                                             <Button Content="Archivar" Width="70" Tag="{Binding}" Click="ArchivarMeta_Click" Style="{StaticResource BotonRedondo}" Background="#888"/>
+                                            <Button Content="Editar" Width="60" Tag="{Binding}" Click="EditarMeta_Click" Style="{StaticResource BotonRedondo}" Margin="0,0,5,0" Background="#4682B4"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -113,10 +116,13 @@
                                 <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="150"/>
                                 <DataGridTextColumn Header="Objetivo" Binding="{Binding MontoObjetivo, StringFormat=C}" Width="100"/>
                                 <DataGridTextColumn Header="Archivada el" Binding="{Binding FechaArchivada, StringFormat=dd/MM/yyyy}" Width="120"/>
-                                <DataGridTemplateColumn Header="Acciones" Width="100">
+                                <DataGridTemplateColumn Header="Acciones" Width="150">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Content="Restaurar" Tag="{Binding}" Click="RestaurarMeta_Click" Style="{StaticResource BotonRedondo}"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Button Content="Restaurar" Tag="{Binding}" Click="RestaurarMeta_Click" Style="{StaticResource BotonRedondo}" Margin="0,0,5,0"/>
+                                                <Button Content="Eliminar" Tag="{Binding}" Click="EliminarMeta_Click" Style="{StaticResource BotonRedondo}" Background="#B22222"/>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

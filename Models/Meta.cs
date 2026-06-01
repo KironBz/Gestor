@@ -26,6 +26,12 @@ namespace Yes_Gestor.Models
         [JsonPropertyName("archivada")]
         public bool Archivada { get; set; }   // Meta abandonada
 
+        [JsonPropertyName("fechaCompletada")]
+        public DateTime? FechaCompletada { get; set; }
+
+        [JsonPropertyName("fechaArchivada")]
+        public DateTime? FechaArchivada { get; set; }
+
         public Meta()
         {
             Id = Guid.NewGuid().ToString();

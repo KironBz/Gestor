@@ -62,6 +62,62 @@ namespace Yes_Gestor
                 icCuentasCorrientes.ItemsSource = cuentasCorrientes;
                 icCuentasOcultas.ItemsSource = cuentasOcultas;
                 icCuentasAjenas.ItemsSource = cuentasAjenas;
+
+                // 7. Calcular deudas activas (por persona)
+                var acreedores = new List<ResumenDeuda>();
+                var deudores = new List<ResumenDeuda>();
+
+                // Préstamos recibidos (debo) – Ingreso + Préstamo con referencia no nula
+                var prestamosRecibidos = datos.Movimientos
+                    .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
+                    .ToList();
+
+                foreach (var prestamo in prestamosRecibidos)
+                {
+                    var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
+                    if (persona == null) continue;
+                    decimal pagado = datos.Movimientos
+                        .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
+                        .Sum(m => m.Monto);
+                    decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
+                    decimal pendiente = montoOriginal - pagado;
+                    if (pendiente > 0)
+                    {
+                        var existente = acreedores.FirstOrDefault(a => a.Contraparte == persona.Nombre);
+                        if (existente != null)
+                            existente.SaldoPendiente += pendiente;
+                        else
+                            acreedores.Add(new ResumenDeuda { Contraparte = persona.Nombre, SaldoPendiente = pendiente });
+                    }
+                }
+
+                // Préstamos otorgados (me deben) – Egreso + Cargo con referencia no nula
+                var prestamosOtorgados = datos.Movimientos
+                    .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
+                    .ToList();
+
+                foreach (var prestamo in prestamosOtorgados)
+                {
+                    var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
+                    if (persona == null) continue;
+                    decimal abonado = datos.Movimientos
+                        .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
+                        .Sum(m => m.Monto);
+                    decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
+                    decimal pendiente = montoOriginal - abonado;
+                    if (pendiente > 0)
+                    {
+                        var existente = deudores.FirstOrDefault(d => d.Contraparte == persona.Nombre);
+                        if (existente != null)
+                            existente.SaldoPendiente += pendiente;
+                        else
+                            deudores.Add(new ResumenDeuda { Contraparte = persona.Nombre, SaldoPendiente = pendiente });
+                    }
+                }
+
+                // Asignar a los ItemsControl
+                icAcreedores.ItemsSource = acreedores;
+                icDeudores.ItemsSource = deudores;
             }
             catch (Exception ex)
             {
@@ -231,5 +287,11 @@ namespace Yes_Gestor
         public string Visibilidad { get; set; }
         public decimal Saldo { get; set; }
     }
+    public class ResumenDeuda
+    {
+        public string Contraparte { get; set; }
+        public decimal SaldoPendiente { get; set; }
+    }
+
 
 }

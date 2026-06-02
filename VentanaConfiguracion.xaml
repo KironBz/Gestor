@@ -31,7 +31,7 @@
             </Border>
 
             <!-- Contenido principal con pestañas -->
-            <TabControl Grid.Row="1" Margin="10" BorderThickness="0">
+            <TabControl Grid.Row="1" Margin="10" BorderThickness="0" Cursor="">
                 <!-- Pestaña Cuentas -->
                 <TabItem Header="Cuentas">
                     <Grid Margin="10">
@@ -50,9 +50,9 @@
                         </DataGrid>
                         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
                             <Button Content="Agregar" Width="80" Margin="5" Click="AgregarCuenta_Click" Style="{StaticResource BotonRedondo}"/>
-                            <Button Content="Editar" Width="80" Margin="5" Click="EditarCuenta_Click" Style="{StaticResource BotonRedondo}"/>
+                            <Button Content="Editar" Width="80" Margin="5" Click="EditarCuenta_Click" Style="{StaticResource BotonRedondo}" Background="#4682B4"/>
                             <Button Content="Eliminar" Width="80" Margin="5" Click="EliminarCuenta_Click" Style="{StaticResource BotonRedondo}" Background="#B22222"/>
-                            <Button Content="Ajustar saldo" Width="100" Margin="5" Click="AjustarSaldoCuenta_Click" Style="{StaticResource BotonRedondo}" Background="#4682B4"/>
+                            <Button Content="Ajustar saldo" Width="100" Margin="5" Click="AjustarSaldoCuenta_Click" Style="{StaticResource BotonRedondo}" Background="#888"/>
                         </StackPanel>
                     </Grid>
                 </TabItem>
@@ -73,7 +73,7 @@
                         </DataGrid>
                         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
                             <Button Content="Agregar" Width="80" Margin="5" Click="AgregarCategoria_Click" Style="{StaticResource BotonRedondo}"/>
-                            <Button Content="Editar" Width="80" Margin="5" Click="EditarCategoria_Click" Style="{StaticResource BotonRedondo}"/>
+                            <Button Content="Editar" Width="80" Margin="5" Click="EditarCategoria_Click" Style="{StaticResource BotonRedondo}"  Background="#4682B4" />
                             <Button Content="Eliminar" Width="80" Margin="5" Click="EliminarCategoria_Click" Style="{StaticResource BotonRedondo}" Background="#B22222"/>
                         </StackPanel>
                     </Grid>
@@ -95,7 +95,7 @@
                         </DataGrid>
                         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center">
                             <Button Content="Agregar" Width="80" Margin="5" Click="AgregarPersona_Click" Style="{StaticResource BotonRedondo}"/>
-                            <Button Content="Editar" Width="80" Margin="5" Click="EditarPersona_Click" Style="{StaticResource BotonRedondo}"/>
+                            <Button Content="Editar" Width="80" Margin="5" Click="EditarPersona_Click" Style="{StaticResource BotonRedondo}"  Background="#4682B4" />
                             <Button Content="Eliminar" Width="80" Margin="5" Click="EliminarPersona_Click" Style="{StaticResource BotonRedondo}" Background="#B22222"/>
                         </StackPanel>
                     </Grid>
@@ -106,7 +106,7 @@
                     <StackPanel Margin="20">
                         <TextBlock Text="Carpeta de sincronización (Drive)" FontWeight="Bold" Margin="0,0,0,10"/>
                         <TextBlock x:Name="txtCarpetaActual" TextWrapping="Wrap" Margin="0,0,0,10"/>
-                        <Button Content="Cambiar carpeta" Width="150" Click="CambiarCarpeta_Click" Style="{StaticResource BotonRedondo}"/>
+                        <Button Content="Cambiar carpeta" Width="150" Click="CambiarCarpeta_Click" Style="{StaticResource BotonRedondo}"  Background="#4682B4" />
                     </StackPanel>
                 </TabItem>
             </TabControl>

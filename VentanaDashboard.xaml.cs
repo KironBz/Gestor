@@ -170,21 +170,46 @@ namespace Yes_Gestor
             decimal totalEgresos = _movimientosFiltrados.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
 
             // Barras absolutas
-            var columnasAbs = new ColumnSeries
+            // Crear dos series separadas: una para ingresos, otra para egresos
+            var ingresosSeries = new ColumnSeries
             {
-                Title = "Totales",
-                Values = new ChartValues<decimal> { totalIngresos, totalEgresos },
+                Title = "Ingresos",
+                Values = new ChartValues<decimal> { totalIngresos },
                 DataLabels = true,
-                LabelPoint = point => point.Y.ToString("C")
+                LabelPoint = point => point.Y.ToString("C"),
+                Fill = System.Windows.Media.Brushes.Green
             };
-            AbsSeries = new SeriesCollection { columnasAbs };
-            EtiquetasAbs = new List<string> { "Ingresos", "Egresos" };
+
+            var egresosSeries = new ColumnSeries
+            {
+                Title = "Egresos",
+                Values = new ChartValues<decimal> { totalEgresos },
+                DataLabels = true,
+                LabelPoint = point => point.Y.ToString("C"),
+                Fill = System.Windows.Media.Brushes.DarkRed
+            };
+
+            AbsSeries = new SeriesCollection { ingresosSeries, egresosSeries };
 
             // Pastel de ingresos vs egresos
             PieSeries = new SeriesCollection
             {
-                new PieSeries { Title = "Ingresos", Values = new ChartValues<decimal> { totalIngresos }, DataLabels = true, LabelPoint = point => point.Y.ToString("C") },
-                new PieSeries { Title = "Egresos", Values = new ChartValues<decimal> { totalEgresos }, DataLabels = true, LabelPoint = point => point.Y.ToString("C") }
+                new PieSeries
+                {
+                    Title = "Ingresos",
+                    Values = new ChartValues<decimal> { totalIngresos },
+                    DataLabels = true,
+                    LabelPoint = point => point.Y.ToString("C"),
+                    Fill = System.Windows.Media.Brushes.Green   // ← Color verde
+                },
+                new PieSeries
+                {
+                    Title = "Egresos",
+                    Values = new ChartValues<decimal> { totalEgresos },
+                    DataLabels = true,
+                    LabelPoint = point => point.Y.ToString("C"),
+                    Fill = System.Windows.Media.Brushes.DarkRed     // ← Color rojo
+                }
             };
 
             // Ingresos por categoría

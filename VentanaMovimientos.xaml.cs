@@ -50,7 +50,7 @@ namespace Yes_Gestor
             if (!string.IsNullOrEmpty(categoriaId))
                 lista = lista.Where(m => m.CategoriaId == categoriaId);
 
-            movimientosView = lista.Select(m => new MovimientoViewModel
+            movimientosView = lista.OrderByDescending(m => m.FechaOcurrido).Select(m => new MovimientoViewModel
             {
                 Id = m.Id,
                 FechaOcurrido = m.FechaOcurrido,

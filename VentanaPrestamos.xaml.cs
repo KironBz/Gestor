@@ -20,7 +20,9 @@ namespace Yes_Gestor
             var (porCobrar, porPagar, completados) = CalcularTodasDeudas(App.Datos);
             dgDeudores.ItemsSource = porCobrar;
             dgAcreedores.ItemsSource = porPagar;
-            dgCompletados.ItemsSource = completados;
+            //  dgCompletados.ItemsSource = completados;                                                    //  Original
+            //  dgCompletados.ItemsSource = completados.OrderBy(c => c.FechaCompletado).ToList();           // del mas viejo al ultimo
+            dgCompletados.ItemsSource = completados.OrderByDescending(c => c.FechaCompletado).ToList();     // del mas reciente al ultimo
         }
 
         private (List<DeudaPendiente> porCobrar, List<DeudaPendiente> porPagar, List<DeudaPendiente> completados) CalcularTodasDeudas(DatosApp datos)
@@ -63,9 +65,19 @@ namespace Yes_Gestor
                 };
 
                 if (pendiente > 0)
+                {
                     porPagar.Add(deuda);
+                }
                 else if (pendiente == 0 && pagado > 0)
+                {
+                    // Obtener la fecha del último pago realizado para esta referencia
+                    var ultimoPago = datos.Movimientos
+                        .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
+                        .OrderByDescending(m => m.FechaOcurrido)
+                        .FirstOrDefault();
+                    deuda.FechaCompletado = ultimoPago?.FechaOcurrido;
                     completados.Add(deuda);
+                }
             }
 
             // ===== PRÉSTAMOS OTORGADOS (me deben) – Egreso + Cargo con referencia no nula =====
@@ -102,9 +114,19 @@ namespace Yes_Gestor
                 };
 
                 if (pendiente > 0)
+                {
                     porCobrar.Add(deuda);
+                }
                 else if (pendiente == 0 && abonado > 0)
+                {
+                    // Obtener la fecha del último abono realizado para esta referencia
+                    var ultimoAbono = datos.Movimientos
+                        .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
+                        .OrderByDescending(m => m.FechaOcurrido)
+                        .FirstOrDefault();
+                    deuda.FechaCompletado = ultimoAbono?.FechaOcurrido;
                     completados.Add(deuda);
+                }
             }
 
             return (porCobrar, porPagar, completados);

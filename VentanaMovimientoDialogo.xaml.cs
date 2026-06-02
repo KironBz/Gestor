@@ -186,7 +186,8 @@ namespace Yes_Gestor
                     decimal? montoFinal = null;
                     int? plazos = null;
 
-                    if (esPrestamoRecibido)
+                    /*
+                    if (esPrestamoRecibido)                                             // Forzando monto final y plazos en prestamo
                     {
                         if (!decimal.TryParse(txtMontoFinal.Text, out decimal mf) || mf <= 0)
                             throw new Exception("Monto final inválido.");
@@ -195,6 +196,27 @@ namespace Yes_Gestor
                         montoFinal = mf;
                         plazos = p;
                     }
+                    */
+
+                    if (esPrestamoRecibido)                                             // Sin forzar monto final y plazos en prestamo
+                    {
+                        // Opcional: si el usuario llena montoFinal, lo toma; si no, se queda como null
+                        if (!string.IsNullOrWhiteSpace(txtMontoFinal.Text))
+                        {
+                            if (!decimal.TryParse(txtMontoFinal.Text, out decimal mf) || mf <= 0)
+                                throw new Exception("Monto final inválido.");
+                            montoFinal = mf;
+                        }
+                        // Opcional: plazos
+                        if (!string.IsNullOrWhiteSpace(txtPlazos.Text))
+                        {
+                            if (!int.TryParse(txtPlazos.Text, out int p) || p <= 0)
+                                throw new Exception("Plazos inválidos.");
+                            plazos = p;
+                        }
+                        // Si no se llenaron, montoFinal y plazos siguen siendo null
+                    }
+
                     else if (esCargo)
                     {
                         if (!string.IsNullOrWhiteSpace(txtMontoFinal.Text))

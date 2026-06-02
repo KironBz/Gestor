@@ -110,13 +110,28 @@ namespace Yes_Gestor.Models
             bool esPrestamoRecibido = (tipo == "Ingreso" && categoria == "Préstamo");
             bool esCargoCompleto = (tipo == "Egreso" && categoria == "Cargo" && montoFinal != null && plazos != null);
 
-            if (esPrestamoRecibido)
-            {
+            /*
+            if (esPrestamoRecibido)                         // Forzando monto final y plazos
+            {                                         
                 if (montoFinal == null || plazos == null)
+                {
                     throw new ArgumentException("Para préstamos recibidos, MontoFinal y Plazos son obligatorios.");
-                MontoFinal = montoFinal;
-                Plazos = plazos;
-                GenerarReferenciaAuto();
+                    MontoFinal = montoFinal;
+                    Plazos = plazos;
+                    GenerarReferenciaAuto();
+                }
+            }
+            */
+
+            if (esPrestamoRecibido)                         // sin forzar el monto final y plazos
+            {
+                MontoFinal = montoFinal;  // puede ser null
+                Plazos = plazos;          // puede ser null
+
+                if (MontoFinal == null)
+                    MontoFinal = Monto;
+
+                GenerarReferenciaAuto();  // siempre generar referencia (útil para seguimiento)
             }
             else if (esCargoCompleto)
             {

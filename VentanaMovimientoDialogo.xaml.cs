@@ -15,6 +15,8 @@ namespace Yes_Gestor
         private bool _guardando = false;
         private Movimiento _movimientoOriginal; // para edición
         private bool _editando = false;
+        private string _referenciaAutoOriginal; // nueva
+        private string _metaIdOriginal;         // nueva
 
         // Constructor para NUEVO movimiento
         public VentanaMovimientoDialogo()
@@ -32,6 +34,8 @@ namespace Yes_Gestor
             InitializeComponent();
             _movimientoOriginal = movimiento;
             _editando = true;
+            _referenciaAutoOriginal = movimiento.ReferenciaAuto;
+            _metaIdOriginal = movimiento.MetaId;
             CargarCombos();
             CargarDatosDesdeMovimiento(movimiento);
             cbTipo.SelectionChanged += TipoCategoria_SelectionChanged;
@@ -211,6 +215,8 @@ namespace Yes_Gestor
                     if (_editando && _movimientoOriginal != null)
                     {
                         movimiento.Id = _movimientoOriginal.Id; // conservar el mismo ID para reemplazar
+                        movimiento.ReferenciaAuto = _referenciaAutoOriginal;
+                        movimiento.MetaId = _metaIdOriginal;
                     }
                     movimientosGenerados.Add(movimiento);
                 }

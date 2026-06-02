@@ -1,25 +1,52 @@
 ﻿<Window x:Class="Yes_Gestor.VentanaRegistroPagoDialogo"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Registrar pago" Height="300" Width="400"
+        Title="Registrar pago" Height="400" Width="450"
         WindowStartupLocation="CenterOwner"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent">
-    <Border Background="White" CornerRadius="20" Padding="10">
+
+    <Window.Resources>
+        <Style x:Key="CampoRedondo" TargetType="TextBox">
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#CCC"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Margin" Value="0,2,0,5"/>
+            <Setter Property="Height" Value="30"/>
+        </Style>
+        <Style x:Key="ComboRedondo" TargetType="ComboBox">
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#CCC"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="Margin" Value="0,2,0,5"/>
+            <Setter Property="Height" Value="30"/>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="White" CornerRadius="20" Padding="10" BorderBrush="#DDD" BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
+
+            <!-- Barra de título -->
             <Border Grid.Row="0" Background="#2E8B57" CornerRadius="15,15,0,0" Height="40"
                     MouseLeftButtonDown="MoverVentana_MouseLeftButtonDown">
                 <TextBlock Text="Registrar pago" Foreground="White" FontSize="16" FontWeight="Bold"
                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Border>
+
+            <!-- Contenido -->
             <StackPanel Grid.Row="1" Margin="20">
-                <TextBlock Text="Monto a pagar:" Margin="0,5,0,0"/>
-                <TextBox x:Name="txtMonto" />
+                <TextBlock Text="Monto a pagar:" Margin="0,10,0,0"/>
+                <TextBox x:Name="txtMonto" Style="{StaticResource CampoRedondo}"/>
+
+                <TextBlock Text="Cuenta:" Margin="0,5,0,0"/>
+                <ComboBox x:Name="cbCuenta" Style="{StaticResource ComboRedondo}" DisplayMemberPath="Nombre" SelectedValuePath="Id"/>
+
                 <TextBlock Text="Fecha:" Margin="0,10,0,0"/>
-                <DatePicker x:Name="dpFecha" SelectedDate="{Binding Fecha}"/>
+                <DatePicker x:Name="dpFecha" />
+
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20">
                     <Button Content="Aceptar" Width="80" Click="Aceptar_Click" Style="{StaticResource BotonRedondo}"/>
                     <Button Content="Cancelar" Width="80" Margin="10,0,0,0" Click="Cancelar_Click" Style="{StaticResource BotonRedondo}"/>

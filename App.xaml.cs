@@ -29,6 +29,7 @@ namespace Yes_Gestor
             if (Datos.Categorias.Count == 0)
             {
                 // Solo una categoría genérica
+                Datos.Categorias.Add(new Categoria("Abono", "Ingreso"));
                 Datos.Categorias.Add(new Categoria("Ahorro", "Ambos"));
                 Datos.Categorias.Add(new Categoria("Cargo", "Egreso"));
                 Datos.Categorias.Add(new Categoria("Pago", "Egreso"));

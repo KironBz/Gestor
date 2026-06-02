@@ -1,8 +1,8 @@
 ﻿<Window x:Class="Yes_Gestor.VentanaMovimientos"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Movimientos" Height="600" Width="1000"
-        WindowStartupLocation="CenterOwner"
+        Title="Movimientos" Height="805" Width="1200"
+        WindowStartupLocation="CenterScreen"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent">
 
     <Border Background="White" CornerRadius="20" Padding="10" BorderBrush="#DDD" BorderThickness="1">

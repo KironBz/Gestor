@@ -2,8 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:lvc="clr-namespace:LiveCharts.Wpf;assembly=LiveCharts.Wpf"
-        Title="Dashboard" Height="900" Width="1200"
-        WindowStartupLocation="CenterOwner"
+        Title="Dashboard" Height="805" Width="1200"
+        WindowStartupLocation="CenterScreen"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent">
 
     <Border Background="White" CornerRadius="20" Padding="10" BorderBrush="#DDD" BorderThickness="1">

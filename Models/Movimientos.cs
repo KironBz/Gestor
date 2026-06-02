@@ -124,6 +124,12 @@ namespace Yes_Gestor.Models
                 Plazos = plazos;
                 GenerarReferenciaAuto();
             }
+            else if (tipo == "Egreso" && categoria == "Cargo")
+            {
+                MontoFinal = montoFinal;
+                Plazos = plazos;
+                GenerarReferenciaAuto(); // Siempre generar referencia, incluso sin plazos
+            }
             else
             {
                 MontoFinal = null;
@@ -131,6 +137,7 @@ namespace Yes_Gestor.Models
             }
         }
 
+        /*
         public void GenerarReferenciaAuto()
         {
             string prefijo = (Tipo == "Ingreso" && Categoria == "Préstamo") ? "PRE" : "CAR";
@@ -138,7 +145,34 @@ namespace Yes_Gestor.Models
             string descLimpia = string.IsNullOrEmpty(Descripcion) ? "NA" : Regex.Replace(Descripcion, "[^a-zA-Z0-9]", "");
             if (string.IsNullOrEmpty(descLimpia)) descLimpia = "NA";
             else if (descLimpia.Length > 5) descLimpia = descLimpia.Substring(0, 5);
-            ReferenciaAuto = $"{prefijo}-{fechaStr}-{descLimpia}-{Monto}";
+            //    ReferenciaAuto = $"{prefijo}-{fechaStr}-{descLimpia}-{Monto}";            // 1er MEtodo
+            //  ReferenciaAuto = $"{descLimpia}-{fechaStr}-{Monto}";                        // 2do Metodo (mi propuesta
+        }
+        */
+        public void GenerarReferenciaAuto()                                                 // Nuevo Metodo
+        {
+            // Obtener primeras 5 letras de la descripción (o "SINDESC" si no hay)
+            string descripcionCorta = "SINDESC";
+            if (!string.IsNullOrEmpty(Descripcion))
+            {
+                string soloLetras = Regex.Replace(Descripcion, "[^a-zA-Z]", "");
+                if (soloLetras.Length >= 5)
+                    descripcionCorta = soloLetras.Substring(0, 5).ToUpper();
+                else if (soloLetras.Length > 0)
+                    descripcionCorta = soloLetras.ToUpper();
+            }
+
+            // Fecha en formato ddMMyy (ej. 300526 para 30 de mayo de 2026)
+            string fechaCorta = FechaOcurrido.ToString("ddMMyy");
+
+            // Monto sin decimales (entero)
+            string montoStr = Math.Floor(Monto).ToString();
+
+ 
+            string prefijo = (Tipo == "Ingreso" && Categoria == "Préstamo") ? "P " : "C ";
+
+            // Referencia: descripcionCorta-fechaCorta-montoStr
+            ReferenciaAuto = $"{prefijo} {descripcionCorta}-{fechaCorta}-{montoStr}";
         }
 
         public int Signo() => Tipo == "Ingreso" ? 1 : (Tipo == "Egreso" ? -1 : 0);

@@ -62,7 +62,8 @@ namespace Yes_Gestor
                 CategoriaId = m.CategoriaId,
                 PersonaId = m.PersonaId,
                 NombreCuenta = ObtenerNombreCuenta(m.CuentaId),
-                NombrePersona = ObtenerNombrePersona(m.PersonaId)
+                NombrePersona = ObtenerNombrePersona(m.PersonaId),
+                ReferenciaAuto = m.ReferenciaAuto   // ← Nueva línea
             }).ToList();
 
             dgMovimientos.ItemsSource = movimientosView;
@@ -207,6 +208,7 @@ namespace Yes_Gestor
             public string PersonaId { get; set; }
             public string NombreCuenta { get; set; }
             public string NombrePersona { get; set; }
+            public string ReferenciaAuto { get; set; }
         }
     }
 }

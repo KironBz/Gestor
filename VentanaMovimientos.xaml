@@ -72,6 +72,7 @@
                                 <DataGridTextColumn Header="Categoría" Binding="{Binding Categoria}" Width="120"/>
                                 <DataGridTextColumn Header="Persona" Binding="{Binding NombrePersona}" Width="100"/>
                                 <DataGridTextColumn Header="Descripción" Binding="{Binding Descripcion}" Width="*"/>
+                                <DataGridTextColumn Header="Referencia" Binding="{Binding ReferenciaAuto}" Width="175"/>
                                 <DataGridTextColumn Header="Monto" Binding="{Binding Monto, StringFormat=C}" Width="100"/>
                             </DataGrid.Columns>
                         </DataGrid>

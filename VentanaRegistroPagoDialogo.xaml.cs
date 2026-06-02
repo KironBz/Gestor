@@ -52,7 +52,7 @@ namespace Yes_Gestor
                     categoriaId: null,
                     monto: monto,
                     personaId: _deuda.PersonaId,
-                    descripcion: $"{categoria} de {_deuda.Contraparte} - {_deuda.ReferenciaAuto}",
+                    descripcion: $"{categoria} de {_deuda.Contraparte}",
                     montoFinal: null,
                     plazos: null,
                     metaId: null

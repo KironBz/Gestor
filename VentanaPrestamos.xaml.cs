@@ -29,9 +29,9 @@ namespace Yes_Gestor
             var porPagar = new List<DeudaPendiente>();
             var completados = new List<DeudaPendiente>();
 
-            // ===== PRÉSTAMOS RECIBIDOS (DEBO) =====
+            // ===== PRÉSTAMOS RECIBIDOS (debo) – Ingreso + Préstamo con referencia no nula =====
             var prestamosRecibidos = datos.Movimientos
-                .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null)
+                .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
                 .ToList();
 
             foreach (var prestamo in prestamosRecibidos)
@@ -39,24 +39,14 @@ namespace Yes_Gestor
                 var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
                 if (persona == null) continue;
 
-                // Pagos realizados (egresos con categoría Pago y misma referencia)
-                var pagos = datos.Movimientos
+                decimal pagado = datos.Movimientos
                     .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
-                    .OrderBy(m => m.FechaOcurrido)
-                    .ToList();
+                    .Sum(m => m.Monto);
+                int pagosRealizados = datos.Movimientos
+                    .Count(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto);
 
-                decimal pagado = pagos.Sum(m => m.Monto);
-                int pagosRealizados = pagos.Count;
                 decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
                 decimal pendiente = montoOriginal - pagado;
-
-                // Fecha de completado: si pendiente == 0, tomar la fecha del último pago
-                DateTime? fechaCompletado = null;
-                if (pendiente <= 0 && pagos.Any())
-                {
-                    fechaCompletado = pagos.Last().FechaOcurrido;
-                    pendiente = 0; // asegurar
-                }
 
                 var deuda = new DeudaPendiente
                 {
@@ -69,8 +59,7 @@ namespace Yes_Gestor
                     PagosRealizados = pagosRealizados,
                     PlazosTotales = prestamo.Plazos,
                     CuotaMensual = prestamo.Plazos.HasValue && prestamo.Plazos > 0 ? montoOriginal / prestamo.Plazos.Value : (decimal?)null,
-                    Tipo = "Acreedor (debo)",
-                    FechaCompletado = fechaCompletado
+                    Tipo = "Acreedor (debo)"
                 };
 
                 if (pendiente > 0)
@@ -79,9 +68,9 @@ namespace Yes_Gestor
                     completados.Add(deuda);
             }
 
-            // ===== PRÉSTAMOS OTORGADOS (ME DEBEN) =====
+            // ===== PRÉSTAMOS OTORGADOS (me deben) – Egreso + Cargo con referencia no nula =====
             var prestamosOtorgados = datos.Movimientos
-                .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null)
+                .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
                 .ToList();
 
             foreach (var prestamo in prestamosOtorgados)
@@ -89,23 +78,14 @@ namespace Yes_Gestor
                 var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
                 if (persona == null) continue;
 
-                // Abonos recibidos (ingresos con categoría Abono y misma referencia)
-                var abonos = datos.Movimientos
+                decimal abonado = datos.Movimientos
                     .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
-                    .OrderBy(m => m.FechaOcurrido)
-                    .ToList();
+                    .Sum(m => m.Monto);
+                int abonosRealizados = datos.Movimientos
+                    .Count(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto);
 
-                decimal abonado = abonos.Sum(m => m.Monto);
-                int abonosRealizados = abonos.Count;
                 decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
                 decimal pendiente = montoOriginal - abonado;
-
-                DateTime? fechaCompletado = null;
-                if (pendiente <= 0 && abonos.Any())
-                {
-                    fechaCompletado = abonos.Last().FechaOcurrido;
-                    pendiente = 0;
-                }
 
                 var deuda = new DeudaPendiente
                 {
@@ -118,8 +98,7 @@ namespace Yes_Gestor
                     PagosRealizados = abonosRealizados,
                     PlazosTotales = prestamo.Plazos,
                     CuotaMensual = prestamo.Plazos.HasValue && prestamo.Plazos > 0 ? montoOriginal / prestamo.Plazos.Value : (decimal?)null,
-                    Tipo = "Deudor (me debe)",
-                    FechaCompletado = fechaCompletado
+                    Tipo = "Deudor (me debe)"
                 };
 
                 if (pendiente > 0)

@@ -32,9 +32,12 @@ namespace Yes_Gestor
             {
                 c.SaldoActual = CalcularSaldoCuenta(c.Id);
             }
-            dgCuentas.ItemsSource = cuentas;
-            dgCategorias.ItemsSource = App.Datos.Categorias.ToList();
-            dgPersonas.ItemsSource = App.Datos.Personas.ToList();
+              dgCuentas.ItemsSource = cuentas;                                                    //  Orden manual
+            //  dgCuentas.ItemsSource = cuentas.OrderBy(c => c.Nombre).ToList();                        // Por Nombre
+            //  dgCategorias.ItemsSource = App.Datos.Categorias.OrderBy(c => c.Nombre).ToList();    //  Orden manual
+            dgCategorias.ItemsSource = App.Datos.Categorias.OrderBy(c => c.Nombre).ToList();        // Por Nombre
+            //  dgPersonas.ItemsSource = App.Datos.Personas.ToList();                               //  Orden manual
+            dgPersonas.ItemsSource = App.Datos.Personas.OrderBy(p => p.Nombre).ToList();            // Por Nombre
         }
 
         private decimal CalcularSaldoCuenta(string cuentaId)

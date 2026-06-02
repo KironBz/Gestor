@@ -12,7 +12,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- BARRA DE TÍTULO CON BOTONES DE NAVEGACIÓN -->
+            <!-- Barra de título -->
             <Border Grid.Row="0" Background="#2E8B57" CornerRadius="15,15,0,0" Height="40"
                     MouseLeftButtonDown="MoverVentana_MouseLeftButtonDown">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -30,67 +30,89 @@
                 </StackPanel>
             </Border>
 
-            <!-- Contenido principal (igual que antes) -->
-            <Grid Grid.Row="1" Margin="10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+            <!-- Contenido principal con scroll -->
+            <ScrollViewer Grid.Row="1" Margin="10">
+                <StackPanel>
+                    <!-- Tablas de deudas activas -->
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                <!-- Panel izquierdo: Deudores (me deben) -->
-                <Border Grid.Column="0" Margin="5" BorderBrush="#DDD" BorderThickness="1" CornerRadius="10" Padding="5">
-                    <StackPanel>
-                        <TextBlock Text="DEUDORES (ME DEBEN)" FontWeight="Bold" FontSize="16" TextAlignment="Center" Margin="0,0,0,10"/>
-                        <DataGrid x:Name="dgDeudores" AutoGenerateColumns="False" IsReadOnly="True" Height="400">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Contraparte" Binding="{Binding Contraparte}" Width="*"/>
-                                <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="*"/>
-                                <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="*"/>
-                                <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="*"/>
-                                <DataGridTextColumn Header="Progreso" Width="80">
-                                    <DataGridTextColumn.Binding>
-                                        <MultiBinding StringFormat="{}{0}/{1}">
-                                            <Binding Path="PagosRealizados"/>
-                                            <Binding Path="PlazosTotales"/>
-                                        </MultiBinding>
-                                    </DataGridTextColumn.Binding>
-                                </DataGridTextColumn>
-                                <DataGridTextColumn Header="Cuota mensual" Binding="{Binding CuotaMensual, StringFormat=C}" Width="*"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <Button Content="Registrar pago" Style="{StaticResource BotonRedondo}" Margin="0,10,0,0" Click="RegistrarPagoDeudor_Click"/>
-                    </StackPanel>
-                </Border>
+                        <!-- Deudores -->
+                        <Border Grid.Column="0" Margin="5" BorderBrush="#DDD" BorderThickness="1" CornerRadius="10" Padding="5">
+                            <StackPanel>
+                                <TextBlock Text="DEUDORES (ME DEBEN)" FontWeight="Bold" FontSize="16" TextAlignment="Center" Margin="0,0,0,10"/>
+                                <DataGrid x:Name="dgDeudores" AutoGenerateColumns="False" IsReadOnly="True" Height="400">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Contraparte" Binding="{Binding Contraparte}" Width="*"/>
+                                        <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="*"/>
+                                        <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="*"/>
+                                        <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="*"/>
+                                        <DataGridTextColumn Header="Progreso" Width="80">
+                                            <DataGridTextColumn.Binding>
+                                                <MultiBinding StringFormat="{}{0}/{1}">
+                                                    <Binding Path="PagosRealizados"/>
+                                                    <Binding Path="PlazosTotales"/>
+                                                </MultiBinding>
+                                            </DataGridTextColumn.Binding>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Cuota mensual" Binding="{Binding CuotaMensual, StringFormat=C}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <Button Content="Registrar pago" Style="{StaticResource BotonRedondo}" Margin="0,10,0,0" Click="RegistrarPagoDeudor_Click"/>
+                            </StackPanel>
+                        </Border>
 
-                <!-- Panel derecho: Acreedores (debo) -->
-                <Border Grid.Column="1" Margin="5" BorderBrush="#DDD" BorderThickness="1" CornerRadius="10" Padding="5">
-                    <StackPanel>
-                        <TextBlock Text="ACREEDORES (DEBO)" FontWeight="Bold" FontSize="16" TextAlignment="Center" Margin="0,0,0,10"/>
-                        <DataGrid x:Name="dgAcreedores" AutoGenerateColumns="False" IsReadOnly="True" Height="400">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="Contraparte" Binding="{Binding Contraparte}" Width="*"/>
-                                <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="*"/>
-                                <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="*"/>
-                                <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="*"/>
-                                <DataGridTextColumn Header="Progreso" Width="80">
-                                    <DataGridTextColumn.Binding>
-                                        <MultiBinding StringFormat="{}{0}/{1}">
-                                            <Binding Path="PagosRealizados"/>
-                                            <Binding Path="PlazosTotales"/>
-                                        </MultiBinding>
-                                    </DataGridTextColumn.Binding>
-                                </DataGridTextColumn>
-                                <DataGridTextColumn Header="Cuota mensual" Binding="{Binding CuotaMensual, StringFormat=C}" Width="*"/>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                        <Button Content="Registrar pago" Style="{StaticResource BotonRedondo}" Margin="0,10,0,0" Click="RegistrarPagoAcreedor_Click"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
+                        <!-- Acreedores -->
+                        <Border Grid.Column="1" Margin="5" BorderBrush="#DDD" BorderThickness="1" CornerRadius="10" Padding="5">
+                            <StackPanel>
+                                <TextBlock Text="ACREEDORES (DEBO)" FontWeight="Bold" FontSize="16" TextAlignment="Center" Margin="0,0,0,10"/>
+                                <DataGrid x:Name="dgAcreedores" AutoGenerateColumns="False" IsReadOnly="True" Height="400">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Contraparte" Binding="{Binding Contraparte}" Width="*"/>
+                                        <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="*"/>
+                                        <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="*"/>
+                                        <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="*"/>
+                                        <DataGridTextColumn Header="Progreso" Width="80">
+                                            <DataGridTextColumn.Binding>
+                                                <MultiBinding StringFormat="{}{0}/{1}">
+                                                    <Binding Path="PagosRealizados"/>
+                                                    <Binding Path="PlazosTotales"/>
+                                                </MultiBinding>
+                                            </DataGridTextColumn.Binding>
+                                        </DataGridTextColumn>
+                                        <DataGridTextColumn Header="Cuota mensual" Binding="{Binding CuotaMensual, StringFormat=C}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <Button Content="Registrar pago" Style="{StaticResource BotonRedondo}" Margin="0,10,0,0" Click="RegistrarPagoAcreedor_Click"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Préstamos completados (expandible) -->
+                    <Expander Header="Préstamos completados" IsExpanded="False" Margin="5,0,5,10">
+                        <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="10" Padding="5">
+                            <DataGrid x:Name="dgCompletados" AutoGenerateColumns="False" IsReadOnly="True" Height="200">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="100"/>
+                                    <DataGridTextColumn Header="Contraparte" Binding="{Binding Contraparte}" Width="150"/>
+                                    <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="120"/>
+                                    <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="120"/>
+                                    <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="120"/>
+                                    <DataGridTextColumn Header="Finalizado el" Binding="{Binding FechaCompletado, StringFormat=dd/MM/yyyy}" Width="100"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+                    </Expander>
+                </StackPanel>
+            </ScrollViewer>
+
             <!-- Botón flotante -->
             <Button Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,20,20"
-                Width="50" Height="50" Background="#FF5722" Foreground="White" FontSize="24" FontWeight="Bold"
-                BorderThickness="0" ToolTip="Agregar movimiento" Click="AgregarMovimiento_Click">
+                    Width="50" Height="50" Background="#FF5722" Foreground="White" FontSize="24" FontWeight="Bold"
+                    BorderThickness="0" ToolTip="Agregar movimiento" Click="AgregarMovimiento_Click">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}" CornerRadius="25">
@@ -101,6 +123,5 @@
                 +
             </Button>
         </Grid>
-       
     </Border>
 </Window>

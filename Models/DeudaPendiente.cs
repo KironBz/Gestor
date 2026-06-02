@@ -11,5 +11,7 @@
         public int PagosRealizados { get; set; }
         public int? PlazosTotales { get; set; }
         public decimal? CuotaMensual { get; set; }
+        public string Tipo { get; set; }
+        public DateTime? FechaCompletado { get; set; }
     }
 }

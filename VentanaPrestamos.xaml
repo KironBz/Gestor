@@ -47,10 +47,11 @@
                                 <DataGrid x:Name="dgDeudores" AutoGenerateColumns="False" IsReadOnly="True" Height="400">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Contraparte" Binding="{Binding Contraparte}" Width="*"/>
+                                        <DataGridTextColumn Header="Referencia" Binding="{Binding ReferenciaAuto}" Width="100"/>
                                         <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="*"/>
                                         <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="*"/>
                                         <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="*"/>
-                                        <DataGridTextColumn Header="Progreso" Width="80">
+                                        <DataGridTextColumn Header="Progreso" Width="65">
                                             <DataGridTextColumn.Binding>
                                                 <MultiBinding StringFormat="{}{0}/{1}">
                                                     <Binding Path="PagosRealizados"/>
@@ -72,10 +73,11 @@
                                 <DataGrid x:Name="dgAcreedores" AutoGenerateColumns="False" IsReadOnly="True" Height="400">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Contraparte" Binding="{Binding Contraparte}" Width="*"/>
+                                        <DataGridTextColumn Header="Referencia" Binding="{Binding ReferenciaAuto}" Width="100"/>
                                         <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="*"/>
                                         <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="*"/>
                                         <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="*"/>
-                                        <DataGridTextColumn Header="Progreso" Width="80">
+                                        <DataGridTextColumn Header="Progreso" Width="65">
                                             <DataGridTextColumn.Binding>
                                                 <MultiBinding StringFormat="{}{0}/{1}">
                                                     <Binding Path="PagosRealizados"/>
@@ -98,6 +100,7 @@
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="100"/>
                                     <DataGridTextColumn Header="Contraparte" Binding="{Binding Contraparte}" Width="150"/>
+                                    <DataGridTextColumn Header="Referencia" Binding="{Binding ReferenciaAuto}" Width="120"/>
                                     <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="120"/>
                                     <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="120"/>
                                     <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="120"/>

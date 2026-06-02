@@ -34,7 +34,7 @@
             <ScrollViewer Grid.Row="1" Margin="10">
                 <StackPanel>
                     <!-- Tablas de deudas activas -->
-                    <Grid Margin="0,0,0,20">
+                    <Grid Margin="0,0,0,10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
@@ -98,13 +98,13 @@
                         <Border BorderBrush="#DDD" BorderThickness="1" CornerRadius="10" Padding="5">
                             <DataGrid x:Name="dgCompletados" AutoGenerateColumns="False" IsReadOnly="True" Height="200">
                                 <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Finalizado el" Binding="{Binding FechaCompletado, StringFormat=dd/MM/yyyy}" Width="100"/>
                                     <DataGridTextColumn Header="Tipo" Binding="{Binding Tipo}" Width="100"/>
                                     <DataGridTextColumn Header="Contraparte" Binding="{Binding Contraparte}" Width="150"/>
                                     <DataGridTextColumn Header="Referencia" Binding="{Binding ReferenciaAuto}" Width="120"/>
                                     <DataGridTextColumn Header="Monto Total" Binding="{Binding MontoTotal, StringFormat=C}" Width="120"/>
                                     <DataGridTextColumn Header="Pagado" Binding="{Binding Pagado, StringFormat=C}" Width="120"/>
                                     <DataGridTextColumn Header="Saldo pendiente" Binding="{Binding SaldoPendiente, StringFormat=C}" Width="120"/>
-                                    <DataGridTextColumn Header="Finalizado el" Binding="{Binding FechaCompletado, StringFormat=dd/MM/yyyy}" Width="100"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Border>

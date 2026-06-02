@@ -30,7 +30,8 @@ namespace Yes_Gestor
         {
             try
             {
-                if (cbCuenta.SelectedItem == null) throw new Exception("Seleccione una cuenta.");
+                if (cbCuenta.SelectedItem == null)
+                    throw new Exception("Seleccione una cuenta.");
                 if (!decimal.TryParse(txtMonto.Text, out decimal monto) || monto <= 0)
                     throw new Exception("Monto inválido.");
                 if (monto > _deuda.SaldoPendiente)
@@ -42,22 +43,30 @@ namespace Yes_Gestor
                 Cuenta cuenta = cbCuenta.SelectedItem as Cuenta;
                 DateTime fecha = dpFecha.SelectedDate ?? DateTime.Today;
                 string tipo = _esPagoPropio ? "Egreso" : "Ingreso";
-                string categoria = _esPagoPropio ? "Pago" : "Abono";
+                string nombreCategoria = _esPagoPropio ? "Pago" : "Abono";
+
+                // Buscar la categoría correspondiente (debe existir en la base de datos)
+                var categoria = App.Datos.Categorias.FirstOrDefault(c => c.Nombre == nombreCategoria);
+                if (categoria == null)
+                {
+                    MessageBox.Show($"No existe la categoría '{nombreCategoria}'. Créela desde Configuración.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
                 var movimiento = new Movimiento(
                     fechaOcurrido: fecha,
                     tipo: tipo,
-                    categoria: categoria,
+                    categoria: nombreCategoria,
                     cuentaId: cuenta.Id,
-                    categoriaId: null,
+                    categoriaId: categoria.Id,
                     monto: monto,
                     personaId: _deuda.PersonaId,
-                    descripcion: $"{categoria} de {_deuda.Contraparte}",
+                    descripcion: $"{nombreCategoria} de {_deuda.Contraparte}",
                     montoFinal: null,
                     plazos: null,
                     metaId: null
                 );
-                movimiento.ReferenciaAuto = _deuda.ReferenciaAuto;
+                movimiento.ReferenciaAuto = _deuda.ReferenciaAuto; // vincular al préstamo
 
                 PagoMovimiento = movimiento;
                 DialogResult = true;

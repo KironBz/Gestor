@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YESSMobilePWA</title>
+    <base href="/" />
+    <link rel="preload" id="webassembly" />
+
+    <!-- Bootstrap CSS desde CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <!-- Radzen.Blazor CSS -->
+    <link href="_content/Radzen.Blazor/css/default-base.css" rel="stylesheet" />
+
+    <!-- Estilos propios de la aplicación -->
+    <link rel="stylesheet" href="css/app.css" />
+    <link href="YESSMobilePWA.styles.css" rel="stylesheet" />
+
+    <!-- Iconos y manifest PWA -->
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <link href="manifest.webmanifest" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+
+    <script type="importmap"></script>
+</head>
+
+<body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text"></div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+
+    <!-- Bootstrap JavaScript (necesario para el modal y menú) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Radzen.Blazor JavaScript -->
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+
+    <!-- Blazor WebAssembly runtime -->
+    <script src="_framework/blazor.webassembly.js"></script>
+
+    <!-- Service Worker para PWA -->
+    <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
+
+    <!-- Funciones auxiliares para importar/exportar JSON -->
+    <script>
+        window.getFileContent = function (elementId) {
+            const input = document.getElementById(elementId);
+            if (input && input.files && input.files[0]) {
+                const reader = new FileReader();
+                return new Promise((resolve, reject) => {
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = (e) => reject(e.target.error);
+                    reader.readAsText(input.files[0]);
+                });
+            }
+            return Promise.resolve(null);
+        };
+
+        window.downloadFile = function (filename, content) {
+            const blob = new Blob([content], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        };
+    </script>
+</body>
+
+</html>

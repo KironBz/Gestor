@@ -1,0 +1,492 @@
+@page "/movimientos"
+@using YESSMobilePWA.Models
+@using YESSMobilePWA.Services
+@inject ArchivoService ArchivoService
+@inject IJSRuntime JS
+
+<h3>Movimientos</h3>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="() => AbrirModal()">Agregar movimiento</button>
+</div>
+
+@if (movimientos == null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    <!-- Tabla para pantallas grandes -->
+    <div class="d-none d-md-block">
+        <table class="table table-dark table-striped table-movimientos">   <!-- ← aquí está la tabla -->
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Cuenta</th>
+                    <th>Tipo</th>
+                    <th>Categoría</th>
+                    <th>Persona</th>
+                    <th>Descripción</th>
+                    <th>Referencia</th>
+                    <th>Monto</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var mov in movimientos.OrderByDescending(m => m.FechaOcurrido))
+                {
+                    <tr>
+                        <td>@mov.FechaOcurrido.ToString("dd/MM/yyyy")</td>
+                        <td>@mov.NombreCuenta</td>
+                        <td>@mov.Tipo</td>
+                        <td>@mov.Categoria</td>
+                        <td>@mov.NombrePersona</td>
+                        <td>@mov.Descripcion</td>
+                        <td>@mov.ReferenciaAuto</td>
+                        <td>@mov.Monto.ToString("C")</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning" @onclick="() => AbrirModal(mov)">Editar</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => EliminarMovimiento(mov)">Eliminar</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Tarjetas para móvil -->
+    <div class="d-block d-md-none">
+        @foreach (var mov in movimientos.OrderByDescending(m => m.FechaOcurrido))
+        {
+            <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @mov.ColorCuenta;">
+                <div class="card-body">
+                    <h5 class="card-title">@mov.Descripcion</h5>
+                    <p class="card-text">
+                        <strong>@mov.Monto.ToString("C")</strong><br />
+                        @mov.FechaOcurrido.ToString("dd/MM/yyyy") - @mov.NombreCuenta<br />
+                        @mov.Tipo / @mov.Categoria
+                    </p>
+                    <p class="card-text"><small>Ref: @mov.ReferenciaAuto</small></p>
+                    <button class="btn btn-sm btn-warning" @onclick="() => AbrirModal(mov)">Editar</button>
+                    <button class="btn btn-sm btn-danger" @onclick="() => EliminarMovimiento(mov)">Eliminar</button>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Modal (ventana emergente) -->
+@if (modalVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(movimientoEditando == null ? "Nuevo movimiento" : "Editar movimiento")</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => modalVisible = false"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Fecha -->
+                    <div class="mb-3">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" class="form-control" @bind="formulario.Fecha" />
+                    </div>
+                    <!-- Tipo -->
+                    <div class="mb-3">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select" @bind="formulario.Tipo">
+                            <option value="Ingreso">Ingreso</option>
+                            <option value="Egreso">Egreso</option>
+                            <option value="Transferencia">Transferencia</option>
+                        </select>
+                    </div>
+                    <!-- Cuenta (para Ingreso/Egreso) -->
+                    @if (formulario.Tipo != "Transferencia")
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Cuenta</label>
+                            <div class="input-group">
+                                <select class="form-select" @bind="formulario.CuentaId">
+                                    @foreach (var cuenta in cuentasDisponibles)
+                                    {
+                                        <option value="@cuenta.Id">@cuenta.Nombre</option>
+                                    }
+                                </select>
+                                <button type="button" class="btn btn-outline-success" @onclick="AgregarCuenta">+</button>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Transferencia: origen y destino (ambos con botón +) -->
+                        <div class="mb-3">
+                            <label class="form-label">Cuenta origen</label>
+                            <div class="input-group">
+                                <select class="form-select" @bind="formulario.CuentaOrigenId">
+                                    @foreach (var cuenta in cuentasDisponibles)
+                                    {
+                                        <option value="@cuenta.Id">@cuenta.Nombre</option>
+                                    }
+                                </select>
+                                <button type="button" class="btn btn-outline-success" @onclick="AgregarCuenta">+</button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Cuenta destino</label>
+                            <div class="input-group">
+                                <select class="form-select" @bind="formulario.CuentaDestinoId">
+                                    @foreach (var cuenta in cuentasDisponibles)
+                                    {
+                                        <option value="@cuenta.Id">@cuenta.Nombre</option>
+                                    }
+                                </select>
+                                <button type="button" class="btn btn-outline-success" @onclick="AgregarCuenta">+</button>
+                            </div>
+                        </div>
+                    }
+                    <!-- Categoría (con botón +) -->
+                    @if (formulario.Tipo != "Transferencia")
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Categoría</label>
+                            <div class="input-group">
+                                <select class="form-select" @bind="formulario.CategoriaId">
+                                    @foreach (var categoria in categoriasDisponibles)
+                                    {
+                                        <option value="@categoria.Id">@categoria.Nombre</option>
+                                    }
+                                </select>
+                                <button type="button" class="btn btn-outline-success" @onclick="AgregarCategoria">+</button>
+                            </div>
+                        </div>
+                    }
+                    <!-- Persona (con botón +) -->
+                    <div class="mb-3">
+                        <label class="form-label">Persona (opcional)</label>
+                        <div class="input-group">
+                            <select class="form-select" @bind="formulario.PersonaId">
+                                <option value="">(Ninguna)</option>
+                                @foreach (var persona in personasDisponibles)
+                                {
+                                    <option value="@persona.Id">@persona.Nombre</option>
+                                }
+                            </select>
+                            <button type="button" class="btn btn-outline-success" @onclick="AgregarPersona">+</button>
+                        </div>
+                    </div>
+                    <!-- Descripción -->
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <input type="text" class="form-control" @bind="formulario.Descripcion" />
+                    </div>
+                    <!-- Monto -->
+                    <div class="mb-3">
+                        <label class="form-label">Monto</label>
+                        <input type="number" step="0.01" class="form-control" @bind="formulario.Monto" />
+                    </div>
+                    <!-- Campos para préstamo/cargo -->
+                    @if ((formulario.Tipo == "Ingreso" && categoriaSeleccionada?.Nombre == "Préstamo") ||
+                         (formulario.Tipo == "Egreso" && categoriaSeleccionada?.Nombre == "Cargo"))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Monto final (con intereses)</label>
+                            <input type="number" step="0.01" class="form-control" @bind="formulario.MontoFinal" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Plazos (meses)</label>
+                            <input type="number" class="form-control" @bind="formulario.Plazos" />
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => modalVisible = false">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="GuardarMovimiento">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private DatosApp datos = null!;
+    private List<MovimientoViewModel> movimientos = null!;
+    private bool modalVisible = false;
+    private MovimientoViewModel? movimientoEditando = null;
+    private FormularioMovimiento formulario = new();
+    private List<Cuenta> cuentasDisponibles = new();
+    private List<Categoria> categoriasDisponibles = new();
+    private List<Persona> personasDisponibles = new();
+
+    private class MovimientoViewModel
+    {
+        public string Id { get; set; } = "";
+        public DateTime FechaOcurrido { get; set; }
+        public string Tipo { get; set; } = "";
+        public string Categoria { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public decimal Monto { get; set; }
+        public string CuentaId { get; set; } = "";
+        public string CategoriaId { get; set; } = "";
+        public string PersonaId { get; set; } = "";
+        public string NombreCuenta { get; set; } = "";
+        public string NombrePersona { get; set; } = "";
+        public string ReferenciaAuto { get; set; } = "";
+        public string ColorCuenta { get; set; } = "";
+    }
+
+    private class FormularioMovimiento
+    {
+        public DateTime Fecha { get; set; } = DateTime.Today;
+        public string Tipo { get; set; } = "Ingreso";
+        public string CuentaId { get; set; } = "";
+        public string CuentaOrigenId { get; set; } = "";
+        public string CuentaDestinoId { get; set; } = "";
+        public string CategoriaId { get; set; } = "";
+        public string PersonaId { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public decimal Monto { get; set; }
+        public decimal? MontoFinal { get; set; }
+        public int? Plazos { get; set; }
+    }
+
+    private Categoria? categoriaSeleccionada => categoriasDisponibles.FirstOrDefault(c => c.Id == formulario.CategoriaId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        datos = await ArchivoService.CargarAsync();
+        CargarMovimientos();
+        CargarListas();
+    }
+
+    private void CargarListas()
+    {
+        cuentasDisponibles = datos.Cuentas.ToList();
+        categoriasDisponibles = datos.Categorias.ToList();
+        personasDisponibles = datos.Personas.ToList();
+    }
+
+    private void CargarMovimientos()
+    {
+        movimientos = datos.Movimientos.Select(m => new MovimientoViewModel
+        {
+            Id = m.Id,
+            FechaOcurrido = m.FechaOcurrido,
+            Tipo = m.Tipo,
+            Categoria = m.Categoria,
+            Descripcion = m.Descripcion,
+            Monto = m.Monto,
+            CuentaId = m.CuentaId,
+            CategoriaId = m.CategoriaId,
+            PersonaId = m.PersonaId,
+            NombreCuenta = datos.Cuentas.FirstOrDefault(c => c.Id == m.CuentaId)?.Nombre ?? "Desconocida",
+            ColorCuenta = datos.Cuentas.FirstOrDefault(c => c.Id == m.CuentaId)?.Color ?? "#FFFFFF",
+            NombrePersona = datos.Personas.FirstOrDefault(p => p.Id == m.PersonaId)?.Nombre ?? "",
+            ReferenciaAuto = m.ReferenciaAuto
+        }).ToList();
+        StateHasChanged();
+    }
+
+    private void AbrirModal(MovimientoViewModel? mov = null)
+    {
+        movimientoEditando = mov;
+        if (mov == null)
+        {
+            formulario = new FormularioMovimiento { Fecha = DateTime.Today, Tipo = "Ingreso" };
+        }
+        else
+        {
+            formulario = new FormularioMovimiento
+            {
+                Fecha = mov.FechaOcurrido,
+                Tipo = mov.Tipo,
+                CuentaId = mov.CuentaId,
+                CategoriaId = mov.CategoriaId,
+                PersonaId = mov.PersonaId,
+                Descripcion = mov.Descripcion,
+                Monto = mov.Monto
+            };
+            var original = datos.Movimientos.FirstOrDefault(m => m.Id == mov.Id);
+            if (original != null)
+            {
+                formulario.MontoFinal = original.MontoFinal;
+                formulario.Plazos = original.Plazos;
+            }
+        }
+        modalVisible = true;
+    }
+
+    // ================== AGREGAR CUENTA, CATEGORÍA, PERSONA ==================
+    private async Task AgregarCuenta()
+    {
+        var nombre = await JS.InvokeAsync<string>("prompt", "Ingrese el nombre de la nueva cuenta:");
+        if (string.IsNullOrWhiteSpace(nombre)) return;
+
+        var visibilidad = await JS.InvokeAsync<string>("prompt", "Visibilidad (Corriente, Oculto, Ajeno, Transporte):", "Corriente");
+        if (!new[] { "Corriente", "Oculto", "Ajeno", "Transporte" }.Contains(visibilidad))
+            visibilidad = "Corriente";
+
+        var saldoInicialStr = await JS.InvokeAsync<string>("prompt", "Saldo inicial (opcional):", "0");
+        decimal.TryParse(saldoInicialStr, out var saldoInicial);
+
+        var nuevaCuenta = new Cuenta(nombre, visibilidad, saldoInicial);
+        datos.Cuentas.Add(nuevaCuenta);
+        await ArchivoService.GuardarAsync(datos);
+        CargarListas(); // refrescar combos
+        StateHasChanged();
+    }
+
+    private async Task AgregarCategoria()
+    {
+        var nombre = await JS.InvokeAsync<string>("prompt", "Ingrese el nombre de la nueva categoría:");
+        if (string.IsNullOrWhiteSpace(nombre)) return;
+
+        var tipoPermitido = await JS.InvokeAsync<string>("prompt", "Tipo permitido (Ingreso, Egreso, Ambos):", "Ambos");
+        if (!new[] { "Ingreso", "Egreso", "Ambos" }.Contains(tipoPermitido))
+            tipoPermitido = "Ambos";
+
+        var nuevaCategoria = new Categoria(nombre, tipoPermitido);
+        datos.Categorias.Add(nuevaCategoria);
+        await ArchivoService.GuardarAsync(datos);
+        CargarListas();
+        StateHasChanged();
+    }
+
+    private async Task AgregarPersona()
+    {
+        var nombre = await JS.InvokeAsync<string>("prompt", "Ingrese el nombre de la nueva persona:");
+        if (string.IsNullOrWhiteSpace(nombre)) return;
+
+        var tipo = await JS.InvokeAsync<string>("prompt", "Tipo (Deudor, Acreedor, Ambos, Ninguno):", "Ninguno");
+        if (!new[] { "Deudor", "Acreedor", "Ambos", "Ninguno" }.Contains(tipo))
+            tipo = "Ninguno";
+
+        var nuevaPersona = new Persona(nombre, tipo);
+        datos.Personas.Add(nuevaPersona);
+        await ArchivoService.GuardarAsync(datos);
+        CargarListas();
+        StateHasChanged();
+    }
+
+    // ================== GUARDAR Y ELIMINAR ==================
+    private async Task GuardarMovimiento()
+    {
+        if (formulario.Tipo == "Transferencia")
+        {
+            if (string.IsNullOrEmpty(formulario.CuentaOrigenId) || string.IsNullOrEmpty(formulario.CuentaDestinoId))
+            {
+                await JS.InvokeVoidAsync("alert", "Debe seleccionar cuenta origen y destino para una transferencia.");
+                return;
+            }
+            if (formulario.CuentaOrigenId == formulario.CuentaDestinoId)
+            {
+                await JS.InvokeVoidAsync("alert", "Las cuentas origen y destino no pueden ser iguales.");
+                return;
+            }
+            if (formulario.Monto <= 0)
+            {
+                await JS.InvokeVoidAsync("alert", "Monto inválido.");
+                return;
+            }
+
+            var movOrigen = new Movimiento(
+                fechaOcurrido: formulario.Fecha,
+                tipo: "Egreso",
+                categoria: "Transferencia",
+                cuentaId: formulario.CuentaOrigenId,
+                categoriaId: null,
+                monto: formulario.Monto,
+                personaId: null,
+                descripcion: formulario.Descripcion,
+                montoFinal: null,
+                plazos: null
+            );
+            var movDestino = new Movimiento(
+                fechaOcurrido: formulario.Fecha,
+                tipo: "Ingreso",
+                categoria: "Transferencia",
+                cuentaId: formulario.CuentaDestinoId,
+                categoriaId: null,
+                monto: formulario.Monto,
+                personaId: null,
+                descripcion: formulario.Descripcion,
+                montoFinal: null,
+                plazos: null
+            );
+            datos.Movimientos.Add(movOrigen);
+            datos.Movimientos.Add(movDestino);
+        }
+        else
+        {
+            if (string.IsNullOrEmpty(formulario.CuentaId))
+            {
+                await JS.InvokeVoidAsync("alert", "Seleccione una cuenta.");
+                return;
+            }
+            if (string.IsNullOrEmpty(formulario.CategoriaId))
+            {
+                await JS.InvokeVoidAsync("alert", "Seleccione una categoría.");
+                return;
+            }
+            if (formulario.Monto <= 0)
+            {
+                await JS.InvokeVoidAsync("alert", "Monto inválido.");
+                return;
+            }
+
+            var categoria = categoriasDisponibles.FirstOrDefault(c => c.Id == formulario.CategoriaId);
+            bool esPrestamo = (formulario.Tipo == "Ingreso" && categoria?.Nombre == "Préstamo");
+            bool esCargo = (formulario.Tipo == "Egreso" && categoria?.Nombre == "Cargo");
+
+            decimal? montoFinal = esPrestamo || esCargo ? formulario.MontoFinal : null;
+            int? plazos = esPrestamo || esCargo ? formulario.Plazos : null;
+
+            var movimiento = new Movimiento(
+                fechaOcurrido: formulario.Fecha,
+                tipo: formulario.Tipo,
+                categoria: categoria?.Nombre ?? "",
+                cuentaId: formulario.CuentaId,
+                categoriaId: formulario.CategoriaId,
+                monto: formulario.Monto,
+                personaId: string.IsNullOrEmpty(formulario.PersonaId) ? null : formulario.PersonaId,
+                descripcion: formulario.Descripcion,
+                montoFinal: montoFinal,
+                plazos: plazos
+            );
+
+            if (movimientoEditando != null)
+            {
+                // Editar: reemplazar el existente
+                var idx = datos.Movimientos.FindIndex(m => m.Id == movimientoEditando.Id);
+                if (idx != -1)
+                {
+                    movimiento.Id = movimientoEditando.Id;
+                    datos.Movimientos[idx] = movimiento;
+                }
+            }
+            else
+            {
+                datos.Movimientos.Add(movimiento);
+            }
+        }
+
+        await ArchivoService.GuardarAsync(datos);
+        CargarMovimientos();
+        CargarListas();
+        modalVisible = false;
+    }
+
+    private async Task EliminarMovimiento(MovimientoViewModel mov)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar el movimiento del {mov.FechaOcurrido:dd/MM/yyyy} por {mov.Monto:C}?"))
+        {
+            var original = datos.Movimientos.FirstOrDefault(m => m.Id == mov.Id);
+            if (original != null)
+            {
+                datos.Movimientos.Remove(original);
+                await ArchivoService.GuardarAsync(datos);
+                CargarMovimientos();
+            }
+        }
+    }
+}

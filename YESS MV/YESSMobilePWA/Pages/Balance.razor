@@ -1,0 +1,324 @@
+@page "/"
+@page "/balance"
+@using YESSMobilePWA.Models
+@using YESSMobilePWA.Services
+@inject ArchivoService ArchivoService
+
+<h3 class="text-center mb-4">Balance General</h3>
+@if (!string.IsNullOrEmpty(mensajeError))
+{
+    <div class="alert alert-danger">@mensajeError</div>
+}
+
+@if (datos == null)
+{
+    <div class="text-center">
+        <p><em>Cargando...</em></p>
+    </div>
+}
+else
+{
+    <!-- Tarjetas de totales -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card text-white bg-success shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Dinero disponible</h5>
+                    <p class="card-text display-6">@totalCorriente.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card text-white bg-primary shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Dinero oculto</h5>
+                    <p class="card-text display-6">@totalOculto.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card text-white shadow" style="background-color: #CD853F;">
+                <div class="card-body">
+                    <h5 class="card-title">Cuentas por cobrar</h5>
+                    <p class="card-text display-6">@totalPorCobrar.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card text-white shadow" style="background-color: #B22222;">
+                <div class="card-body">
+                    <h5 class="card-title">Cuentas por pagar</h5>
+                    <p class="card-text display-6">@totalPorPagar.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-12">
+            <div class="card text-white shadow" style="background-color: #2F4F4F;">
+                <div class="card-body">
+                    <h5 class="card-title">Total global</h5>
+                    <p class="card-text display-6">@totalGlobal.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card text-white shadow" style="background-color: #18278C;">
+                <div class="card-body">
+                    <h5 class="card-title">Saldo en Transporte</h5>
+                    <p class="card-text display-6">@totalTransporte.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card text-white shadow" style="background-color: #D549E3;">
+                <div class="card-body">
+                    <h5 class="card-title">Ajeno</h5>
+                    <p class="card-text display-6">@totalAjeno.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cuentas Corrientes -->
+    <div class="card bg-dark text-white mb-4" style="border: 2px solid #28a745;">
+        <div class="card-body">
+            <h5 class="card-title" style="color: #28a745;">Cuentas Corrientes</h5>
+            <div class="d-flex flex-wrap gap-3">
+                @foreach (var cuenta in cuentasCorrientes)
+                {
+                    <div class="card bg-secondary text-white" style="width: 10rem; border: 2px solid @cuenta.Color;">
+                        <div class="card-body">
+                            <h6 class="card-title">@cuenta.Nombre</h6>
+                            <p class="card-text">@cuenta.Saldo.ToString("C")</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Cuentas Ocultas -->
+    <div class="card bg-dark text-white mb-4" style="border: 2px solid #007bff;">
+        <div class="card-body">
+            <h5 class="card-title" style="color: #007bff;">Cuentas Ocultas</h5>
+            <div class="d-flex flex-wrap gap-3">
+                @foreach (var cuenta in cuentasOcultas)
+                {
+                    <div class="card bg-secondary text-white" style="width: 10rem; border: 2px solid @cuenta.Color;">
+                        <div class="card-body">
+                            <h6 class="card-title">@cuenta.Nombre</h6>
+                            <p class="card-text">@cuenta.Saldo.ToString("C")</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Cuentas Ajenas -->
+    <div class="card bg-dark text-white mb-4" style="border: 2px solid #D549E3;">
+        <div class="card-body">
+            <h5 class="card-title" style="color: #D549E3;">Cuentas Ajenas</h5>
+            <div class="d-flex flex-wrap gap-3">
+                @foreach (var cuenta in cuentasAjenas)
+                {
+                    <div class="card bg-secondary text-white" style="width: 10rem; border: 2px solid @cuenta.Color;">
+                        <div class="card-body">
+                            <h6 class="card-title">@cuenta.Nombre</h6>
+                            <p class="card-text">@cuenta.Saldo.ToString("C")</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Cuentas Transporte -->
+    <div class="card bg-dark text-white mb-4" style="border: 2px solid #18278C;">
+        <div class="card-body">
+            <h5 class="card-title" style="color: #18278C;">Cuentas Transporte</h5>
+            <div class="d-flex flex-wrap gap-3">
+                @foreach (var cuenta in cuentasTransporte)
+                {
+                    <div class="card bg-secondary text-white" style="width: 10rem; border: 2px solid @cuenta.Color;">
+                        <div class="card-body">
+                            <h6 class="card-title">@cuenta.Nombre</h6>
+                            <p class="card-text">@cuenta.Saldo.ToString("C")</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Acreedores (debo) -->
+    <div class="card bg-dark text-white mb-4" style="border: 2px solid #dc3545;">
+        <div class="card-body">
+            <h5 class="card-title" style="color: #dc3545;">Acreedores (debo)</h5>
+            <div class="d-flex flex-wrap gap-3">
+                @foreach (var acreedor in acreedores)
+                {
+                    <div class="card bg-secondary text-white" style="width: 12rem;">
+                        <div class="card-body">
+                            <h6 class="card-title">@acreedor.Contraparte</h6>
+                            <p class="card-text">@acreedor.SaldoPendiente.ToString("C")</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Deudores (me deben) -->
+    <div class="card bg-dark text-white mb-4" style="border: 2px solid #fd7e14;">
+        <div class="card-body">
+            <h5 class="card-title" style="color: #fd7e14;">Deudores (me deben)</h5>
+            <div class="d-flex flex-wrap gap-3">
+                @foreach (var deudor in deudores)
+                {
+                    <div class="card bg-secondary text-white" style="width: 12rem;">
+                        <div class="card-body">
+                            <h6 class="card-title">@deudor.Contraparte</h6>
+                            <p class="card-text">@deudor.SaldoPendiente.ToString("C")</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private DatosApp datos = null!;
+    private decimal totalCorriente;
+    private decimal totalOculto;
+    private decimal totalPorCobrar;
+    private decimal totalPorPagar;
+    private decimal totalGlobal;
+    private decimal totalAjeno;
+    private decimal totalTransporte;
+    private string mensajeError = "";
+
+    private List<CuentaSaldo> cuentasCorrientes = new();
+    private List<CuentaSaldo> cuentasOcultas = new();
+    private List<CuentaSaldo> cuentasAjenas = new();
+    private List<CuentaSaldo> cuentasTransporte = new();
+    private List<ResumenDeuda> acreedores = new();
+    private List<ResumenDeuda> deudores = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            datos = await ArchivoService.CargarAsync();
+            var saldos = CalcularSaldosCuentas(datos);
+            cuentasCorrientes = saldos.Where(c => c.Visibilidad == "Corriente").ToList();
+            cuentasOcultas = saldos.Where(c => c.Visibilidad == "Oculto").ToList();
+            cuentasAjenas = saldos.Where(c => c.Visibilidad == "Ajeno").ToList();
+            cuentasTransporte = saldos.Where(c => c.Visibilidad == "Transporte").ToList();
+
+            totalCorriente = cuentasCorrientes.Sum(c => c.Saldo);
+            totalOculto = cuentasOcultas.Sum(c => c.Saldo);
+            totalAjeno = cuentasAjenas.Sum(c => c.Saldo);
+            totalTransporte = cuentasTransporte.Sum(c => c.Saldo);
+            totalGlobal = totalCorriente + totalOculto;
+
+            (acreedores, deudores) = CalcularDeudasResumidas(datos);
+            totalPorCobrar = deudores.Sum(d => d.SaldoPendiente);
+            totalPorPagar = acreedores.Sum(d => d.SaldoPendiente);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ERROR EN BALANCE: {ex.Message}");
+            mensajeError = $"Error al cargar datos: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private List<CuentaSaldo> CalcularSaldosCuentas(DatosApp datos)
+    {
+        var dict = datos.Cuentas.ToDictionary(c => c.Id, c => new CuentaSaldo
+        {
+            Id = c.Id,
+            Nombre = c.Nombre,
+            Visibilidad = c.Visibilidad,
+            Saldo = c.SaldoInicial,
+            Color = c.Color
+        });
+        foreach (var mov in datos.Movimientos)
+        {
+            if (!dict.ContainsKey(mov.CuentaId)) continue;
+            if (mov.Tipo == "Ingreso")
+                dict[mov.CuentaId].Saldo += mov.Monto;
+            else if (mov.Tipo == "Egreso")
+                dict[mov.CuentaId].Saldo -= mov.Monto;
+        }
+        return dict.Values.ToList();
+    }
+
+    private (List<ResumenDeuda> acreedores, List<ResumenDeuda> deudores) CalcularDeudasResumidas(DatosApp datos)
+    {
+        var acreedores = new List<ResumenDeuda>();
+        var deudores = new List<ResumenDeuda>();
+
+        var prestamosRecibidos = datos.Movimientos
+            .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
+            .ToList();
+        foreach (var prestamo in prestamosRecibidos)
+        {
+            var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
+            if (persona == null) continue;
+            decimal pagado = datos.Movimientos
+                .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
+                .Sum(m => m.Monto);
+            decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
+            decimal pendiente = montoOriginal - pagado;
+            if (pendiente > 0)
+            {
+                var existente = acreedores.FirstOrDefault(a => a.Contraparte == persona.Nombre);
+                if (existente != null)
+                    existente.SaldoPendiente += pendiente;
+                else
+                    acreedores.Add(new ResumenDeuda { Contraparte = persona.Nombre, SaldoPendiente = pendiente });
+            }
+        }
+
+        var prestamosOtorgados = datos.Movimientos
+            .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
+            .ToList();
+        foreach (var prestamo in prestamosOtorgados)
+        {
+            var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
+            if (persona == null) continue;
+            decimal abonado = datos.Movimientos
+                .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
+                .Sum(m => m.Monto);
+            decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
+            decimal pendiente = montoOriginal - abonado;
+            if (pendiente > 0)
+            {
+                var existente = deudores.FirstOrDefault(d => d.Contraparte == persona.Nombre);
+                if (existente != null)
+                    existente.SaldoPendiente += pendiente;
+                else
+                    deudores.Add(new ResumenDeuda { Contraparte = persona.Nombre, SaldoPendiente = pendiente });
+            }
+        }
+
+        return (acreedores, deudores);
+    }
+
+    public class CuentaSaldo
+    {
+        public string Id { get; set; } = "";
+        public string Nombre { get; set; } = "";
+        public string Visibilidad { get; set; } = "";
+        public decimal Saldo { get; set; }
+        public string Color { get; set; } = "#FFFFFF";
+    }
+
+    public class ResumenDeuda
+    {
+        public string Contraparte { get; set; } = "";
+        public decimal SaldoPendiente { get; set; }
+    }
+}

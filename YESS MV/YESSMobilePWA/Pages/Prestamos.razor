@@ -1,0 +1,425 @@
+@page "/prestamos"
+@using YESSMobilePWA.Models
+@using YESSMobilePWA.Services
+@inject ArchivoService ArchivoService
+@inject IJSRuntime JS
+
+<!-- ===================================================================== -->
+<!-- 1. ENCABEZADO Y BOTÓN DE REFRESCO                                      -->
+<!-- ===================================================================== -->
+<h3>Préstamos y deudas</h3>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="CargarDeudas">Refrescar</button>
+</div>
+
+@if (acreedores == null || deudores == null || completados == null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    <!-- ================================================================= -->
+    <!-- 2. DEUDAS ACTIVAS (ACREEDORES Y DEUDORES) - VISTA PARA PC (TABLA) -->
+    <!-- ================================================================= -->
+    <div class="d-none d-md-block">
+        <!-- 2.1 Deudores (me deben) - tabla -->
+        <h5 class="text-warning mt-3">Deudores (me deben)</h5>
+        <table class="table table-dark table-striped">
+            <thead>
+                <tr>
+                    <th>Contraparte</th>
+                    <th>Monto total</th>
+                    <th>Abonado</th>
+                    <th>Saldo pendiente</th>
+                    <th>Progreso</th>
+                    <th>Referencia</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var deuda in deudores)
+                {
+                    <tr>
+                        <td>@deuda.Contraparte</td
+                        <td>@deuda.MontoTotal.ToString("C")</td
+                        <td>@deuda.Pagado.ToString("C")</td
+                        <td>@deuda.SaldoPendiente.ToString("C")</td
+                        <td>@(deuda.PlazosTotales.HasValue ? $"{deuda.PagosRealizados}/{deuda.PlazosTotales}" : "-")</td
+                        <td>@deuda.ReferenciaAuto</td
+                        <td>
+                            <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, false)">Registrar abono</button>
+                         </td
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Línea divisoria entre Deudores y Acreedores -->
+        <hr class="my-3" />
+
+        <!-- 2.2 Acreedores (debo) - tabla -->
+        <h5 class="text-danger mt-4">Acreedores (debo)</h5>
+        <table class="table table-dark table-striped">
+            <thead>
+                <tr>
+                    <th>Contraparte</th>
+                    <th>Monto total</th>
+                    <th>Pagado</th>
+                    <th>Saldo pendiente</th>
+                    <th>Progreso</th>
+                    <th>Referencia</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var deuda in acreedores)
+                {
+                    <tr>
+                        <td>@deuda.Contraparte</td
+                        <td>@deuda.MontoTotal.ToString("C")</td
+                        <td>@deuda.Pagado.ToString("C")</td
+                        <td>@deuda.SaldoPendiente.ToString("C")</td
+                        <td>@(deuda.PlazosTotales.HasValue ? $"{deuda.PagosRealizados}/{deuda.PlazosTotales}" : "-")</td
+                        <td>@deuda.ReferenciaAuto</td
+                        <td>
+                            <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, true)">Pagar</button>
+                         </td
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 3. DEUDAS ACTIVAS - VISTA PARA MÓVIL (TARJETAS)                    -->
+    <!-- ================================================================= -->
+    <div class="d-block d-md-none">
+        <!-- 3.1 Deudores (me deben) - tarjetas -->
+        <h5 class="text-warning mt-3">Deudores (me deben)</h5>
+        @foreach (var deuda in deudores)
+        {
+            <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @deuda.ColorCuenta;">
+                <div class="card-body">
+                    <h6 class="card-title">@deuda.Contraparte</h6>
+                    <p>
+                        Total: @deuda.MontoTotal.ToString("C")<br />
+                        Abonado: @deuda.Pagado.ToString("C")<br />
+                        Pendiente: @deuda.SaldoPendiente.ToString("C")<br />
+                        <strong>Referencia:</strong> @deuda.ReferenciaAuto
+                    </p>
+                    <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, false)">Registrar abono</button>
+                </div>
+            </div>
+        }
+
+         <!-- Línea divisoria entre Deudores y Acreedores -->
+        <hr class="my-3" />
+
+        <!-- 3.2 Acreedores (debo) - tarjetas -->
+        <h5 class="text-danger mt-3">Acreedores (debo)</h5>
+        @foreach (var deuda in acreedores)
+        {
+            <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @deuda.ColorCuenta;">
+                <div class="card-body">
+                    <h6 class="card-title">@deuda.Contraparte</h6>
+                    <p>
+                        Total: @deuda.MontoTotal.ToString("C")<br />
+                        Pagado: @deuda.Pagado.ToString("C")<br />
+                        Pendiente: @deuda.SaldoPendiente.ToString("C")<br />
+                        <strong>Referencia:</strong> @deuda.ReferenciaAuto
+                    </p>
+                    <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, true)">Pagar</button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- 4. PRÉSTAMOS COMPLETADOS                                            -->
+    <!-- ================================================================= -->
+    <hr class="my-4" />
+    <!-- Solo el título de esta sección va en color verde (text-success) -->
+    <h4 class="text-success">Préstamos completados</h4>
+
+    <!-- 4.1 Vista para PC (tabla) - sin color verde en las celdas, solo texto normal -->
+    <div class="d-none d-md-block">
+        <table class="table table-dark table-striped">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Contraparte</th>
+                    <th>Referencia</th>
+                    <th>Monto total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in completados)
+                {
+                    <tr>
+                        <td>@item.FechaCompletado?.ToString("dd/MM/yyyy")</td
+                        <td>@(item.Tipo == "Acreedor" ? "Deuda pagada" : "Préstamo cobrado")</td
+                        <td>@item.Contraparte</td
+                        <td>@item.ReferenciaAuto</td
+                        <td>@item.MontoTotal.ToString("C")</td
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 4.2 Vista para móvil (tarjetas) - sin color verde en los textos (solo normal) -->
+    <div class="d-block d-md-none">
+        @foreach (var item in completados)
+        {
+            <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @item.ColorCuenta;">
+                <div class="card-body">
+                    <h6 class="card-title">@item.Contraparte</h6>
+                    <p>
+                        Fecha: @item.FechaCompletado?.ToString("dd/MM/yyyy")<br />
+                        Tipo: @(item.Tipo == "Acreedor" ? "Deuda pagada" : "Préstamo cobrado")<br />
+                        Referencia: @item.ReferenciaAuto<br />
+                        Monto: @item.MontoTotal.ToString("C")
+                    </p>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- ================================================================= -->
+<!-- 5. MODAL PARA REGISTRAR PAGO                                      -->
+<!-- ================================================================= -->
+@if (modalVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">Registrar @(esPagoPropio ? "pago" : "abono")</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => modalVisible = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Monto</label>
+                        <input type="number" step="0.01" class="form-control" @bind="montoPago" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" class="form-control" @bind="fechaPago" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cuenta</label>
+                        <select class="form-select" @bind="cuentaIdPago">
+                            <option value="">Seleccione cuenta</option>
+                            @foreach (var cuenta in cuentasDisponibles)
+                            {
+                                <option value="@cuenta.Id">@cuenta.Nombre</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => modalVisible = false">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="GuardarPago">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    // =================================================================
+    // 6. VARIABLES PRIVADAS Y MÉTODOS AUXILIARES
+    // =================================================================
+    private List<DeudaPendiente>? acreedores;   // Lo que debo (préstamos recibidos)
+    private List<DeudaPendiente>? deudores;     // Lo que me deben (préstamos otorgados)
+    private List<DeudaPendiente>? completados;  // Préstamos ya saldados (saldo = 0)
+    private List<Cuenta> cuentasDisponibles = new();
+
+    private bool modalVisible = false;
+    private DeudaPendiente? deudaSeleccionada;
+    private bool esPagoPropio;
+    private decimal montoPago;
+    private DateTime fechaPago = DateTime.Today;
+    private string cuentaIdPago = "";
+
+    // =================================================================
+    // 7. CARGA INICIAL Y REFRESCO
+    // =================================================================
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDeudas();
+    }
+
+    private async Task CargarDeudas()
+    {
+        var datos = await ArchivoService.CargarAsync();
+        cuentasDisponibles = datos.Cuentas.ToList();
+        (acreedores, deudores, completados) = CalcularDeudasCompletas(datos);
+        StateHasChanged();
+    }
+
+    // =================================================================
+    // 8. CÁLCULO DE DEUDAS ACTIVAS Y COMPLETADAS (CON COLOR DE CUENTA Y FECHA)
+    // =================================================================
+    private (List<DeudaPendiente> acreedores, List<DeudaPendiente> deudores, List<DeudaPendiente> completados) CalcularDeudasCompletas(DatosApp datos)
+    {
+        var acreedores = new List<DeudaPendiente>();
+        var deudores = new List<DeudaPendiente>();
+        var completados = new List<DeudaPendiente>();
+
+        // 8.1 Préstamos recibidos (debo) - Ingreso + Préstamo
+        var prestamosRecibidos = datos.Movimientos
+            .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
+            .ToList();
+
+        foreach (var prestamo in prestamosRecibidos)
+        {
+            var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
+            if (persona == null) continue;
+
+            var cuenta = datos.Cuentas.FirstOrDefault(c => c.Id == prestamo.CuentaId);
+            string colorCuenta = cuenta?.Color ?? "#FFFFFF";
+
+            decimal pagado = datos.Movimientos
+                .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
+                .Sum(m => m.Monto);
+            int pagosRealizados = datos.Movimientos
+                .Count(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto);
+            decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
+            decimal pendiente = montoOriginal - pagado;
+
+            var deuda = new DeudaPendiente
+            {
+                Contraparte = persona.Nombre,
+                MontoTotal = montoOriginal,
+                Pagado = pagado,
+                SaldoPendiente = pendiente,
+                ReferenciaAuto = prestamo.ReferenciaAuto,
+                PersonaId = prestamo.PersonaId,
+                PagosRealizados = pagosRealizados,
+                PlazosTotales = prestamo.Plazos,
+                ColorCuenta = colorCuenta,
+                Tipo = "Acreedor"
+            };
+
+            if (pendiente > 0)
+                acreedores.Add(deuda);
+            else if (pendiente == 0 && pagado > 0)
+            {
+                var ultimoPago = datos.Movimientos
+                    .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
+                    .OrderByDescending(m => m.FechaOcurrido)
+                    .FirstOrDefault();
+                deuda.FechaCompletado = ultimoPago?.FechaOcurrido;
+                completados.Add(deuda);
+            }
+        }
+
+        // 8.2 Préstamos otorgados (me deben) - Egreso + Cargo
+        var prestamosOtorgados = datos.Movimientos
+            .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
+            .ToList();
+
+        foreach (var prestamo in prestamosOtorgados)
+        {
+            var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
+            if (persona == null) continue;
+
+            var cuenta = datos.Cuentas.FirstOrDefault(c => c.Id == prestamo.CuentaId);
+            string colorCuenta = cuenta?.Color ?? "#FFFFFF";
+
+            decimal abonado = datos.Movimientos
+                .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
+                .Sum(m => m.Monto);
+            int abonosRealizados = datos.Movimientos
+                .Count(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto);
+            decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
+            decimal pendiente = montoOriginal - abonado;
+
+            var deuda = new DeudaPendiente
+            {
+                Contraparte = persona.Nombre,
+                MontoTotal = montoOriginal,
+                Pagado = abonado,
+                SaldoPendiente = pendiente,
+                ReferenciaAuto = prestamo.ReferenciaAuto,
+                PersonaId = prestamo.PersonaId,
+                PagosRealizados = abonosRealizados,
+                PlazosTotales = prestamo.Plazos,
+                ColorCuenta = colorCuenta,
+                Tipo = "Deudor"
+            };
+
+            if (pendiente > 0)
+                deudores.Add(deuda);
+            else if (pendiente == 0 && abonado > 0)
+            {
+                var ultimoAbono = datos.Movimientos
+                    .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
+                    .OrderByDescending(m => m.FechaOcurrido)
+                    .FirstOrDefault();
+                deuda.FechaCompletado = ultimoAbono?.FechaOcurrido;
+                completados.Add(deuda);
+            }
+        }
+
+        // 8.3 Orden descendente por fecha de completado (más reciente primero)
+        completados = completados.OrderByDescending(c => c.FechaCompletado).ToList();
+        return (acreedores, deudores, completados);
+    }
+
+    // =================================================================
+    // 9. MANEJADORES DEL MODAL DE PAGO
+    // =================================================================
+    private void RegistrarPago(DeudaPendiente deuda, bool esPago)
+    {
+        deudaSeleccionada = deuda;
+        esPagoPropio = esPago;
+        montoPago = 0;
+        fechaPago = DateTime.Today;
+        cuentaIdPago = "";
+        modalVisible = true;
+    }
+
+    private async Task GuardarPago()
+    {
+        if (cuentaIdPago == "")
+        {
+            await JS.InvokeVoidAsync("alert", "Seleccione una cuenta.");
+            return;
+        }
+        if (montoPago <= 0)
+        {
+            await JS.InvokeVoidAsync("alert", "Monto inválido.");
+            return;
+        }
+
+        var datos = await ArchivoService.CargarAsync();
+        string tipo = esPagoPropio ? "Egreso" : "Ingreso";
+        string categoria = esPagoPropio ? "Pago" : "Abono";
+
+        var movimiento = new Movimiento(
+            fechaOcurrido: fechaPago,
+            tipo: tipo,
+            categoria: categoria,
+            cuentaId: cuentaIdPago,
+            categoriaId: null,
+            monto: montoPago,
+            personaId: deudaSeleccionada?.PersonaId,
+            descripcion: $"{categoria} de {deudaSeleccionada?.Contraparte} - {deudaSeleccionada?.ReferenciaAuto}",
+            montoFinal: null,
+            plazos: null
+        );
+        if (deudaSeleccionada != null)
+            movimiento.ReferenciaAuto = deudaSeleccionada.ReferenciaAuto;
+
+        datos.Movimientos.Add(movimiento);
+        await ArchivoService.GuardarAsync(datos);
+        await CargarDeudas();
+        modalVisible = false;
+    }
+}

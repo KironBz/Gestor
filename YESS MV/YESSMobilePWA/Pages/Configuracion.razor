@@ -1,0 +1,586 @@
+@page "/configuracion"
+@using YESSMobilePWA.Models
+@using YESSMobilePWA.Services
+@inject ArchivoService ArchivoService
+@inject IJSRuntime JS
+
+<h3>Configuración</h3>
+
+<ul class="nav nav-tabs">
+    <li class="nav-item">
+        <a class="nav-link @(tabActiva == "cuentas" ? "active" : "")" @onclick='() => tabActiva = "cuentas"'>Cuentas</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(tabActiva == "categorias" ? "active" : "")" @onclick='() => tabActiva = "categorias"'>Categorías</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(tabActiva == "personas" ? "active" : "")" @onclick='() => tabActiva = "personas"'>Personas</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link @(tabActiva == "importar" ? "active" : "")" @onclick='() => tabActiva = "importar"'>Opciones</a>
+    </li>
+</ul>
+
+<div class="mt-3">
+    @* ================== CUENTAS ================== *@
+    @if (tabActiva == "cuentas")
+    {
+        <h5>Cuentas</h5>
+
+        <!-- Vista para PC (tabla) -->
+        <div class="d-none d-md-block">
+            <table class="table table-dark table-striped">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Visibilidad</th>
+                        <th>Saldo actual</th>
+                        <th>Color</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cuenta in cuentas)
+                    {
+                        <tr>
+                            <td><input type="text" class="form-control form-control-sm" @bind="cuenta.Nombre" /></td>
+                            <td>
+                                <select class="form-select form-select-sm" @bind="cuenta.Visibilidad">
+                                    <option value="Corriente">Corriente</option>
+                                    <option value="Oculto">Oculto</option>
+                                    <option value="Ajeno">Ajeno</option>
+                                    <option value="Transporte">Transporte</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" class="form-control form-control-sm" @bind="cuenta.SaldoActual" />
+                            </td>
+                            <td><input type="color" class="form-control form-control-sm" style="width: 80px;" @bind="cuenta.Color" /></td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarCuenta(cuenta)">Editar</button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => EliminarCuenta(cuenta)">Eliminar</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Vista para móvil (tarjetas) -->
+        <div class="d-block d-md-none">
+            @foreach (var cuenta in cuentas)
+            {
+                <div class="card bg-dark text-white mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title">@cuenta.Nombre</h6>
+                        <p>Visibilidad: @cuenta.Visibilidad</p>
+                        <p>Saldo actual: @cuenta.SaldoActual.ToString("C")</p>
+                        <p>Color: <input type="color" @bind="cuenta.Color" style="width: 50px;" /></p>
+                        <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarCuenta(cuenta)">Editar</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => EliminarCuenta(cuenta)">Eliminar</button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <button class="btn btn-primary mt-2" @onclick="AbrirModalNuevaCuenta">+ Agregar cuenta</button>
+        <button class="btn btn-success mt-2" @onclick="GuardarCambios">Guardar cambios</button>
+    }
+
+    @* ================== CATEGORÍAS ================== *@
+    else if (tabActiva == "categorias")
+    {
+        <h5>Categorías</h5>
+        <!-- Tabla PC -->
+        <div class="d-none d-md-block">
+            <table class="table table-dark table-striped">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Tipo permitido</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var categoria in categorias)
+                    {
+                        <tr>
+                            <td><input type="text" class="form-control form-control-sm" @bind="categoria.Nombre" /></td>
+                            <td>
+                                <select class="form-select form-select-sm" @bind="categoria.TipoPermitido">
+                                    <option value="Ingreso">Ingreso</option>
+                                    <option value="Egreso">Egreso</option>
+                                    <option value="Ambos">Ambos</option>
+                                </select>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarCategoria(categoria)">Editar</button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => EliminarCategoria(categoria)">Eliminar</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <!-- Tarjetas móvil -->
+        <div class="d-block d-md-none">
+            @foreach (var categoria in categorias)
+            {
+                <div class="card bg-dark text-white mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title">@categoria.Nombre</h6>
+                        <p>Tipo permitido: @categoria.TipoPermitido</p>
+                        <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarCategoria(categoria)">Editar</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => EliminarCategoria(categoria)">Eliminar</button>
+                    </div>
+                </div>
+            }
+        </div>
+        <button class="btn btn-primary mt-2" @onclick="AbrirModalNuevaCategoria">+ Agregar categoría</button>
+        <button class="btn btn-success mt-2" @onclick="GuardarCambios">Guardar cambios</button>
+    }
+
+    @* ================== PERSONAS ================== *@
+    else if (tabActiva == "personas")
+    {
+        <h5>Personas</h5>
+        <!-- Tabla PC -->
+        <div class="d-none d-md-block">
+            <table class="table table-dark table-striped">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var persona in personas)
+                    {
+                        <tr>
+                            <td><input type="text" class="form-control form-control-sm" @bind="persona.Nombre" /></td>
+                            <td>
+                                <select class="form-select form-select-sm" @bind="persona.Tipo">
+                                    <option value="Deudor">Deudor</option>
+                                    <option value="Acreedor">Acreedor</option>
+                                    <option value="Ambos">Ambos</option>
+                                    <option value="Ninguno">Ninguno</option>
+                                </select>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarPersona(persona)">Editar</button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => EliminarPersona(persona)">Eliminar</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <!-- Tarjetas móvil -->
+        <div class="d-block d-md-none">
+            @foreach (var persona in personas)
+            {
+                <div class="card bg-dark text-white mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title">@persona.Nombre</h6>
+                        <p>Tipo: @persona.Tipo</p>
+                        <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarPersona(persona)">Editar</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => EliminarPersona(persona)">Eliminar</button>
+                    </div>
+                </div>
+            }
+        </div>
+        <button class="btn btn-primary mt-2" @onclick="AbrirModalNuevaPersona">+ Agregar persona</button>
+        <button class="btn btn-success mt-2" @onclick="GuardarCambios">Guardar cambios</button>
+    }
+
+    @* ================== IMPORTAR/EXPORTAR ================== *@
+    else if (tabActiva == "importar")
+    {
+        <h5>Importar/Exportar datos</h5>
+        <p>Selecciona un archivo JSON para importar (sobrescribe los datos actuales).</p>
+        <div class="mb-3">
+            <input type="file" id="fileInput" accept=".json" class="form-control" />
+        </div>
+        <button class="btn btn-primary" @onclick="ImportarArchivo">Importar</button>
+        <button class="btn btn-secondary" @onclick="ExportarArchivo">Exportar datos</button>
+        @if (!string.IsNullOrEmpty(mensaje))
+        {
+            <div class="alert alert-info mt-3">@mensaje</div>
+        }
+    }
+</div>
+
+<!-- MODAL PARA CUENTA -->
+@if (modalCuentaVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(cuentaEditando == null ? "Nueva cuenta" : "Editar cuenta")</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => modalCuentaVisible = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" @bind="cuentaFormulario.Nombre" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Visibilidad</label>
+                        <select class="form-select" @bind="cuentaFormulario.Visibilidad">
+                            <option value="Corriente">Corriente</option>
+                            <option value="Oculto">Oculto</option>
+                            <option value="Ajeno">Ajeno</option>
+                            <option value="Transporte">Transporte</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Saldo actual</label>
+                        <input type="number" step="0.01" class="form-control" @bind="cuentaFormulario.SaldoActual" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Color</label>
+                        <input type="color" class="form-control" @bind="cuentaFormulario.Color" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => modalCuentaVisible = false">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="GuardarCuentaModal">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- MODAL PARA CATEGORÍA -->
+@if (modalCategoriaVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(categoriaEditando == null ? "Nueva categoría" : "Editar categoría")</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => modalCategoriaVisible = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" @bind="categoriaFormulario.Nombre" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo permitido</label>
+                        <select class="form-select" @bind="categoriaFormulario.TipoPermitido">
+                            <option value="Ingreso">Ingreso</option>
+                            <option value="Egreso">Egreso</option>
+                            <option value="Ambos">Ambos</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => modalCategoriaVisible = false">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="GuardarCategoriaModal">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- MODAL PARA PERSONA -->
+@if (modalPersonaVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(personaEditando == null ? "Nueva persona" : "Editar persona")</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => modalPersonaVisible = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" @bind="personaFormulario.Nombre" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select" @bind="personaFormulario.Tipo">
+                            <option value="Deudor">Deudor</option>
+                            <option value="Acreedor">Acreedor</option>
+                            <option value="Ambos">Ambos</option>
+                            <option value="Ninguno">Ninguno</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => modalPersonaVisible = false">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="GuardarPersonaModal">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string tabActiva = "cuentas";
+    private List<Cuenta> cuentas = new();
+    private List<Categoria> categorias = new();
+    private List<Persona> personas = new();
+    private string mensaje = "";
+
+    // Variables para modales de cuenta
+    private bool modalCuentaVisible = false;
+    private Cuenta? cuentaEditando = null;
+    private CuentaFormula cuentaFormulario = new();
+
+    // Variables para modales de categoría
+    private bool modalCategoriaVisible = false;
+    private Categoria? categoriaEditando = null;
+    private CategoriaFormula categoriaFormulario = new();
+
+    // Variables para modales de persona
+    private bool modalPersonaVisible = false;
+    private Persona? personaEditando = null;
+    private PersonaFormula personaFormulario = new();
+
+    // Clases auxiliares para los formularios
+    private class CuentaFormula
+    {
+        public string Nombre { get; set; } = "";
+        public string Visibilidad { get; set; } = "Corriente";
+        public decimal SaldoActual { get; set; }
+        public string Color { get; set; } = "#FFFFFF";
+    }
+    private class CategoriaFormula
+    {
+        public string Nombre { get; set; } = "";
+        public string TipoPermitido { get; set; } = "Ambos";
+    }
+    private class PersonaFormula
+    {
+        public string Nombre { get; set; } = "";
+        public string Tipo { get; set; } = "Ninguno";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        var datos = await ArchivoService.CargarAsync();
+        cuentas = datos.Cuentas.ToList();
+        categorias = datos.Categorias.ToList();
+        personas = datos.Personas.ToList();
+        CalcularSaldosCuentas(datos);
+        StateHasChanged();
+    }
+
+    private void CalcularSaldosCuentas(DatosApp datos)
+    {
+        foreach (var cuenta in cuentas)
+        {
+            cuenta.SaldoActual = cuenta.SaldoInicial;
+        }
+        foreach (var mov in datos.Movimientos)
+        {
+            var cuenta = cuentas.FirstOrDefault(c => c.Id == mov.CuentaId);
+            if (cuenta == null) continue;
+            if (mov.Tipo == "Ingreso")
+                cuenta.SaldoActual += mov.Monto;
+            else if (mov.Tipo == "Egreso")
+                cuenta.SaldoActual -= mov.Monto;
+        }
+    }
+
+    private async Task GuardarCambios()
+    {
+        var datos = await ArchivoService.CargarAsync();
+        foreach (var cuenta in cuentas)
+        {
+            var movimientosNeto = datos.Movimientos
+                .Where(m => m.CuentaId == cuenta.Id)
+                .Sum(m => m.Tipo == "Ingreso" ? m.Monto : -m.Monto);
+            cuenta.SaldoInicial = cuenta.SaldoActual - movimientosNeto;
+        }
+        datos.Cuentas = cuentas;
+        datos.Categorias = categorias;
+        datos.Personas = personas;
+        await ArchivoService.GuardarAsync(datos);
+        mensaje = "Cambios guardados correctamente.";
+        StateHasChanged();
+    }
+
+    // ================== CUENTAS ==================
+    private void AbrirModalNuevaCuenta()
+    {
+        cuentaEditando = null;
+        cuentaFormulario = new CuentaFormula();
+        modalCuentaVisible = true;
+    }
+
+    private void AbrirModalEditarCuenta(Cuenta cuenta)
+    {
+        cuentaEditando = cuenta;
+        cuentaFormulario = new CuentaFormula
+        {
+            Nombre = cuenta.Nombre,
+            Visibilidad = cuenta.Visibilidad,
+            SaldoActual = cuenta.SaldoActual,
+            Color = cuenta.Color
+        };
+        modalCuentaVisible = true;
+    }
+
+    private async Task GuardarCuentaModal()
+    {
+        if (cuentaEditando == null)
+        {
+            // Nueva cuenta
+            var nueva = new Cuenta(cuentaFormulario.Nombre, cuentaFormulario.Visibilidad, 0);
+            nueva.Color = cuentaFormulario.Color;
+            nueva.SaldoActual = cuentaFormulario.SaldoActual;
+            cuentas.Add(nueva);
+        }
+        else
+        {
+            // Editar cuenta existente
+            cuentaEditando.Nombre = cuentaFormulario.Nombre;
+            cuentaEditando.Visibilidad = cuentaFormulario.Visibilidad;
+            cuentaEditando.SaldoActual = cuentaFormulario.SaldoActual;
+            cuentaEditando.Color = cuentaFormulario.Color;
+        }
+        modalCuentaVisible = false;
+        await GuardarCambios();
+    }
+
+    private async Task EliminarCuenta(Cuenta cuenta)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar la cuenta '{cuenta.Nombre}'?"))
+        {
+            cuentas.Remove(cuenta);
+            await GuardarCambios();
+        }
+    }
+
+    // ================== CATEGORÍAS ==================
+    private void AbrirModalNuevaCategoria()
+    {
+        categoriaEditando = null;
+        categoriaFormulario = new CategoriaFormula();
+        modalCategoriaVisible = true;
+    }
+
+    private void AbrirModalEditarCategoria(Categoria categoria)
+    {
+        categoriaEditando = categoria;
+        categoriaFormulario = new CategoriaFormula
+        {
+            Nombre = categoria.Nombre,
+            TipoPermitido = categoria.TipoPermitido
+        };
+        modalCategoriaVisible = true;
+    }
+
+    private async Task GuardarCategoriaModal()
+    {
+        if (categoriaEditando == null)
+        {
+            categorias.Add(new Categoria(categoriaFormulario.Nombre, categoriaFormulario.TipoPermitido));
+        }
+        else
+        {
+            categoriaEditando.Nombre = categoriaFormulario.Nombre;
+            categoriaEditando.TipoPermitido = categoriaFormulario.TipoPermitido;
+        }
+        modalCategoriaVisible = false;
+        await GuardarCambios();
+    }
+
+    private async Task EliminarCategoria(Categoria categoria)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar la categoría '{categoria.Nombre}'?"))
+        {
+            categorias.Remove(categoria);
+            await GuardarCambios();
+        }
+    }
+
+    // ================== PERSONAS ==================
+    private void AbrirModalNuevaPersona()
+    {
+        personaEditando = null;
+        personaFormulario = new PersonaFormula();
+        modalPersonaVisible = true;
+    }
+
+    private void AbrirModalEditarPersona(Persona persona)
+    {
+        personaEditando = persona;
+        personaFormulario = new PersonaFormula
+        {
+            Nombre = persona.Nombre,
+            Tipo = persona.Tipo
+        };
+        modalPersonaVisible = true;
+    }
+
+    private async Task GuardarPersonaModal()
+    {
+        if (personaEditando == null)
+        {
+            personas.Add(new Persona(personaFormulario.Nombre, personaFormulario.Tipo));
+        }
+        else
+        {
+            personaEditando.Nombre = personaFormulario.Nombre;
+            personaEditando.Tipo = personaFormulario.Tipo;
+        }
+        modalPersonaVisible = false;
+        await GuardarCambios();
+    }
+
+    private async Task EliminarPersona(Persona persona)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar a '{persona.Nombre}'?"))
+        {
+            personas.Remove(persona);
+            await GuardarCambios();
+        }
+    }
+
+    // ================== IMPORTAR/EXPORTAR ==================
+    private async Task ImportarArchivo()
+    {
+        var contenido = await JS.InvokeAsync<string>("getFileContent", "fileInput");
+        if (string.IsNullOrEmpty(contenido))
+        {
+            mensaje = "Selecciona un archivo JSON.";
+            return;
+        }
+        try
+        {
+            var datos = System.Text.Json.JsonSerializer.Deserialize<DatosApp>(contenido);
+            if (datos == null) throw new Exception("Archivo inválido");
+            await ArchivoService.GuardarAsync(datos);
+            await CargarDatos();
+            mensaje = "Importación exitosa.";
+        }
+        catch (Exception ex)
+        {
+            mensaje = $"Error: {ex.Message}";
+        }
+        StateHasChanged();
+    }
+
+    private async Task ExportarArchivo()
+    {
+        var datos = await ArchivoService.CargarAsync();
+        var json = System.Text.Json.JsonSerializer.Serialize(datos, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        await JS.InvokeVoidAsync("downloadFile", "yes_gestor_data.json", json);
+        mensaje = "Exportación iniciada.";
+    }
+}

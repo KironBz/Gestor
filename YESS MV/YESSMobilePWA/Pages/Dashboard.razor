@@ -55,7 +55,6 @@ else if (!string.IsNullOrEmpty(mensajeError))
 }
 else
 {
-    <!-- Fila 1: Barras (ingresos vs egresos) con paleta de colores fija -->
     <div class="row g-4 mb-4">
         <div class="col-md-6">
             <div class="card bg-dark text-white h-100">
@@ -64,19 +63,12 @@ else
                     @if (datosBarras.Any() && datosBarras.Sum(x => x.Monto) > 0)
                     {
                         <RadzenChart Style="height: 300px;">
-                            <ChartPalette>
-                                <RadzenChartPalette>
-                                    <RadzenChartColor>#28a745</RadzenChartColor>  <!-- Verde -->
-                                    <RadzenChartColor>#dc3545</RadzenChartColor>   <!-- Rojo -->
-                                </RadzenChartPalette>
-                            </ChartPalette>
-                            <RadzenBarSeries TItem="TotalItem" Data="@datosBarras" 
-                                             CategoryProperty="Categoria" ValueProperty="Monto" />
+                            <RadzenBarSeries TItem="TotalItem" Data="@datosBarras" CategoryProperty="Categoria" ValueProperty="Monto" />
                         </RadzenChart>
                     }
                     else
                     {
-                        <p class="text-center text-muted">Sin datos para mostrar</p>
+                        <p class="text-center text-muted">Sin datos</p>
                     }
                 </div>
             </div>
@@ -88,20 +80,18 @@ else
                     @if (datosPastelTotal.Any() && datosPastelTotal.Sum(x => x.Monto) > 0)
                     {
                         <RadzenChart Style="height: 300px;">
-                            <RadzenPieSeries TItem="TotalItem" Data="@datosPastelTotal" 
-                                             CategoryProperty="Categoria" ValueProperty="Monto" />
+                            <RadzenPieSeries TItem="TotalItem" Data="@datosPastelTotal" CategoryProperty="Categoria" ValueProperty="Monto" />
                         </RadzenChart>
                     }
                     else
                     {
-                        <p class="text-center text-muted">Sin datos para mostrar</p>
+                        <p class="text-center text-muted">Sin datos</p>
                     }
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Fila 2: Pasteles de categorías -->
     <div class="row g-4 mb-4">
         <div class="col-md-6">
             <div class="card bg-dark text-white h-100">
@@ -110,13 +100,12 @@ else
                     @if (datosIngresosCategoria.Any() && datosIngresosCategoria.Sum(x => x.Monto) > 0)
                     {
                         <RadzenChart Style="height: 300px;">
-                            <RadzenPieSeries TItem="CategoriaItem" Data="@datosIngresosCategoria" 
-                                             CategoryProperty="Categoria" ValueProperty="Monto" />
+                            <RadzenPieSeries TItem="CategoriaItem" Data="@datosIngresosCategoria" CategoryProperty="Categoria" ValueProperty="Monto" />
                         </RadzenChart>
                     }
                     else
                     {
-                        <p class="text-center text-muted">Sin ingresos registrados</p>
+                        <p class="text-center text-muted">Sin ingresos</p>
                     }
                 </div>
             </div>
@@ -128,20 +117,18 @@ else
                     @if (datosEgresosCategoria.Any() && datosEgresosCategoria.Sum(x => x.Monto) > 0)
                     {
                         <RadzenChart Style="height: 300px;">
-                            <RadzenPieSeries TItem="CategoriaItem" Data="@datosEgresosCategoria" 
-                                             CategoryProperty="Categoria" ValueProperty="Monto" />
+                            <RadzenPieSeries TItem="CategoriaItem" Data="@datosEgresosCategoria" CategoryProperty="Categoria" ValueProperty="Monto" />
                         </RadzenChart>
                     }
                     else
                     {
-                        <p class="text-center text-muted">Sin egresos registrados</p>
+                        <p class="text-center text-muted">Sin egresos</p>
                     }
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Fila 3: Línea de gastos mensuales (con scroll) -->
     <div class="row g-4">
         <div class="col-12">
             <div class="card bg-dark text-white">
@@ -151,14 +138,13 @@ else
                     {
                         <div style="overflow-x: auto; width: 100%;">
                             <RadzenChart Style="min-width: 400px; height: 300px;">
-                                <RadzenLineSeries TItem="GastoMensual" Data="@datosLinea" 
-                                                  CategoryProperty="Mes" ValueProperty="Gasto" />
+                                <RadzenLineSeries TItem="GastoMensual" Data="@datosLinea" CategoryProperty="Mes" ValueProperty="Gasto" />
                             </RadzenChart>
                         </div>
                     }
                     else
                     {
-                        <p class="text-center text-muted">No hay datos de gastos mensuales</p>
+                        <p class="text-center text-muted">Sin datos</p>
                     }
                 </div>
             </div>
@@ -194,48 +180,27 @@ else
                     .ToList();
                 await AplicarFiltros();
             }
-            else
-            {
-                mensajeError = "No se pudieron cargar los datos o el archivo está vacío.";
-            }
+            else mensajeError = "No se pudieron cargar los datos.";
         }
-        catch (Exception ex)
-        {
-            mensajeError = $"Error al cargar datos: {ex.Message}";
-        }
+        catch (Exception ex) { mensajeError = $"Error: {ex.Message}"; }
     }
 
     private async Task AplicarFiltros()
     {
         try
         {
-            mensajeError = null;
             if (datos?.Movimientos == null) return;
-
             var movimientos = datos.Movimientos
-                .Where(m => !string.IsNullOrEmpty(m.Categoria) && m.Categoria != "Transferencia")
-                .ToList();
+                .Where(m => !string.IsNullOrEmpty(m.Categoria) && m.Categoria != "Transferencia").ToList();
+            if (!movimientos.Any()) { LimpiarDatos(); return; }
 
-            if (!movimientos.Any())
-            {
-                LimpiarDatos();
-                return;
-            }
-
-            // Año
             if (anioSeleccionado != "todos")
-            {
-                int anio = int.Parse(anioSeleccionado);
-                movimientos = movimientos.Where(m => m.FechaOcurrido.Year == anio).ToList();
-            }
+                movimientos = movimientos.Where(m => m.FechaOcurrido.Year == int.Parse(anioSeleccionado)).ToList();
 
-            // Período
             if (periodoSeleccionado != "total")
             {
-                if (periodoSeleccionado == "semestre1")
-                    movimientos = movimientos.Where(m => m.FechaOcurrido.Month <= 6).ToList();
-                else if (periodoSeleccionado == "semestre2")
-                    movimientos = movimientos.Where(m => m.FechaOcurrido.Month >= 7).ToList();
+                if (periodoSeleccionado == "semestre1") movimientos = movimientos.Where(m => m.FechaOcurrido.Month <= 6).ToList();
+                else if (periodoSeleccionado == "semestre2") movimientos = movimientos.Where(m => m.FechaOcurrido.Month >= 7).ToList();
                 else if (periodoSeleccionado.StartsWith("mes"))
                 {
                     int mes = int.Parse(periodoSeleccionado.Substring(3));
@@ -243,11 +208,7 @@ else
                 }
             }
 
-            if (!movimientos.Any())
-            {
-                LimpiarDatos();
-                return;
-            }
+            if (!movimientos.Any()) { LimpiarDatos(); return; }
 
             decimal totalIngresos = movimientos.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto);
             decimal totalEgresos = movimientos.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
@@ -259,31 +220,20 @@ else
             };
             datosPastelTotal = datosBarras.Select(x => new TotalItem { Categoria = x.Categoria, Monto = x.Monto }).ToList();
 
-            // Categorías (sin porcentaje en la etiqueta por ahora)
-            datosIngresosCategoria = movimientos
-                .Where(m => m.Tipo == "Ingreso")
+            datosIngresosCategoria = movimientos.Where(m => m.Tipo == "Ingreso")
                 .GroupBy(m => m.Categoria)
                 .Select(g => new CategoriaItem { Categoria = g.Key, Monto = (double)g.Sum(m => m.Monto) })
-                .OrderByDescending(x => x.Monto)
-                .ToList();
+                .OrderByDescending(x => x.Monto).ToList();
 
-            datosEgresosCategoria = movimientos
-                .Where(m => m.Tipo == "Egreso")
+            datosEgresosCategoria = movimientos.Where(m => m.Tipo == "Egreso")
                 .GroupBy(m => m.Categoria)
                 .Select(g => new CategoriaItem { Categoria = g.Key, Monto = (double)g.Sum(m => m.Monto) })
-                .OrderByDescending(x => x.Monto)
-                .ToList();
+                .OrderByDescending(x => x.Monto).ToList();
 
             await ConstruirLineaGastos(movimientos);
-        }
-        catch (Exception ex)
-        {
-            mensajeError = $"Error al filtrar: {ex.Message}";
-        }
-        finally
-        {
             StateHasChanged();
         }
+        catch (Exception ex) { mensajeError = $"Filtro: {ex.Message}"; }
     }
 
     private async Task ConstruirLineaGastos(List<Movimiento> movimientos)
@@ -296,20 +246,14 @@ else
             {
                 var inicio = new DateTime(anio, mes, 1);
                 var fin = inicio.AddMonths(1).AddDays(-1);
-                decimal gasto = movimientos
-                    .Where(m => m.Tipo == "Egreso" && m.FechaOcurrido >= inicio && m.FechaOcurrido <= fin)
-                    .Sum(m => m.Monto);
+                decimal gasto = movimientos.Where(m => m.Tipo == "Egreso" && m.FechaOcurrido >= inicio && m.FechaOcurrido <= fin).Sum(m => m.Monto);
                 lineData.Add(new GastoMensual { Mes = inicio.ToString("MMM"), Gasto = (double)gasto });
             }
             datosLinea = lineData;
         }
         else
         {
-            if (!movimientos.Any())
-            {
-                datosLinea = new List<GastoMensual>();
-                return;
-            }
+            if (!movimientos.Any()) { datosLinea = new(); return; }
             var fechas = movimientos.Select(m => m.FechaOcurrido);
             var primera = fechas.Min();
             var ultima = fechas.Max();
@@ -320,9 +264,7 @@ else
             {
                 var inicio = fecha;
                 var fin = inicio.AddMonths(1).AddDays(-1);
-                decimal gasto = movimientos
-                    .Where(m => m.Tipo == "Egreso" && m.FechaOcurrido >= inicio && m.FechaOcurrido <= fin)
-                    .Sum(m => m.Monto);
+                decimal gasto = movimientos.Where(m => m.Tipo == "Egreso" && m.FechaOcurrido >= inicio && m.FechaOcurrido <= fin).Sum(m => m.Monto);
                 lineData.Add(new GastoMensual { Mes = inicio.ToString(formato), Gasto = (double)gasto });
                 fecha = fecha.AddMonths(1);
             }
@@ -333,11 +275,11 @@ else
 
     private void LimpiarDatos()
     {
-        datosBarras.Clear();
-        datosPastelTotal.Clear();
-        datosIngresosCategoria.Clear();
-        datosEgresosCategoria.Clear();
-        datosLinea.Clear();
+        datosBarras.Clear(); datosPastelTotal.Clear(); datosIngresosCategoria.Clear(); datosEgresosCategoria.Clear(); datosLinea.Clear();
         StateHasChanged();
     }
+
+    public class TotalItem { public string Categoria { get; set; } = ""; public double Monto { get; set; } }
+    public class CategoriaItem { public string Categoria { get; set; } = ""; public double Monto { get; set; } }
+    public class GastoMensual { public string Mes { get; set; } = ""; public double Gasto { get; set; } }
 }

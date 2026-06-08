@@ -59,7 +59,7 @@ else
         <div class="col-md-6">
             <div class="card bg-dark text-white h-100">
                 <div class="card-body">
-                    <h5 class="card-title text-center">Ingresos vs Egresos totales</h5>
+                    <h5 class="card-title text-center">Ingresos vs Egresos</h5>
                     @if (datosBarras.Any() && datosBarras.Sum(x => x.Monto) > 0)
                     {
                         <RadzenChart Style="height: 300px;">
@@ -76,7 +76,7 @@ else
         <div class="col-md-6">
             <div class="card bg-dark text-white h-100">
                 <div class="card-body">
-                    <h5 class="card-title text-center">Proporción ingresos/egresos</h5>
+                    <h5 class="card-title text-center">Proporción Ingresos - Egresos</h5>
                     @if (datosPastelTotal.Any() && datosPastelTotal.Sum(x => x.Monto) > 0)
                     {
                         <RadzenChart Style="height: 300px;">
@@ -133,7 +133,7 @@ else
         <div class="col-12">
             <div class="card bg-dark text-white">
                 <div class="card-body">
-                    <h5 class="card-title text-center">Evolución de gastos mensuales</h5>
+                    <h5 class="card-title text-center">Evolución Gastos Mensual</h5>
                     @if (datosLinea.Any() && datosLinea.Any(d => d.Gasto > 0))
                     {
                         <div style="overflow-x: auto; width: 100%;">

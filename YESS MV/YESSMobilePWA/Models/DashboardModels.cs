@@ -4,6 +4,7 @@ namespace YESSMobilePWA.Models
     {
         public string Categoria { get; set; } = "";
         public double Monto { get; set; }
+        public string? Color { get; set; }
     }
 
     public class CategoriaItem

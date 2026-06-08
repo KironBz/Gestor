@@ -63,7 +63,7 @@ else
                     @if (datosBarras.Any() && datosBarras.Sum(x => x.Monto) > 0)
                     {
                         <RadzenChart Style="height: 300px;">
-                            <RadzenBarSeries TItem="TotalItem" Data="@datosBarras" CategoryProperty="Categoria" ValueProperty="Monto" />
+                            <RadzenColumnSeries TItem="TotalItem" Data="@datosBarras" CategoryProperty="Categoria" ValueProperty="Monto" />
                         </RadzenChart>
                     }
                     else

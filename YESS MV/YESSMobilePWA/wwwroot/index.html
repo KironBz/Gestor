@@ -20,7 +20,7 @@
 
     <!-- Iconos y manifest PWA -->
     <link rel="icon" type="image/png" href="favicon.png" />
-    <link href="manifest.webmanifest" rel="manifest" />
+    <!-- <link href="manifest.webmanifest" rel="manifest" /> -->
     <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
     <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
 
@@ -51,8 +51,8 @@
     <!-- Blazor WebAssembly runtime -->
     <script src="_framework/blazor.webassembly.js"></script>
 
-    <!-- Service Worker para PWA -->
-    <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
+    <!-- Service Worker para PWA (comentado) -->
+    <!-- <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script> -->
 
     <!-- Funciones auxiliares para importar/exportar JSON -->
     <script>
@@ -78,6 +78,170 @@
             URL.revokeObjectURL(link.href);
         };
     </script>
+
+    <!-- Script mejorado para tooltips manuales con reintentos -->
+    <script>
+    window.initCustomTooltips = function (datosBarras, datosPastel, datosIngresos, datosEgresos, datosLinea) {
+        console.log("initCustomTooltips llamado con datos:", datosBarras, datosPastel);
+
+        // Eliminar tooltip anterior si existe
+        var oldTip = document.getElementById('customTooltip');
+        if (oldTip) oldTip.remove();
+
+        // Crear el div del tooltip con estilos visibles
+        var tooltip = document.createElement('div');
+        tooltip.id = 'customTooltip';
+        tooltip.style.position = 'absolute';
+        tooltip.style.backgroundColor = '#000000';   // fondo negro para contraste
+        tooltip.style.color = '#ffffff';
+        tooltip.style.padding = '8px 12px';
+        tooltip.style.borderRadius = '8px';
+        tooltip.style.fontSize = '14px';
+        tooltip.style.fontFamily = 'sans-serif';
+        tooltip.style.border = '1px solid #28a745';
+        tooltip.style.pointerEvents = 'none';
+        tooltip.style.zIndex = '999999';
+        tooltip.style.whiteSpace = 'nowrap';
+        tooltip.style.boxShadow = '2px 2px 10px rgba(0,0,0,0.5)';
+        tooltip.style.display = 'none';
+        document.body.appendChild(tooltip);
+        console.log("Tooltip creado en el DOM");
+
+        function mostrarTooltip(evt, texto) {
+            console.log("mostrarTooltip llamado con texto:", texto);
+            tooltip.innerHTML = texto;
+            tooltip.style.left = (evt.clientX + 15) + 'px';
+            tooltip.style.top = (evt.clientY - 35) + 'px';
+            tooltip.style.display = 'block';
+        }
+        function ocultarTooltip() {
+            tooltip.style.display = 'none';
+        }
+
+        // Función para asignar eventos a una lista de elementos
+        function asignarEventos(elementos, obtenerTexto) {
+            elementos.forEach(function(el, idx) {
+                if (el.getAttribute('data-tooltip') === 'true') return;
+                el.setAttribute('data-tooltip', 'true');
+                // Usamos mouseenter en lugar de mousemove para asegurar que se dispare
+                el.addEventListener('mouseenter', function(e) {
+                    var texto = obtenerTexto(idx, e);
+                    if (texto) mostrarTooltip(e, texto);
+                });
+                el.addEventListener('mouseleave', function() {
+                    ocultarTooltip();
+                });
+                console.log("Eventos asignados a elemento", idx, el);
+            });
+        }
+
+        // Buscar los elementos que representan las barras (paths con fill verde o rojo)
+        function encontrarBarras() {
+            var allPaths = document.querySelectorAll('path');
+            var barras = [];
+            allPaths.forEach(function(p) {
+                var fill = p.getAttribute('fill');
+                if (fill === '#28a745' || fill === '#dc3545') {
+                    barras.push(p);
+                }
+            });
+            console.log("Barras encontradas (por color):", barras.length);
+            return barras;
+        }
+
+        // Buscar porciones de pastel (pueden ser paths o elementos específicos)
+        function encontrarPasteles() {
+            // Intentamos con .rz-pie-slice o fallback a paths con fill no verde/rojo
+            var slices = document.querySelectorAll('.rz-pie-slice');
+            if (slices.length === 0) {
+                // Buscar paths que no sean las barras
+                var allPaths = document.querySelectorAll('path');
+                slices = Array.from(allPaths).filter(p => {
+                    var fill = p.getAttribute('fill');
+                    return fill && fill !== '#28a745' && fill !== '#dc3545';
+                });
+            }
+            console.log("Porciones de pastel encontradas:", slices.length);
+            return slices;
+        }
+
+        // Buscar marcadores de línea (círculos o paths pequeños)
+        function encontrarMarcadores() {
+            var markers = document.querySelectorAll('.rz-marker, .rz-line-marker, circle');
+            console.log("Marcadores de línea encontrados:", markers.length);
+            return markers;
+        }
+
+        // Función de reintento hasta que aparezcan los elementos
+        var maxIntentos = 30;
+        var intentos = 0;
+        var intervalo = setInterval(function() {
+            var barras = encontrarBarras();
+            var pasteles = encontrarPasteles();
+            var marcadores = encontrarMarcadores();
+
+            if ((barras.length > 0 || pasteles.length > 0 || marcadores.length > 0) || intentos >= maxIntentos) {
+                clearInterval(intervalo);
+                if (barras.length >= 2) {
+                    asignarEventos(barras, function(idx) {
+                        if (!datosBarras || idx >= datosBarras.length) return null;
+                        var item = datosBarras[idx];
+                        var monto = item.Monto.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+                        return item.Categoria + ': ' + monto;
+                    });
+                }
+                if (pasteles.length > 0) {
+                    asignarEventos(pasteles, function(idx, evt) {
+                        // Identificar a qué gráfica pertenece
+                        var container = evt.target.closest('.card');
+                        if (!container) return null;
+                        var titulo = container.querySelector('.card-title')?.innerText || '';
+                        var dataIdx = idx; // simplificado, pero puedes mapear según orden
+                        if (titulo.includes('Proporción Ingresos - Egresos')) {
+                            if (datosPastel && datosPastel[dataIdx]) {
+                                var item = datosPastel[dataIdx];
+                                var total = datosPastel.reduce((s,i)=>s + i.Monto, 0);
+                                var pct = total > 0 ? (item.Monto / total) * 100 : 0;
+                                var monto = item.Monto.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+                                return `${item.Categoria}: ${monto} (${pct.toFixed(1)}%)`;
+                            }
+                        } else if (titulo.includes('Ingresos por Categoría')) {
+                            if (datosIngresos && datosIngresos[dataIdx]) {
+                                var item = datosIngresos[dataIdx];
+                                var total = datosIngresos.reduce((s,i)=>s + i.Monto, 0);
+                                var pct = total > 0 ? (item.Monto / total) * 100 : 0;
+                                var monto = item.Monto.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+                                return `${item.Categoria}: ${monto} (${pct.toFixed(1)}%)`;
+                            }
+                        } else if (titulo.includes('Egresos por Categoría')) {
+                            if (datosEgresos && datosEgresos[dataIdx]) {
+                                var item = datosEgresos[dataIdx];
+                                var total = datosEgresos.reduce((s,i)=>s + i.Monto, 0);
+                                var pct = total > 0 ? (item.Monto / total) * 100 : 0;
+                                var monto = item.Monto.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+                                return `${item.Categoria}: ${monto} (${pct.toFixed(1)}%)`;
+                            }
+                        }
+                        return null;
+                    });
+                }
+                if (marcadores.length > 0) {
+                    asignarEventos(marcadores, function(idx) {
+                        if (datosLinea && datosLinea[idx]) {
+                            var item = datosLinea[idx];
+                            var monto = item.Gasto.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
+                            return `${item.Mes}: ${monto}`;
+                        }
+                        return null;
+                    });
+                }
+                if (intentos >= maxIntentos) console.warn('No se encontraron elementos después de reintentar');
+            }
+            intentos++;
+        }, 200);
+    };
+</script>
+
 </body>
 
 </html>

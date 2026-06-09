@@ -3,6 +3,10 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using YESSMobilePWA;
 using YESSMobilePWA.Services;
 using Radzen; // ← Agregar este using
+using System.Globalization;
+
+CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("es-MX");
+CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("es-MX");
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");

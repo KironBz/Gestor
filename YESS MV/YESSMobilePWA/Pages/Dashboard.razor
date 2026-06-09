@@ -5,6 +5,7 @@
 @using Radzen.Blazor
 @using System.Globalization
 @inject ArchivoService ArchivoService
+@inject IJSRuntime JSRuntime
 
 <h3 class="text-center mb-4">Dashboard Financiero</h3>
 
@@ -63,15 +64,20 @@ else
                     @if (datosBarras.Any() && datosBarras.Sum(x => x.Monto) > 0)
                     {
                         <RadzenChart Style="height: 300px;">
+                            @* <RadzenChartTooltipOptions Shared="true" /> *@  @* Eliminado *@
+                            
                             <RadzenColumnSeries TItem="TotalItem"
                                                 Data="@datosBarras"
                                                 CategoryProperty="Categoria"
                                                 ValueProperty="Monto"
-                                                Title="Monto"
+                                                Title="Monto Total"
                                                 Fills="@paletaColoresBarras" />
                             <RadzenColumnOptions Radius="5" />
                             <RadzenCategoryAxis Padding="20" />
-                            <RadzenValueAxis Min="0" />
+                            
+                            <RadzenValueAxis Min="0" Formatter="@FormatearMonedaEje">
+                                <RadzenGridLines Visible="true" />
+                            </RadzenValueAxis>
                         </RadzenChart>
                     }
                     else
@@ -89,6 +95,7 @@ else
                     @if (datosPastelTotal.Any() && datosPastelTotal.Sum(x => x.Monto) > 0)
                     {
                         <RadzenChart Style="height: 300px;">
+                            @* <RadzenChartTooltipOptions Shared="false" /> *@  @* Eliminado *@
                             <RadzenPieSeries TItem="TotalItem" 
                                              Data="@datosPastelTotal" 
                                              CategoryProperty="Categoria" 
@@ -157,12 +164,15 @@ else
                     @if (datosLinea.Any() && datosLinea.Any(d => d.Gasto > 0))
                     {
                         <RadzenChart Style="height: 300px;">
+                            @* <RadzenChartTooltipOptions Shared="true" /> *@  @* Eliminado *@
                             <RadzenLineSeries TItem="GastoMensual" 
                                               Data="@datosLinea" 
                                               CategoryProperty="Mes" 
                                               ValueProperty="Gasto" />
                             <RadzenCategoryAxis />
-                            <RadzenValueAxis />
+                            <RadzenValueAxis Formatter="@FormatearMonedaEje">
+                                <RadzenGridLines Visible="true" />
+                            </RadzenValueAxis>
                         </RadzenChart>
                     }
                     else
@@ -190,6 +200,15 @@ else
     private List<GastoMensual> datosLinea = new();
 
     private readonly string[] paletaColoresBarras = new string[] { "#28a745", "#dc3545" };
+
+    private string FormatearMonedaEje(object value)
+    {
+        if (value is double numero)
+        {
+            return numero.ToString("C0", CultureInfo.GetCultureInfo("es-MX"));
+        }
+        return value?.ToString() ?? string.Empty;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -222,6 +241,19 @@ else
             estaCargando = false;
         }
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!estaCargando && datos != null)
+        {
+            // Esperar un poco a que Radzen termine de dibujar
+            await Task.Delay(500);
+            await JSRuntime.InvokeVoidAsync("initCustomTooltips", 
+                datosBarras, datosPastelTotal, datosIngresosCategoria, datosEgresosCategoria, datosLinea);
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+    
 
     private void AplicarFiltros()
     {
@@ -331,8 +363,6 @@ else
         datosLinea.Clear();
     }
 
-    // Si estas clases ya existen en tu proyecto en Models/, elimina estas líneas.
-    // De lo contrario, déjalas aquí para que el componente compile.
     public class TotalItem
     {
         public string Categoria { get; set; } = string.Empty;

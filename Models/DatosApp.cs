@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace YESSMobilePWA.Models
+namespace YESS.Models
 {
     public class DatosApp
     {
@@ -25,6 +25,10 @@ namespace YESSMobilePWA.Models
 
         [JsonPropertyName("metas")]
         public List<Meta> Metas { get; set; } = new();
+
+        // ✅ Agregado: Lista de deudas pendientes (antes comentada o ausente)
+        [JsonPropertyName("deudasPendientes")]
+        public List<DeudaPendiente> DeudasPendientes { get; set; } = new();
 
         public override string ToString() => $"Movimientos: {Movimientos.Count}, Cuentas: {Cuentas.Count}, Categorías: {Categorias.Count}, Personas: {Personas.Count}";
     }

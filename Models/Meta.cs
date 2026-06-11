@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace YESSMobilePWA.Models
+namespace YESS.Models
 {
     public class Meta
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
 
         [JsonPropertyName("nombre")]
-        public string Nombre { get; set; }
+        public string Nombre { get; set; } = string.Empty;
 
         [JsonPropertyName("montoObjetivo")]
         public decimal MontoObjetivo { get; set; }
@@ -21,10 +21,10 @@ namespace YESSMobilePWA.Models
         public DateTime FechaCreacion { get; set; }
 
         [JsonPropertyName("completada")]
-        public bool Completada { get; set; }  // Meta lograda
+        public bool Completada { get; set; }
 
         [JsonPropertyName("archivada")]
-        public bool Archivada { get; set; }   // Meta abandonada
+        public bool Archivada { get; set; }
 
         [JsonPropertyName("fechaCompletada")]
         public DateTime? FechaCompletada { get; set; }
@@ -47,6 +47,6 @@ namespace YESSMobilePWA.Models
             Prioridad = prioridad;
         }
 
-        public decimal AhorradoActual { get; set; } // No se guarda, se calcula en tiempo real
+        public decimal AhorradoActual { get; set; }
     }
 }

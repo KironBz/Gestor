@@ -1,12 +1,12 @@
 ﻿<div data-bs-theme="dark">
     <Router AppAssembly="typeof(App).Assembly">
         <Found Context="routeData">
-            <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+            <RouteView RouteData="routeData" DefaultLayout="typeof(YESS.Components.Layout.MainLayout)" />
             <FocusOnNavigate RouteData="routeData" Selector="h1" />
         </Found>
         <NotFound>
             <PageTitle>Not found</PageTitle>
-            <LayoutView Layout="typeof(Layout.MainLayout)">
+            <LayoutView Layout="typeof(YESS.Components.Layout.MainLayout)">
                 <p role="alert">Sorry, there's nothing at this address.</p>
             </LayoutView>
         </NotFound>

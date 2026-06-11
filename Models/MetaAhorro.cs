@@ -1,24 +1,24 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace YESSMobilePWA.Models
+namespace YESS.Models
 {
     public class MetaAhorro
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
 
         [JsonPropertyName("referencia")]
-        public string Referencia { get; set; }
+        public string Referencia { get; set; } = string.Empty;
 
         [JsonPropertyName("nombre")]
-        public string Nombre { get; set; }
+        public string Nombre { get; set; } = string.Empty;
 
         [JsonPropertyName("montoObjetivo")]
         public decimal MontoObjetivo { get; set; }
 
         [JsonPropertyName("ahorradoManual")]
-        public decimal AhorradoManual { get; set; }  // Si el usuario no asigna movimientos
+        public decimal AhorradoManual { get; set; }
 
         [JsonPropertyName("fechaCreacion")]
         public DateTime FechaCreacion { get; set; }
@@ -29,16 +29,14 @@ namespace YESSMobilePWA.Models
             FechaCreacion = DateTime.Now;
         }
 
-        public MetaAhorro(string referencia, string nombre, decimal montoObjetivo)
+        public MetaAhorro(string referencia, string nombre, decimal montoObjetivo) : this()
         {
-            Id = Guid.NewGuid().ToString();
             Referencia = referencia;
             Nombre = nombre;
             MontoObjetivo = montoObjetivo;
             AhorradoManual = 0;
-            FechaCreacion = DateTime.Now;
         }
 
-        public decimal AhorradoTotal => AhorradoManual; // Por ahora solo manual. Luego sumaremos movimientos opcionales
+        public decimal AhorradoTotal => AhorradoManual;
     }
 }

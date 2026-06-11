@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace YESSMobilePWA.Models
+namespace YESS.Models
 {
     public class Persona
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
 
-        private string _nombre;
+        private string _nombre = string.Empty;
         [JsonPropertyName("nombre")]
         public string Nombre
         {
@@ -21,7 +21,7 @@ namespace YESSMobilePWA.Models
             }
         }
 
-        private string _tipo;
+        private string _tipo = "Ninguno";
         [JsonPropertyName("tipo")]
         public string Tipo
         {

@@ -1,8 +1,9 @@
 ﻿using Microsoft.JSInterop;
 using System.Text.Json;
-using YESSMobilePWA.Models;
+using YESS.Models;                    // ← cambiado
+using YESS.Services;                  // ← el namespace debe coincidir con la carpeta
 
-namespace YESSMobilePWA.Services
+namespace YESS.Services               // ← cambiado (antes YESSMobilePWA.Services)
 {
     public class ArchivoService
     {

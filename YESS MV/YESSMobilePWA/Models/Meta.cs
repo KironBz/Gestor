@@ -21,16 +21,24 @@ namespace YESSMobilePWA.Models
         public DateTime FechaCreacion { get; set; }
 
         [JsonPropertyName("completada")]
-        public bool Completada { get; set; }  // Meta lograda
+        public bool Completada { get; set; }
 
         [JsonPropertyName("archivada")]
-        public bool Archivada { get; set; }   // Meta abandonada
+        public bool Archivada { get; set; }
 
         [JsonPropertyName("fechaCompletada")]
         public DateTime? FechaCompletada { get; set; }
 
         [JsonPropertyName("fechaArchivada")]
         public DateTime? FechaArchivada { get; set; }
+
+        // Campo opcional para referencia (útil si se importa desde MetaAhorro)
+        [JsonPropertyName("referencia")]
+        public string Referencia { get; set; }
+
+        // Este campo NO se guarda en JSON, se calcula en tiempo real
+        [JsonIgnore]
+        public decimal AhorradoActual { get; set; }
 
         public Meta()
         {
@@ -46,7 +54,5 @@ namespace YESSMobilePWA.Models
             MontoObjetivo = montoObjetivo;
             Prioridad = prioridad;
         }
-
-        public decimal AhorradoActual { get; set; } // No se guarda, se calcula en tiempo real
     }
 }

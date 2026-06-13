@@ -5,6 +5,9 @@ namespace YESSMobilePWA.Models
 {
     public class DatosApp
     {
+        [JsonPropertyName("version")]
+        public int Version { get; set; } = 0;   // ← NUEVO: control de migraciones
+
         [JsonPropertyName("movimientos")]
         public List<Movimiento> Movimientos { get; set; } = new();
 
@@ -17,8 +20,9 @@ namespace YESSMobilePWA.Models
         [JsonPropertyName("personas")]
         public List<Persona> Personas { get; set; } = new();
 
-        [JsonPropertyName("metasAhorro")]
-        public List<MetaAhorro> MetasAhorro { get; set; } = new();
+        // Elimina o comenta metasAhorro – ya no existe
+        // [JsonPropertyName("metasAhorro")]
+        // public List<MetaAhorro> MetasAhorro { get; set; } = new();
 
         [JsonPropertyName("itemsDeseo")]
         public List<ItemDeseo> ItemsDeseo { get; set; } = new();

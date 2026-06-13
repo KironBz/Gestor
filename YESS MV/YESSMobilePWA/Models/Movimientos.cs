@@ -65,23 +65,41 @@ namespace YESSMobilePWA.Models
             }
         }
 
+        private decimal? _montoFinal;
         [JsonPropertyName("montoFinal")]
-        public decimal? MontoFinal { get; set; }
+        public decimal? MontoFinal
+        {
+            get => _montoFinal;
+            set
+            {
+                if (value.HasValue && value <= 0)
+                    throw new ArgumentException("MontoFinal debe ser mayor a cero si se especifica.");
+                _montoFinal = value;
+            }
+        }
 
+        private int? _plazos;
         [JsonPropertyName("plazos")]
-        public int? Plazos { get; set; }
+        public int? Plazos
+        {
+            get => _plazos;
+            set
+            {
+                if (value.HasValue && value <= 0)
+                    throw new ArgumentException("Plazos debe ser un número positivo.");
+                _plazos = value;
+            }
+        }
 
         [JsonPropertyName("referenciaAuto")]
         public string ReferenciaAuto { get; set; }
 
-        // NUEVO: ID de la meta de ahorro (opcional)
         [JsonPropertyName("metaId")]
         public string MetaId { get; set; }
 
-        // Constructor para deserialización
+        [JsonConstructor]
         public Movimiento() { }
 
-        // Constructor principal (con MetaId opcional al final)
         public Movimiento(
             DateTime? fechaOcurrido,
             string tipo,
@@ -108,30 +126,13 @@ namespace YESSMobilePWA.Models
             MetaId = metaId;
 
             bool esPrestamoRecibido = (tipo == "Ingreso" && categoria == "Préstamo");
-            bool esCargoCompleto = (tipo == "Egreso" && categoria == "Cargo" && montoFinal != null && plazos != null);
+            bool esCargoCompleto = (tipo == "Egreso" && categoria == "Cargo" && montoFinal.HasValue && plazos.HasValue);
 
-            /*
-            if (esPrestamoRecibido)                         // Forzando monto final y plazos
-            {                                         
-                if (montoFinal == null || plazos == null)
-                {
-                    throw new ArgumentException("Para préstamos recibidos, MontoFinal y Plazos son obligatorios.");
-                    MontoFinal = montoFinal;
-                    Plazos = plazos;
-                    GenerarReferenciaAuto();
-                }
-            }
-            */
-
-            if (esPrestamoRecibido)                         // sin forzar el monto final y plazos
+            if (esPrestamoRecibido)
             {
-                MontoFinal = montoFinal;  // puede ser null
-                Plazos = plazos;          // puede ser null
-
-                if (MontoFinal == null)
-                    MontoFinal = Monto;
-
-                GenerarReferenciaAuto();  // siempre generar referencia (útil para seguimiento)
+                MontoFinal = montoFinal ?? Monto;
+                Plazos = plazos;
+                GenerarReferenciaAuto();
             }
             else if (esCargoCompleto)
             {
@@ -143,30 +144,18 @@ namespace YESSMobilePWA.Models
             {
                 MontoFinal = montoFinal;
                 Plazos = plazos;
-                GenerarReferenciaAuto(); // Siempre generar referencia, incluso sin plazos
+                GenerarReferenciaAuto();
             }
             else
             {
                 MontoFinal = null;
                 Plazos = null;
+                ReferenciaAuto = null;
             }
         }
 
-        /*
-        public void GenerarReferenciaAuto()
+        private void GenerarReferenciaAuto()
         {
-            string prefijo = (Tipo == "Ingreso" && Categoria == "Préstamo") ? "PRE" : "CAR";
-            string fechaStr = FechaOcurrido.ToString("yyyyMMdd");
-            string descLimpia = string.IsNullOrEmpty(Descripcion) ? "NA" : Regex.Replace(Descripcion, "[^a-zA-Z0-9]", "");
-            if (string.IsNullOrEmpty(descLimpia)) descLimpia = "NA";
-            else if (descLimpia.Length > 5) descLimpia = descLimpia.Substring(0, 5);
-            //    ReferenciaAuto = $"{prefijo}-{fechaStr}-{descLimpia}-{Monto}";            // 1er MEtodo
-            //  ReferenciaAuto = $"{descLimpia}-{fechaStr}-{Monto}";                        // 2do Metodo (mi propuesta
-        }
-        */
-        public void GenerarReferenciaAuto()                                                 // Nuevo Metodo
-        {
-            // Obtener primeras 5 letras de la descripción (o "SINDESC" si no hay)
             string descripcionCorta = "SINDESC";
             if (!string.IsNullOrEmpty(Descripcion))
             {
@@ -177,39 +166,33 @@ namespace YESSMobilePWA.Models
                     descripcionCorta = soloLetras.ToUpper();
             }
 
-            // Fecha en formato ddMMyy (ej. 300526 para 30 de mayo de 2026)
             string fechaCorta = FechaOcurrido.ToString("ddMMyy");
-
-            // Monto sin decimales (entero)
             string montoStr = Math.Floor(Monto).ToString();
 
- 
-            string prefijo = (Tipo == "Ingreso" && Categoria == "Préstamo") ? "P " : "C ";
-
-            // Referencia: descripcionCorta-fechaCorta-montoStr
-            ReferenciaAuto = $"{prefijo} {descripcionCorta}-{fechaCorta}-{montoStr}";
+            string prefijo = (Tipo == "Ingreso" && Categoria == "Préstamo") ? "PR" : "CR";
+            ReferenciaAuto = $"{prefijo}-{descripcionCorta}-{fechaCorta}-{montoStr}";
         }
 
         public int Signo() => Tipo == "Ingreso" ? 1 : (Tipo == "Egreso" ? -1 : 0);
 
-        public override string ToString() => $"[{FechaOcurrido:dd-MMM-yyyy}] {Tipo} - {Categoria} - {Monto:C} - CuentaId:{CuentaId?.Substring(0, 5)}...";
+        public override string ToString() => $"[{FechaOcurrido:dd-MMM-yyyy}] {Tipo} - {Categoria} - {Monto:C}";
 
-    public Movimiento(Movimiento original)
-            {
-                Id = original.Id;
-                FechaOcurrido = original.FechaOcurrido;
-                FechaRegistro = original.FechaRegistro;
-                Tipo = original.Tipo;
-                Categoria = original.Categoria;
-                CuentaId = original.CuentaId;
-                CategoriaId = original.CategoriaId;
-                PersonaId = original.PersonaId;
-                Descripcion = original.Descripcion;
-                Monto = original.Monto;
-                MontoFinal = original.MontoFinal;
-                Plazos = original.Plazos;
-                ReferenciaAuto = original.ReferenciaAuto;
-                MetaId = original.MetaId;
-            }
+        public Movimiento(Movimiento original)
+        {
+            Id = original.Id;
+            FechaOcurrido = original.FechaOcurrido;
+            FechaRegistro = original.FechaRegistro;
+            Tipo = original.Tipo;
+            Categoria = original.Categoria;
+            CuentaId = original.CuentaId;
+            CategoriaId = original.CategoriaId;
+            PersonaId = original.PersonaId;
+            Descripcion = original.Descripcion;
+            Monto = original.Monto;
+            MontoFinal = original.MontoFinal;
+            Plazos = original.Plazos;
+            ReferenciaAuto = original.ReferenciaAuto;
+            MetaId = original.MetaId;
+        }
     }
 }

@@ -4,9 +4,6 @@
 @inject ArchivoService ArchivoService
 @inject IJSRuntime JS
 
-<!-- ===================================================================== -->
-<!-- 1. ENCABEZADO Y BOTÓN DE REFRESCO                                      -->
-<!-- ===================================================================== -->
 <h3>Préstamos y deudas</h3>
 
 <div class="mb-3">
@@ -19,11 +16,10 @@
 }
 else
 {
-    <!-- ================================================================= -->
-    <!-- 2. DEUDAS ACTIVAS (ACREEDORES Y DEUDORES) - VISTA PARA PC (TABLA) -->
-    <!-- ================================================================= -->
+    <!-- ================================================================ -->
+    <!-- DEUDORES (me deben) - Tabla para PC -->
+    <!-- ================================================================ -->
     <div class="d-none d-md-block">
-        <!-- 2.1 Deudores (me deben) - tabla -->
         <h5 class="text-warning mt-3">Deudores (me deben)</h5>
         <table class="table table-dark table-striped">
             <thead>
@@ -45,7 +41,28 @@ else
                         <td>@deuda.MontoTotal.ToString("C")</td
                         <td>@deuda.Pagado.ToString("C")</td
                         <td>@deuda.SaldoPendiente.ToString("C")</td
-                        <td>@(deuda.PlazosTotales.HasValue ? $"{deuda.PagosRealizados}/{deuda.PlazosTotales}" : "-")</td
+                        <td>
+                            @if (deuda.PlazosTotales.HasValue)
+                            {
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-info" role="progressbar"
+                                         style="width: @(Math.Round((double)deuda.PagosRealizados / (double)deuda.PlazosTotales.Value * 100))%;"
+                                         aria-valuenow="@deuda.PagosRealizados" aria-valuemin="0" aria-valuemax="@deuda.PlazosTotales.Value">
+                                        @deuda.PagosRealizados / @deuda.PlazosTotales
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-success" role="progressbar"
+                                         style="width: @(Math.Round((double)deuda.Pagado / (double)deuda.MontoTotal * 100))%;"
+                                         aria-valuenow="@deuda.Pagado" aria-valuemin="0" aria-valuemax="@deuda.MontoTotal">
+                                        @((deuda.Pagado / deuda.MontoTotal).ToString("P0"))
+                                    </div>
+                                </div>
+                            }
+                         </td
                         <td>@deuda.ReferenciaAuto</td
                         <td>
                             <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, false)">Registrar abono</button>
@@ -55,10 +72,9 @@ else
             </tbody>
         </table>
 
-        <!-- Línea divisoria entre Deudores y Acreedores -->
         <hr class="my-3" />
 
-        <!-- 2.2 Acreedores (debo) - tabla -->
+        <!-- ACREEDORES (debo) - Tabla para PC -->
         <h5 class="text-danger mt-4">Acreedores (debo)</h5>
         <table class="table table-dark table-striped">
             <thead>
@@ -80,7 +96,28 @@ else
                         <td>@deuda.MontoTotal.ToString("C")</td
                         <td>@deuda.Pagado.ToString("C")</td
                         <td>@deuda.SaldoPendiente.ToString("C")</td
-                        <td>@(deuda.PlazosTotales.HasValue ? $"{deuda.PagosRealizados}/{deuda.PlazosTotales}" : "-")</td
+                        <td>
+                            @if (deuda.PlazosTotales.HasValue)
+                            {
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-danger" role="progressbar"
+                                         style="width: @(Math.Round((double)deuda.PagosRealizados / (double)deuda.PlazosTotales.Value * 100))%;"
+                                         aria-valuenow="@deuda.PagosRealizados" aria-valuemin="0" aria-valuemax="@deuda.PlazosTotales.Value">
+                                        @deuda.PagosRealizados / @deuda.PlazosTotales
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-warning" role="progressbar"
+                                         style="width: @(Math.Round((double)deuda.Pagado / (double)deuda.MontoTotal * 100))%;"
+                                         aria-valuenow="@deuda.Pagado" aria-valuemin="0" aria-valuemax="@deuda.MontoTotal">
+                                        @((deuda.Pagado / deuda.MontoTotal).ToString("P0"))
+                                    </div>
+                                </div>
+                            }
+                         </td
                         <td>@deuda.ReferenciaAuto</td
                         <td>
                             <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, true)">Pagar</button>
@@ -91,11 +128,10 @@ else
         </table>
     </div>
 
-    <!-- ================================================================= -->
-    <!-- 3. DEUDAS ACTIVAS - VISTA PARA MÓVIL (TARJETAS)                    -->
-    <!-- ================================================================= -->
+    <!-- ================================================================ -->
+    <!-- VISTA MÓVIL (tarjetas) -->
+    <!-- ================================================================ -->
     <div class="d-block d-md-none">
-        <!-- 3.1 Deudores (me deben) - tarjetas -->
         <h5 class="text-warning mt-3">Deudores (me deben)</h5>
         @foreach (var deuda in deudores)
         {
@@ -108,15 +144,31 @@ else
                         Pendiente: @deuda.SaldoPendiente.ToString("C")<br />
                         <strong>Referencia:</strong> @deuda.ReferenciaAuto
                     </p>
+                    @if (deuda.PlazosTotales.HasValue)
+                    {
+                        <div class="progress mb-2" style="height: 20px;">
+                            <div class="progress-bar bg-info" role="progressbar"
+                                 style="width: @(Math.Round((double)deuda.PagosRealizados / (double)deuda.PlazosTotales.Value * 100))%;">
+                                @deuda.PagosRealizados / @deuda.PlazosTotales
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="progress mb-2" style="height: 20px;">
+                            <div class="progress-bar bg-success" role="progressbar"
+                                 style="width: @(Math.Round((double)deuda.Pagado / (double)deuda.MontoTotal * 100))%;">
+                                @((deuda.Pagado / deuda.MontoTotal).ToString("P0"))
+                            </div>
+                        </div>
+                    }
                     <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, false)">Registrar abono</button>
                 </div>
             </div>
         }
 
-         <!-- Línea divisoria entre Deudores y Acreedores -->
         <hr class="my-3" />
 
-        <!-- 3.2 Acreedores (debo) - tarjetas -->
         <h5 class="text-danger mt-3">Acreedores (debo)</h5>
         @foreach (var deuda in acreedores)
         {
@@ -129,20 +181,36 @@ else
                         Pendiente: @deuda.SaldoPendiente.ToString("C")<br />
                         <strong>Referencia:</strong> @deuda.ReferenciaAuto
                     </p>
+                    @if (deuda.PlazosTotales.HasValue)
+                    {
+                        <div class="progress mb-2" style="height: 20px;">
+                            <div class="progress-bar bg-danger" role="progressbar"
+                                 style="width: @(Math.Round((double)deuda.PagosRealizados / (double)deuda.PlazosTotales.Value * 100))%;">
+                                @deuda.PagosRealizados / @deuda.PlazosTotales
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="progress mb-2" style="height: 20px;">
+                            <div class="progress-bar bg-warning" role="progressbar"
+                                 style="width: @(Math.Round((double)deuda.Pagado / (double)deuda.MontoTotal * 100))%;">
+                                @((deuda.Pagado / deuda.MontoTotal).ToString("P0"))
+                            </div>
+                        </div>
+                    }
                     <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, true)">Pagar</button>
                 </div>
             </div>
         }
     </div>
 
-    <!-- ================================================================= -->
-    <!-- 4. PRÉSTAMOS COMPLETADOS                                            -->
-    <!-- ================================================================= -->
+    <!-- ================================================================ -->
+    <!-- PRÉSTAMOS COMPLETADOS -->
+    <!-- ================================================================ -->
     <hr class="my-4" />
-    <!-- Solo el título de esta sección va en color verde (text-success) -->
     <h4 class="text-success">Préstamos completados</h4>
 
-    <!-- 4.1 Vista para PC (tabla) - sin color verde en las celdas, solo texto normal -->
     <div class="d-none d-md-block">
         <table class="table table-dark table-striped">
             <thead>
@@ -169,7 +237,6 @@ else
         </table>
     </div>
 
-    <!-- 4.2 Vista para móvil (tarjetas) - sin color verde en los textos (solo normal) -->
     <div class="d-block d-md-none">
         @foreach (var item in completados)
         {
@@ -188,9 +255,9 @@ else
     </div>
 }
 
-<!-- ================================================================= -->
-<!-- 5. MODAL PARA REGISTRAR PAGO                                      -->
-<!-- ================================================================= -->
+<!-- ================================================================ -->
+<!-- MODAL PARA REGISTRAR PAGO / ABONO -->
+<!-- ================================================================ -->
 @if (modalVisible)
 {
     <div class="modal-backdrop fade show"></div>
@@ -204,7 +271,7 @@ else
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Monto</label>
-                        <input type="number" step="0.01" class="form-control" @bind="montoPago" />
+                        <input type="number" step="0.01" min="0.01" class="form-control" @bind="montoPago" />
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Fecha</label>
@@ -232,11 +299,11 @@ else
 
 @code {
     // =================================================================
-    // 6. VARIABLES PRIVADAS Y MÉTODOS AUXILIARES
+    // VARIABLES PRIVADAS
     // =================================================================
-    private List<DeudaPendiente>? acreedores;   // Lo que debo (préstamos recibidos)
-    private List<DeudaPendiente>? deudores;     // Lo que me deben (préstamos otorgados)
-    private List<DeudaPendiente>? completados;  // Préstamos ya saldados (saldo = 0)
+    private List<DeudaPendiente>? acreedores;
+    private List<DeudaPendiente>? deudores;
+    private List<DeudaPendiente>? completados;
     private List<Cuenta> cuentasDisponibles = new();
 
     private bool modalVisible = false;
@@ -246,8 +313,11 @@ else
     private DateTime fechaPago = DateTime.Today;
     private string cuentaIdPago = "";
 
+    private Dictionary<string, Persona> mapaPersonas = new();
+    private Dictionary<string, Cuenta> mapaCuentas = new();
+
     // =================================================================
-    // 7. CARGA INICIAL Y REFRESCO
+    // CICLO DE VIDA Y CARGA
     // =================================================================
     protected override async Task OnInitializedAsync()
     {
@@ -257,38 +327,51 @@ else
     private async Task CargarDeudas()
     {
         var datos = await ArchivoService.CargarAsync();
+        PrecalcularMapas(datos);
         cuentasDisponibles = datos.Cuentas.ToList();
         (acreedores, deudores, completados) = CalcularDeudasCompletas(datos);
         StateHasChanged();
     }
 
+    private void PrecalcularMapas(DatosApp datos)
+    {
+        mapaPersonas = datos.Personas.ToDictionary(p => p.Id, p => p);
+        mapaCuentas = datos.Cuentas.ToDictionary(c => c.Id, c => c);
+    }
+
     // =================================================================
-    // 8. CÁLCULO DE DEUDAS ACTIVAS Y COMPLETADAS (CON COLOR DE CUENTA Y FECHA)
+    // CÁLCULO DE DEUDAS (OPTIMIZADO)
     // =================================================================
     private (List<DeudaPendiente> acreedores, List<DeudaPendiente> deudores, List<DeudaPendiente> completados) CalcularDeudasCompletas(DatosApp datos)
     {
-        var acreedores = new List<DeudaPendiente>();
-        var deudores = new List<DeudaPendiente>();
-        var completados = new List<DeudaPendiente>();
+        var acreedoresList = new List<DeudaPendiente>();
+        var deudoresList = new List<DeudaPendiente>();
+        var completadosList = new List<DeudaPendiente>();
 
-        // 8.1 Préstamos recibidos (debo) - Ingreso + Préstamo
+        // Precalcular pagos/abonos agrupados por referencia (usando ! para evitar string? como clave)
+        var pagosPorReferencia = datos.Movimientos
+            .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && !string.IsNullOrEmpty(m.ReferenciaAuto))
+            .GroupBy(m => m.ReferenciaAuto!)
+            .ToDictionary(g => g.Key, g => new { Total = g.Sum(m => m.Monto), Count = g.Count(), Ultimo = g.Max(m => m.FechaOcurrido) });
+
+        var abonosPorReferencia = datos.Movimientos
+            .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && !string.IsNullOrEmpty(m.ReferenciaAuto))
+            .GroupBy(m => m.ReferenciaAuto!)
+            .ToDictionary(g => g.Key, g => new { Total = g.Sum(m => m.Monto), Count = g.Count(), Ultimo = g.Max(m => m.FechaOcurrido) });
+
+        // Préstamos recibidos (debo)
         var prestamosRecibidos = datos.Movimientos
             .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
             .ToList();
 
         foreach (var prestamo in prestamosRecibidos)
         {
-            var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
-            if (persona == null) continue;
+            if (!mapaPersonas.TryGetValue(prestamo.PersonaId!, out var persona)) continue;
+            if (!mapaCuentas.TryGetValue(prestamo.CuentaId, out var cuenta)) continue;
 
-            var cuenta = datos.Cuentas.FirstOrDefault(c => c.Id == prestamo.CuentaId);
-            string colorCuenta = cuenta?.Color ?? "#FFFFFF";
-
-            decimal pagado = datos.Movimientos
-                .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
-                .Sum(m => m.Monto);
-            int pagosRealizados = datos.Movimientos
-                .Count(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto);
+            var pagoInfo = pagosPorReferencia.GetValueOrDefault(prestamo.ReferenciaAuto!);
+            decimal pagado = pagoInfo?.Total ?? 0;
+            int pagosRealizados = pagoInfo?.Count ?? 0;
             decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
             decimal pendiente = montoOriginal - pagado;
 
@@ -298,45 +381,36 @@ else
                 MontoTotal = montoOriginal,
                 Pagado = pagado,
                 SaldoPendiente = pendiente,
-                ReferenciaAuto = prestamo.ReferenciaAuto,
-                PersonaId = prestamo.PersonaId,
+                ReferenciaAuto = prestamo.ReferenciaAuto!,
+                PersonaId = prestamo.PersonaId!,
                 PagosRealizados = pagosRealizados,
                 PlazosTotales = prestamo.Plazos,
-                ColorCuenta = colorCuenta,
+                ColorCuenta = cuenta.Color,
                 Tipo = "Acreedor"
             };
 
             if (pendiente > 0)
-                acreedores.Add(deuda);
+                acreedoresList.Add(deuda);
             else if (pendiente == 0 && pagado > 0)
             {
-                var ultimoPago = datos.Movimientos
-                    .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
-                    .OrderByDescending(m => m.FechaOcurrido)
-                    .FirstOrDefault();
-                deuda.FechaCompletado = ultimoPago?.FechaOcurrido;
-                completados.Add(deuda);
+                deuda.FechaCompletado = pagoInfo?.Ultimo;
+                completadosList.Add(deuda);
             }
         }
 
-        // 8.2 Préstamos otorgados (me deben) - Egreso + Cargo
+        // Préstamos otorgados (me deben)
         var prestamosOtorgados = datos.Movimientos
             .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
             .ToList();
 
         foreach (var prestamo in prestamosOtorgados)
         {
-            var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
-            if (persona == null) continue;
+            if (!mapaPersonas.TryGetValue(prestamo.PersonaId!, out var persona)) continue;
+            if (!mapaCuentas.TryGetValue(prestamo.CuentaId, out var cuenta)) continue;
 
-            var cuenta = datos.Cuentas.FirstOrDefault(c => c.Id == prestamo.CuentaId);
-            string colorCuenta = cuenta?.Color ?? "#FFFFFF";
-
-            decimal abonado = datos.Movimientos
-                .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
-                .Sum(m => m.Monto);
-            int abonosRealizados = datos.Movimientos
-                .Count(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto);
+            var abonoInfo = abonosPorReferencia.GetValueOrDefault(prestamo.ReferenciaAuto!);
+            decimal abonado = abonoInfo?.Total ?? 0;
+            int abonosRealizados = abonoInfo?.Count ?? 0;
             decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
             decimal pendiente = montoOriginal - abonado;
 
@@ -346,34 +420,29 @@ else
                 MontoTotal = montoOriginal,
                 Pagado = abonado,
                 SaldoPendiente = pendiente,
-                ReferenciaAuto = prestamo.ReferenciaAuto,
-                PersonaId = prestamo.PersonaId,
+                ReferenciaAuto = prestamo.ReferenciaAuto!,
+                PersonaId = prestamo.PersonaId!,
                 PagosRealizados = abonosRealizados,
                 PlazosTotales = prestamo.Plazos,
-                ColorCuenta = colorCuenta,
+                ColorCuenta = cuenta.Color,
                 Tipo = "Deudor"
             };
 
             if (pendiente > 0)
-                deudores.Add(deuda);
+                deudoresList.Add(deuda);
             else if (pendiente == 0 && abonado > 0)
             {
-                var ultimoAbono = datos.Movimientos
-                    .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
-                    .OrderByDescending(m => m.FechaOcurrido)
-                    .FirstOrDefault();
-                deuda.FechaCompletado = ultimoAbono?.FechaOcurrido;
-                completados.Add(deuda);
+                deuda.FechaCompletado = abonoInfo?.Ultimo;
+                completadosList.Add(deuda);
             }
         }
 
-        // 8.3 Orden descendente por fecha de completado (más reciente primero)
-        completados = completados.OrderByDescending(c => c.FechaCompletado).ToList();
-        return (acreedores, deudores, completados);
+        completadosList = completadosList.OrderByDescending(c => c.FechaCompletado).ToList();
+        return (acreedoresList, deudoresList, completadosList);
     }
 
     // =================================================================
-    // 9. MANEJADORES DEL MODAL DE PAGO
+    // MODAL DE PAGO
     // =================================================================
     private void RegistrarPago(DeudaPendiente deuda, bool esPago)
     {
@@ -387,20 +456,29 @@ else
 
     private async Task GuardarPago()
     {
-        if (cuentaIdPago == "")
+        if (string.IsNullOrEmpty(cuentaIdPago))
         {
             await JS.InvokeVoidAsync("alert", "Seleccione una cuenta.");
             return;
         }
         if (montoPago <= 0)
         {
-            await JS.InvokeVoidAsync("alert", "Monto inválido.");
+            await JS.InvokeVoidAsync("alert", "El monto debe ser mayor a cero.");
             return;
+        }
+        if (deudaSeleccionada == null) return;
+
+        if (montoPago > deudaSeleccionada.SaldoPendiente)
+        {
+            if (!await JS.InvokeAsync<bool>("confirm", $"El monto ingresado ({montoPago:C}) es mayor al saldo pendiente ({deudaSeleccionada.SaldoPendiente:C}). ¿Desea registrarlo de todas formas? Esto podría sobrepagar la deuda."))
+                return;
         }
 
         var datos = await ArchivoService.CargarAsync();
+
         string tipo = esPagoPropio ? "Egreso" : "Ingreso";
         string categoria = esPagoPropio ? "Pago" : "Abono";
+        string descripcion = $"{categoria} de {deudaSeleccionada.Contraparte} - {deudaSeleccionada.ReferenciaAuto}";
 
         var movimiento = new Movimiento(
             fechaOcurrido: fechaPago,
@@ -409,17 +487,19 @@ else
             cuentaId: cuentaIdPago,
             categoriaId: null,
             monto: montoPago,
-            personaId: deudaSeleccionada?.PersonaId,
-            descripcion: $"{categoria} de {deudaSeleccionada?.Contraparte} - {deudaSeleccionada?.ReferenciaAuto}",
+            personaId: deudaSeleccionada.PersonaId,
+            descripcion: descripcion,
             montoFinal: null,
-            plazos: null
+            plazos: null,
+            metaId: null
         );
-        if (deudaSeleccionada != null)
-            movimiento.ReferenciaAuto = deudaSeleccionada.ReferenciaAuto;
+        movimiento.ReferenciaAuto = deudaSeleccionada.ReferenciaAuto;
 
         datos.Movimientos.Add(movimiento);
         await ArchivoService.GuardarAsync(datos);
         await CargarDeudas();
         modalVisible = false;
+
+        await JS.InvokeVoidAsync("alert", $"{categoria} registrado correctamente.");
     }
 }

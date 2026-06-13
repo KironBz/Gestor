@@ -146,3 +146,7 @@ html, body, #app {
     margin-left: 5px;
     margin-right: 5px;
 }
+
+.page-content {
+    padding-bottom: 3rem;  /* Ajusta el valor según prefieras: 2rem, 50px, etc. */
+}

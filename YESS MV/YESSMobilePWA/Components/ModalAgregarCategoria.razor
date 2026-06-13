@@ -1,0 +1,58 @@
+@using YESSMobilePWA.Models
+
+<div class="modal-backdrop fade show"></div>
+<div class="modal show d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva categoría</h5>
+                <button type="button" class="btn-close btn-close-white" @onclick="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" class="form-control" @bind="Formulario.Nombre" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Tipo permitido</label>
+                    <select class="form-select" @bind="Formulario.TipoPermitido">
+                        <option value="Ingreso">Ingreso</option>
+                        <option value="Egreso">Egreso</option>
+                        <option value="Ambos">Ambos</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="Cerrar">Cancelar</button>
+                <button type="button" class="btn btn-primary" @onclick="Guardar">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback<Categoria> OnCategoriaAgregada { get; set; }
+    [Parameter] public EventCallback OnCancelar { get; set; }
+
+    private CategoriaFormulario Formulario { get; set; } = new();
+
+    private class CategoriaFormulario
+    {
+        public string Nombre { get; set; } = "";
+        public string TipoPermitido { get; set; } = "Ambos";
+    }
+
+    private async Task Guardar()
+    {
+        if (string.IsNullOrWhiteSpace(Formulario.Nombre))
+            return;
+        var nueva = new Categoria(Formulario.Nombre, Formulario.TipoPermitido);
+        await OnCategoriaAgregada.InvokeAsync(nueva);
+        Cerrar();
+    }
+
+    private void Cerrar()
+    {
+        OnCancelar.InvokeAsync();
+    }
+}

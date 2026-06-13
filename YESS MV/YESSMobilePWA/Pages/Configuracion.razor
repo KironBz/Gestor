@@ -43,23 +43,14 @@
                     @foreach (var cuenta in cuentas)
                     {
                         <tr>
-                            <td><input type="text" class="form-control form-control-sm" @bind="cuenta.Nombre" /></td>
-                            <td>
-                                <select class="form-select form-select-sm" @bind="cuenta.Visibilidad">
-                                    <option value="Corriente">Corriente</option>
-                                    <option value="Oculto">Oculto</option>
-                                    <option value="Ajeno">Ajeno</option>
-                                    <option value="Transporte">Transporte</option>
-                                </select>
-                            </td>
-                            <td>
-                                <input type="number" step="0.01" class="form-control form-control-sm" @bind="cuenta.SaldoActual" />
-                            </td>
-                            <td><input type="color" class="form-control form-control-sm" style="width: 80px;" @bind="cuenta.Color" /></td>
+                            <td>@cuenta.Nombre</td
+                            <td>@cuenta.Visibilidad</td
+                            <td>@cuenta.SaldoActual.ToString("C")</td
+                            <td><div style="width:30px; height:30px; background-color:@cuenta.Color; border:1px solid white;"></div></td
                             <td>
                                 <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarCuenta(cuenta)">Editar</button>
                                 <button class="btn btn-sm btn-danger" @onclick="() => EliminarCuenta(cuenta)">Eliminar</button>
-                            </td>
+                            </td
                         </tr>
                     }
                 </tbody>
@@ -75,7 +66,7 @@
                         <h6 class="card-title">@cuenta.Nombre</h6>
                         <p>Visibilidad: @cuenta.Visibilidad</p>
                         <p>Saldo actual: @cuenta.SaldoActual.ToString("C")</p>
-                        <p>Color: <input type="color" @bind="cuenta.Color" style="width: 50px;" /></p>
+                        <p>Color: <span style="display:inline-block; width:20px; height:20px; background-color:@cuenta.Color;"></span></p>
                         <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarCuenta(cuenta)">Editar</button>
                         <button class="btn btn-sm btn-danger" @onclick="() => EliminarCuenta(cuenta)">Eliminar</button>
                     </div>
@@ -84,7 +75,6 @@
         </div>
 
         <button class="btn btn-primary mt-2" @onclick="AbrirModalNuevaCuenta">+ Agregar cuenta</button>
-        <button class="btn btn-success mt-2" @onclick="GuardarCambios">Guardar cambios</button>
     }
 
     @* ================== CATEGORÍAS ================== *@
@@ -105,18 +95,12 @@
                     @foreach (var categoria in categorias)
                     {
                         <tr>
-                            <td><input type="text" class="form-control form-control-sm" @bind="categoria.Nombre" /></td>
-                            <td>
-                                <select class="form-select form-select-sm" @bind="categoria.TipoPermitido">
-                                    <option value="Ingreso">Ingreso</option>
-                                    <option value="Egreso">Egreso</option>
-                                    <option value="Ambos">Ambos</option>
-                                </select>
-                            </td>
+                            <td>@categoria.Nombre</td
+                            <td>@categoria.TipoPermitido</td
                             <td>
                                 <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarCategoria(categoria)">Editar</button>
                                 <button class="btn btn-sm btn-danger" @onclick="() => EliminarCategoria(categoria)">Eliminar</button>
-                            </td>
+                            </td
                         </tr>
                     }
                 </tbody>
@@ -137,7 +121,6 @@
             }
         </div>
         <button class="btn btn-primary mt-2" @onclick="AbrirModalNuevaCategoria">+ Agregar categoría</button>
-        <button class="btn btn-success mt-2" @onclick="GuardarCambios">Guardar cambios</button>
     }
 
     @* ================== PERSONAS ================== *@
@@ -158,19 +141,12 @@
                     @foreach (var persona in personas)
                     {
                         <tr>
-                            <td><input type="text" class="form-control form-control-sm" @bind="persona.Nombre" /></td>
-                            <td>
-                                <select class="form-select form-select-sm" @bind="persona.Tipo">
-                                    <option value="Deudor">Deudor</option>
-                                    <option value="Acreedor">Acreedor</option>
-                                    <option value="Ambos">Ambos</option>
-                                    <option value="Ninguno">Ninguno</option>
-                                </select>
-                            </td>
+                            <td>@persona.Nombre</td
+                            <td>@persona.Tipo</td
                             <td>
                                 <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarPersona(persona)">Editar</button>
                                 <button class="btn btn-sm btn-danger" @onclick="() => EliminarPersona(persona)">Eliminar</button>
-                            </td>
+                            </td
                         </tr>
                     }
                 </tbody>
@@ -191,7 +167,6 @@
             }
         </div>
         <button class="btn btn-primary mt-2" @onclick="AbrirModalNuevaPersona">+ Agregar persona</button>
-        <button class="btn btn-success mt-2" @onclick="GuardarCambios">Guardar cambios</button>
     }
 
     @* ================== IMPORTAR/EXPORTAR ================== *@
@@ -238,7 +213,8 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Saldo actual</label>
-                        <input type="number" step="0.01" class="form-control" @bind="cuentaFormulario.SaldoActual" />
+                        <input type="number" step="0.01" class="form-control" @bind="cuentaFormulario.NuevoSaldoActual" />
+                        <small class="form-text text-muted">Ajusta aquí el dinero real que tienes en esta cuenta. El sistema recalculará automáticamente el saldo inicial.</small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Color</label>
@@ -350,7 +326,7 @@
     {
         public string Nombre { get; set; } = "";
         public string Visibilidad { get; set; } = "Corriente";
-        public decimal SaldoActual { get; set; }
+        public decimal NuevoSaldoActual { get; set; }
         public string Color { get; set; } = "#FFFFFF";
     }
     private class CategoriaFormula
@@ -364,6 +340,9 @@
         public string Tipo { get; set; } = "Ninguno";
     }
 
+    // Para cálculos internos
+    private DatosApp? datosCache;
+
     protected override async Task OnInitializedAsync()
     {
         await CargarDatos();
@@ -371,21 +350,24 @@
 
     private async Task CargarDatos()
     {
-        var datos = await ArchivoService.CargarAsync();
-        cuentas = datos.Cuentas.ToList();
-        categorias = datos.Categorias.ToList();
-        personas = datos.Personas.ToList();
-        CalcularSaldosCuentas(datos);
+        datosCache = await ArchivoService.CargarAsync();
+        cuentas = datosCache.Cuentas.ToList();
+        categorias = datosCache.Categorias.ToList();
+        personas = datosCache.Personas.ToList();
+        CalcularSaldosActuales();
         StateHasChanged();
     }
 
-    private void CalcularSaldosCuentas(DatosApp datos)
+    private void CalcularSaldosActuales()
     {
+        if (datosCache == null) return;
+        // Inicializar saldo actual con saldo inicial
         foreach (var cuenta in cuentas)
         {
             cuenta.SaldoActual = cuenta.SaldoInicial;
         }
-        foreach (var mov in datos.Movimientos)
+        // Sumar/restar movimientos
+        foreach (var mov in datosCache.Movimientos)
         {
             var cuenta = cuentas.FirstOrDefault(c => c.Id == mov.CuentaId);
             if (cuenta == null) continue;
@@ -394,24 +376,6 @@
             else if (mov.Tipo == "Egreso")
                 cuenta.SaldoActual -= mov.Monto;
         }
-    }
-
-    private async Task GuardarCambios()
-    {
-        var datos = await ArchivoService.CargarAsync();
-        foreach (var cuenta in cuentas)
-        {
-            var movimientosNeto = datos.Movimientos
-                .Where(m => m.CuentaId == cuenta.Id)
-                .Sum(m => m.Tipo == "Ingreso" ? m.Monto : -m.Monto);
-            cuenta.SaldoInicial = cuenta.SaldoActual - movimientosNeto;
-        }
-        datos.Cuentas = cuentas;
-        datos.Categorias = categorias;
-        datos.Personas = personas;
-        await ArchivoService.GuardarAsync(datos);
-        mensaje = "Cambios guardados correctamente.";
-        StateHasChanged();
     }
 
     // ================== CUENTAS ==================
@@ -429,7 +393,7 @@
         {
             Nombre = cuenta.Nombre,
             Visibilidad = cuenta.Visibilidad,
-            SaldoActual = cuenta.SaldoActual,
+            NuevoSaldoActual = cuenta.SaldoActual,
             Color = cuenta.Color
         };
         modalCuentaVisible = true;
@@ -437,24 +401,57 @@
 
     private async Task GuardarCuentaModal()
     {
+        // Validación: nombre no vacío y no duplicado (ignorando mayúsculas)
+        if (string.IsNullOrWhiteSpace(cuentaFormulario.Nombre))
+        {
+            await JS.InvokeVoidAsync("alert", "El nombre de la cuenta no puede estar vacío.");
+            return;
+        }
+
+        var nombreNormalizado = cuentaFormulario.Nombre.Trim();
+        var duplicado = cuentas.Any(c => c.Id != (cuentaEditando?.Id ?? "") &&
+                                           c.Nombre.Equals(nombreNormalizado, StringComparison.OrdinalIgnoreCase));
+        if (duplicado)
+        {
+            await JS.InvokeVoidAsync("alert", "Ya existe una cuenta con ese nombre.");
+            return;
+        }
+
+        // Recalcular SaldoInicial a partir del nuevo SaldoActual deseado
+        if (datosCache == null) return;
+
+        decimal netoMovimientos = 0;
+        if (cuentaEditando != null)
+        {
+            // Calcular neto de movimientos para esta cuenta (ingresos - egresos)
+            netoMovimientos = datosCache.Movimientos
+                .Where(m => m.CuentaId == cuentaEditando.Id)
+                .Sum(m => m.Tipo == "Ingreso" ? m.Monto : -m.Monto);
+        }
+        // Para cuenta nueva, netoMovimientos = 0
+
+        decimal nuevoSaldoInicial = cuentaFormulario.NuevoSaldoActual - netoMovimientos;
+
         if (cuentaEditando == null)
         {
             // Nueva cuenta
-            var nueva = new Cuenta(cuentaFormulario.Nombre, cuentaFormulario.Visibilidad, 0);
+            var nueva = new Cuenta(nombreNormalizado, cuentaFormulario.Visibilidad, nuevoSaldoInicial);
             nueva.Color = cuentaFormulario.Color;
-            nueva.SaldoActual = cuentaFormulario.SaldoActual;
+            nueva.SaldoActual = cuentaFormulario.NuevoSaldoActual; // para mostrar inmediatamente
             cuentas.Add(nueva);
         }
         else
         {
             // Editar cuenta existente
-            cuentaEditando.Nombre = cuentaFormulario.Nombre;
+            cuentaEditando.Nombre = nombreNormalizado;
             cuentaEditando.Visibilidad = cuentaFormulario.Visibilidad;
-            cuentaEditando.SaldoActual = cuentaFormulario.SaldoActual;
+            cuentaEditando.SaldoInicial = nuevoSaldoInicial;
             cuentaEditando.Color = cuentaFormulario.Color;
+            cuentaEditando.SaldoActual = cuentaFormulario.NuevoSaldoActual;
         }
+
         modalCuentaVisible = false;
-        await GuardarCambios();
+        await PersistirDatos();
     }
 
     private async Task EliminarCuenta(Cuenta cuenta)
@@ -462,7 +459,7 @@
         if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar la cuenta '{cuenta.Nombre}'?"))
         {
             cuentas.Remove(cuenta);
-            await GuardarCambios();
+            await PersistirDatos();
         }
     }
 
@@ -487,17 +484,33 @@
 
     private async Task GuardarCategoriaModal()
     {
+        if (string.IsNullOrWhiteSpace(categoriaFormulario.Nombre))
+        {
+            await JS.InvokeVoidAsync("alert", "El nombre de la categoría no puede estar vacío.");
+            return;
+        }
+
+        var nombreNormalizado = categoriaFormulario.Nombre.Trim();
+        var duplicado = categorias.Any(c => c.Id != (categoriaEditando?.Id ?? "") &&
+                                             c.Nombre.Equals(nombreNormalizado, StringComparison.OrdinalIgnoreCase));
+        if (duplicado)
+        {
+            await JS.InvokeVoidAsync("alert", "Ya existe una categoría con ese nombre.");
+            return;
+        }
+
         if (categoriaEditando == null)
         {
-            categorias.Add(new Categoria(categoriaFormulario.Nombre, categoriaFormulario.TipoPermitido));
+            categorias.Add(new Categoria(nombreNormalizado, categoriaFormulario.TipoPermitido));
         }
         else
         {
-            categoriaEditando.Nombre = categoriaFormulario.Nombre;
+            categoriaEditando.Nombre = nombreNormalizado;
             categoriaEditando.TipoPermitido = categoriaFormulario.TipoPermitido;
         }
+
         modalCategoriaVisible = false;
-        await GuardarCambios();
+        await PersistirDatos();
     }
 
     private async Task EliminarCategoria(Categoria categoria)
@@ -505,7 +518,7 @@
         if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar la categoría '{categoria.Nombre}'?"))
         {
             categorias.Remove(categoria);
-            await GuardarCambios();
+            await PersistirDatos();
         }
     }
 
@@ -530,17 +543,33 @@
 
     private async Task GuardarPersonaModal()
     {
+        if (string.IsNullOrWhiteSpace(personaFormulario.Nombre))
+        {
+            await JS.InvokeVoidAsync("alert", "El nombre de la persona no puede estar vacío.");
+            return;
+        }
+
+        var nombreNormalizado = personaFormulario.Nombre.Trim();
+        var duplicado = personas.Any(p => p.Id != (personaEditando?.Id ?? "") &&
+                                           p.Nombre.Equals(nombreNormalizado, StringComparison.OrdinalIgnoreCase));
+        if (duplicado)
+        {
+            await JS.InvokeVoidAsync("alert", "Ya existe una persona con ese nombre.");
+            return;
+        }
+
         if (personaEditando == null)
         {
-            personas.Add(new Persona(personaFormulario.Nombre, personaFormulario.Tipo));
+            personas.Add(new Persona(nombreNormalizado, personaFormulario.Tipo));
         }
         else
         {
-            personaEditando.Nombre = personaFormulario.Nombre;
+            personaEditando.Nombre = nombreNormalizado;
             personaEditando.Tipo = personaFormulario.Tipo;
         }
+
         modalPersonaVisible = false;
-        await GuardarCambios();
+        await PersistirDatos();
     }
 
     private async Task EliminarPersona(Persona persona)
@@ -548,8 +577,22 @@
         if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar a '{persona.Nombre}'?"))
         {
             personas.Remove(persona);
-            await GuardarCambios();
+            await PersistirDatos();
         }
+    }
+
+    // ================== PERSISTENCIA Y ACTUALIZACIÓN ==================
+    private async Task PersistirDatos()
+    {
+        if (datosCache == null) return;
+        datosCache.Cuentas = cuentas;
+        datosCache.Categorias = categorias;
+        datosCache.Personas = personas;
+        await ArchivoService.GuardarAsync(datosCache);
+        // Recargar para asegurar consistencia
+        await CargarDatos();
+        mensaje = "Cambios guardados.";
+        StateHasChanged();
     }
 
     // ================== IMPORTAR/EXPORTAR ==================

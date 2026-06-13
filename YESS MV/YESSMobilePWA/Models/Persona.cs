@@ -6,9 +6,9 @@ namespace YESSMobilePWA.Models
     public class Persona
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = Guid.NewGuid().ToString();
 
-        private string _nombre;
+        private string _nombre = "";
         [JsonPropertyName("nombre")]
         public string Nombre
         {
@@ -21,7 +21,7 @@ namespace YESSMobilePWA.Models
             }
         }
 
-        private string _tipo;
+        private string _tipo = "Ninguno";
         [JsonPropertyName("tipo")]
         public string Tipo
         {

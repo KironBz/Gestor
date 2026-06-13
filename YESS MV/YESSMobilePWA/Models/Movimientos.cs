@@ -7,7 +7,7 @@ namespace YESSMobilePWA.Models
     public class Movimiento
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
+        public string Id { get; set; } = Guid.NewGuid().ToString();
 
         [JsonPropertyName("fechaOcurrido")]
         public DateTime FechaOcurrido { get; set; }
@@ -15,7 +15,7 @@ namespace YESSMobilePWA.Models
         [JsonPropertyName("fechaRegistro")]
         public DateTime FechaRegistro { get; set; }
 
-        private string _tipo;
+        private string _tipo = "Ingreso";
         [JsonPropertyName("tipo")]
         public string Tipo
         {
@@ -28,7 +28,7 @@ namespace YESSMobilePWA.Models
             }
         }
 
-        private string _categoria;
+        private string _categoria = "";
         [JsonPropertyName("categoria")]
         public string Categoria
         {
@@ -42,16 +42,16 @@ namespace YESSMobilePWA.Models
         }
 
         [JsonPropertyName("cuentaId")]
-        public string CuentaId { get; set; }
+        public string CuentaId { get; set; } = "";
 
         [JsonPropertyName("categoriaId")]
-        public string CategoriaId { get; set; }
+        public string? CategoriaId { get; set; }
 
         [JsonPropertyName("personaId")]
-        public string PersonaId { get; set; }
+        public string? PersonaId { get; set; }
 
         [JsonPropertyName("descripcion")]
-        public string Descripcion { get; set; }
+        public string? Descripcion { get; set; }
 
         private decimal _monto;
         [JsonPropertyName("monto")]
@@ -92,10 +92,10 @@ namespace YESSMobilePWA.Models
         }
 
         [JsonPropertyName("referenciaAuto")]
-        public string ReferenciaAuto { get; set; }
+        public string? ReferenciaAuto { get; set; }
 
         [JsonPropertyName("metaId")]
-        public string MetaId { get; set; }
+        public string? MetaId { get; set; }
 
         [JsonConstructor]
         public Movimiento() { }
@@ -105,13 +105,13 @@ namespace YESSMobilePWA.Models
             string tipo,
             string categoria,
             string cuentaId,
-            string categoriaId,
+            string? categoriaId,
             decimal monto,
-            string personaId = null,
-            string descripcion = null,
+            string? personaId = null,
+            string? descripcion = null,
             decimal? montoFinal = null,
             int? plazos = null,
-            string metaId = null)
+            string? metaId = null)
         {
             Id = Guid.NewGuid().ToString();
             FechaOcurrido = fechaOcurrido ?? DateTime.Today;

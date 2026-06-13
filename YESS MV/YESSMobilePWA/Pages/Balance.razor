@@ -3,8 +3,10 @@
 @using YESSMobilePWA.Models
 @using YESSMobilePWA.Services
 @inject ArchivoService ArchivoService
+@inject NavigationManager Navigation
 
 <h3 class="text-center mb-4">Balance General</h3>
+
 @if (!string.IsNullOrEmpty(mensajeError))
 {
     <div class="alert alert-danger">@mensajeError</div>
@@ -18,7 +20,7 @@
 }
 else
 {
-    <!-- Tarjetas de totales -->
+    <!-- ========== FILA 1: DINERO DISPONIBLE Y OCULTO ========== -->
     <div class="row g-3 mb-4">
         <div class="col-md-6">
             <div class="card text-white bg-success shadow">
@@ -36,6 +38,22 @@ else
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- ========== FILA 2: TOTAL GLOBAL ========== -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <div class="card text-white shadow" style="background-color: #2F4F4F;">
+                <div class="card-body">
+                    <h5 class="card-title">Total global (efectivo disponible + oculto)</h5>
+                    <p class="card-text display-6">@totalGlobal.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== FILA 3: CUENTAS POR COBRAR Y POR PAGAR ========== -->
+    <div class="row g-3 mb-4">
         <div class="col-md-6">
             <div class="card text-white shadow" style="background-color: #CD853F;">
                 <div class="card-body">
@@ -52,14 +70,22 @@ else
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- ========== FILA 4: PATRIMONIO NETO (MORADO) ========== -->
+    <div class="row g-3 mb-4">
         <div class="col-md-12">
-            <div class="card text-white shadow" style="background-color: #2F4F4F;">
+            <div class="card text-white shadow" style="background-color: #6a0dad;">
                 <div class="card-body">
-                    <h5 class="card-title">Total global</h5>
-                    <p class="card-text display-6">@totalGlobal.ToString("C")</p>
+                    <h5 class="card-title">Patrimonio Neto (Total Global + Cobrar - Pagar)</h5>
+                    <p class="card-text display-6">@patrimonioNeto.ToString("C")</p>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- ========== FILA 5: TRANSPORTE Y AJENO ========== -->
+    <div class="row g-3 mb-5">
         <div class="col-md-6">
             <div class="card text-white shadow" style="background-color: #18278C;">
                 <div class="card-body">
@@ -77,6 +103,8 @@ else
             </div>
         </div>
     </div>
+
+    <!-- ========== PANELES DE CUENTAS INDIVIDUALES ========== -->
 
     <!-- Cuentas Corrientes -->
     <div class="card bg-dark text-white mb-4" style="border: 2px solid #28a745;">
@@ -188,7 +216,7 @@ else
 }
 
 @code {
-    private DatosApp datos = null!;
+    private DatosApp? datos;
     private decimal totalCorriente;
     private decimal totalOculto;
     private decimal totalPorCobrar;
@@ -196,6 +224,7 @@ else
     private decimal totalGlobal;
     private decimal totalAjeno;
     private decimal totalTransporte;
+    private decimal patrimonioNeto;
     private string mensajeError = "";
 
     private List<CuentaSaldo> cuentasCorrientes = new();
@@ -207,10 +236,41 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await CargarDatos();
+    }
+
+    public async Task Recargar()
+    {
+        await CargarDatos();
+        StateHasChanged();
+    }
+
+    private async Task CargarDatos()
+    {
         try
         {
             datos = await ArchivoService.CargarAsync();
-            var saldos = CalcularSaldosCuentas(datos);
+            if (datos == null) return;
+
+            var dictCuentas = datos.Cuentas.ToDictionary(c => c.Id, c => new CuentaSaldo
+            {
+                Id = c.Id,
+                Nombre = c.Nombre,
+                Visibilidad = c.Visibilidad,
+                Saldo = c.SaldoInicial,
+                Color = c.Color
+            });
+
+            foreach (var mov in datos.Movimientos)
+            {
+                if (!dictCuentas.TryGetValue(mov.CuentaId, out var cuenta)) continue;
+                if (mov.Tipo == "Ingreso")
+                    cuenta.Saldo += mov.Monto;
+                else if (mov.Tipo == "Egreso")
+                    cuenta.Saldo -= mov.Monto;
+            }
+
+            var saldos = dictCuentas.Values.ToList();
             cuentasCorrientes = saldos.Where(c => c.Visibilidad == "Corriente").ToList();
             cuentasOcultas = saldos.Where(c => c.Visibilidad == "Oculto").ToList();
             cuentasAjenas = saldos.Where(c => c.Visibilidad == "Ajeno").ToList();
@@ -225,86 +285,73 @@ else
             (acreedores, deudores) = CalcularDeudasResumidas(datos);
             totalPorCobrar = deudores.Sum(d => d.SaldoPendiente);
             totalPorPagar = acreedores.Sum(d => d.SaldoPendiente);
+
+            patrimonioNeto = totalGlobal + (totalPorCobrar - totalPorPagar);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"ERROR EN BALANCE: {ex.Message}");
             mensajeError = $"Error al cargar datos: {ex.Message}";
-            StateHasChanged();
         }
-    }
-
-    private List<CuentaSaldo> CalcularSaldosCuentas(DatosApp datos)
-    {
-        var dict = datos.Cuentas.ToDictionary(c => c.Id, c => new CuentaSaldo
-        {
-            Id = c.Id,
-            Nombre = c.Nombre,
-            Visibilidad = c.Visibilidad,
-            Saldo = c.SaldoInicial,
-            Color = c.Color
-        });
-        foreach (var mov in datos.Movimientos)
-        {
-            if (!dict.ContainsKey(mov.CuentaId)) continue;
-            if (mov.Tipo == "Ingreso")
-                dict[mov.CuentaId].Saldo += mov.Monto;
-            else if (mov.Tipo == "Egreso")
-                dict[mov.CuentaId].Saldo -= mov.Monto;
-        }
-        return dict.Values.ToList();
     }
 
     private (List<ResumenDeuda> acreedores, List<ResumenDeuda> deudores) CalcularDeudasResumidas(DatosApp datos)
     {
-        var acreedores = new List<ResumenDeuda>();
-        var deudores = new List<ResumenDeuda>();
+        var acreedoresDict = new Dictionary<string, decimal>();
+        var deudoresDict = new Dictionary<string, decimal>();
+
+        var pagosPorReferencia = datos.Movimientos
+            .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && !string.IsNullOrEmpty(m.ReferenciaAuto))
+            .GroupBy(m => m.ReferenciaAuto)
+            .ToDictionary(g => g.Key, g => g.Sum(m => m.Monto));
+
+        var abonosPorReferencia = datos.Movimientos
+            .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && !string.IsNullOrEmpty(m.ReferenciaAuto))
+            .GroupBy(m => m.ReferenciaAuto)
+            .ToDictionary(g => g.Key, g => g.Sum(m => m.Monto));
 
         var prestamosRecibidos = datos.Movimientos
             .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
             .ToList();
+
         foreach (var prestamo in prestamosRecibidos)
         {
             var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
             if (persona == null) continue;
-            decimal pagado = datos.Movimientos
-                .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
-                .Sum(m => m.Monto);
+
+            decimal pagado = pagosPorReferencia.GetValueOrDefault(prestamo.ReferenciaAuto, 0);
             decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
             decimal pendiente = montoOriginal - pagado;
             if (pendiente > 0)
             {
-                var existente = acreedores.FirstOrDefault(a => a.Contraparte == persona.Nombre);
-                if (existente != null)
-                    existente.SaldoPendiente += pendiente;
-                else
-                    acreedores.Add(new ResumenDeuda { Contraparte = persona.Nombre, SaldoPendiente = pendiente });
+                acreedoresDict.TryGetValue(persona.Nombre, out var current);
+                acreedoresDict[persona.Nombre] = current + pendiente;
             }
         }
 
         var prestamosOtorgados = datos.Movimientos
             .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
             .ToList();
+
         foreach (var prestamo in prestamosOtorgados)
         {
             var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
             if (persona == null) continue;
-            decimal abonado = datos.Movimientos
-                .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && m.ReferenciaAuto == prestamo.ReferenciaAuto)
-                .Sum(m => m.Monto);
+
+            decimal abonado = abonosPorReferencia.GetValueOrDefault(prestamo.ReferenciaAuto, 0);
             decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
             decimal pendiente = montoOriginal - abonado;
             if (pendiente > 0)
             {
-                var existente = deudores.FirstOrDefault(d => d.Contraparte == persona.Nombre);
-                if (existente != null)
-                    existente.SaldoPendiente += pendiente;
-                else
-                    deudores.Add(new ResumenDeuda { Contraparte = persona.Nombre, SaldoPendiente = pendiente });
+                deudoresDict.TryGetValue(persona.Nombre, out var current);
+                deudoresDict[persona.Nombre] = current + pendiente;
             }
         }
 
-        return (acreedores, deudores);
+        var acreedoresList = acreedoresDict.Select(kv => new ResumenDeuda { Contraparte = kv.Key, SaldoPendiente = kv.Value }).ToList();
+        var deudoresList = deudoresDict.Select(kv => new ResumenDeuda { Contraparte = kv.Key, SaldoPendiente = kv.Value }).ToList();
+
+        return (acreedoresList, deudoresList);
     }
 
     public class CuentaSaldo

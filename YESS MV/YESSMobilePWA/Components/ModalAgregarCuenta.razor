@@ -1,0 +1,75 @@
+@using YESSMobilePWA.Models
+
+<div class="modal-backdrop fade show"></div>
+<div class="modal show d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark text-white">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva cuenta</h5>
+                <button type="button" class="btn-close btn-close-white" @onclick="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" class="form-control" @bind="Formulario.Nombre" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Visibilidad</label>
+                    <select class="form-select" @bind="Formulario.Visibilidad">
+                        <option value="Corriente">Corriente</option>
+                        <option value="Oculto">Oculto</option>
+                        <option value="Ajeno">Ajeno</option>
+                        <option value="Transporte">Transporte</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Saldo inicial</label>
+                    <input type="number" step="0.01" class="form-control" @bind="Formulario.SaldoInicial" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Color</label>
+                    <input type="color" class="form-control" @bind="Formulario.Color" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="Cerrar">Cancelar</button>
+                <button type="button" class="btn btn-primary" @onclick="Guardar">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback<Cuenta> OnCuentaAgregada { get; set; }
+    [Parameter] public EventCallback OnCancelar { get; set; }
+
+    private CuentaFormulario Formulario { get; set; } = new();
+
+    private class CuentaFormulario
+    {
+        public string Nombre { get; set; } = "";
+        public string Visibilidad { get; set; } = "Corriente";
+        public decimal SaldoInicial { get; set; }
+        public string Color { get; set; } = "#FFFFFF";
+    }
+
+    private async Task Guardar()
+    {
+        if (string.IsNullOrWhiteSpace(Formulario.Nombre))
+        {
+            // Podrías mostrar un error con JS, pero aquí simplemente no guardamos
+            return;
+        }
+        var nueva = new Cuenta(Formulario.Nombre, Formulario.Visibilidad, Formulario.SaldoInicial)
+        {
+            Color = Formulario.Color
+        };
+        await OnCuentaAgregada.InvokeAsync(nueva);
+        Cerrar();
+    }
+
+    private void Cerrar()
+    {
+        OnCancelar.InvokeAsync();
+    }
+}

@@ -1,0 +1,373 @@
+@page "/resumen"
+@using YESSMobilePWA.Models
+@using YESSMobilePWA.Services
+@using System.Globalization
+@inject ArchivoService ArchivoService
+
+<h3 class="text-center mb-4">Resumen Financiero</h3>
+
+@if (cargando)
+{
+    <div class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Tarjetas de totales -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-success shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Ingresos</h5>
+                    <p class="card-text display-6">@totalIngresos.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Egresos</h5>
+                    <p class="card-text display-6">@totalEgresos.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Ahorro Neto</h5>
+                    <p class="card-text display-6">@ahorroNeto.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-secondary shadow">
+                <div class="card-body">
+                    <h5 class="card-title">Patrimonio Neto</h5>
+                    <p class="card-text display-6">@patrimonioNeto.ToString("C")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimos movimientos (ordenados correctamente) -->
+    <div class="card bg-dark text-white mb-4">
+        <div class="card-header">Últimos movimientos</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-dark table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Cuenta</th>
+                            <th>Categoría</th>
+                            <th>Descripción</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var mov in ultimosMovimientos)
+                        {
+                            <tr>
+                                <td>@mov.FechaOcurrido.ToString("dd/MM/yyyy")</td
+                                <td>@mov.NombreCuenta</td
+                                <td>@mov.Categoria</td
+                                <td>@mov.Descripcion</td
+                                <td class="@(mov.Tipo == "Ingreso" ? "text-success" : "text-danger")">
+                                    @(mov.Tipo == "Ingreso" ? "+" : "-")@mov.Monto.ToString("C")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Préstamos -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-6">
+            <div class="card bg-dark text-white">
+                <div class="card-header">Acreedores (debo)</div>
+                <div class="card-body p-0">
+                    @if (acreedoresResumen.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Contraparte</th>
+                                        <th>Saldo pendiente</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in acreedoresResumen)
+                                    {
+                                        <tr>
+                                            <td>@item.Contraparte</td>
+                                            <td class="text-danger">@item.SaldoPendiente.ToString("C")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-center p-3">Sin deudas activas</p>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-dark text-white">
+                <div class="card-header">Deudores (me deben)</div>
+                <div class="card-body p-0">
+                    @if (deudoresResumen.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-dark table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Contraparte</th>
+                                        <th>Saldo pendiente</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in deudoresResumen)
+                                    {
+                                        <tr>
+                                            <td>@item.Contraparte</td>
+                                            <td class="text-success">@item.SaldoPendiente.ToString("C")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-center p-3">Sin préstamos activos</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top 3 metas -->
+    <div class="card bg-dark text-white">
+        <div class="card-header">Metas de ahorro activas (top 3)</div>
+        <div class="card-body">
+            @if (topMetas.Any())
+            {
+                <div class="row">
+                    @foreach (var meta in topMetas)
+                    {
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100 bg-secondary text-white">
+                                <div class="card-body">
+                                    <h5 class="card-title">@meta.Nombre</h5>
+                                    <p>
+                                        <strong>Objetivo:</strong> @meta.MontoObjetivo.ToString("C")<br />
+                                        <strong>Ahorrado:</strong> @meta.AhorradoActual.ToString("C")
+                                    </p>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-info" role="progressbar"
+                                             style="width: @PorcentajeMeta(meta)%;">
+                                            @PorcentajeMeta(meta).ToString("F0")%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="text-center">No hay metas activas</p>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private DatosApp? datos;
+    private bool cargando = true;
+
+    private decimal totalIngresos;
+    private decimal totalEgresos;
+    private decimal ahorroNeto;
+    private decimal patrimonioNeto;
+
+    private List<MovimientoViewModel> ultimosMovimientos = new();
+    private List<ResumenDeuda> acreedoresResumen = new();
+    private List<ResumenDeuda> deudoresResumen = new();
+    private List<Meta> topMetas = new();
+
+    private class MovimientoViewModel
+    {
+        public DateTime FechaOcurrido { get; set; }
+        public DateTime FechaRegistro { get; set; }
+        public string NombreCuenta { get; set; } = "";
+        public string Categoria { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public decimal Monto { get; set; }
+        public string Tipo { get; set; } = "";
+    }
+
+    private class ResumenDeuda
+    {
+        public string Contraparte { get; set; } = "";
+        public decimal SaldoPendiente { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        try
+        {
+            cargando = true;
+            datos = await ArchivoService.CargarAsync();
+            if (datos?.Movimientos != null)
+            {
+                CalcularMetricas();
+            }
+        }
+        finally
+        {
+            cargando = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CalcularMetricas()
+    {
+        if (datos?.Movimientos == null) return;
+
+        var movimientos = datos.Movimientos
+            .Where(m => !string.IsNullOrEmpty(m.Categoria) && m.Categoria != "Transferencia")
+            .ToList();
+
+        totalIngresos = movimientos.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto);
+        totalEgresos = movimientos.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
+        ahorroNeto = totalIngresos - totalEgresos;
+
+        var deudas = CalcularDeudasResumidas();
+        decimal totalPorCobrar = deudas.deudores.Sum(d => d.SaldoPendiente);
+        decimal totalPorPagar = deudas.acreedores.Sum(d => d.SaldoPendiente);
+        patrimonioNeto = ahorroNeto + (totalPorCobrar - totalPorPagar);
+
+        // Últimos 10 movimientos con orden correcto
+        var ultimos = movimientos
+            .OrderByDescending(m => m.FechaOcurrido)
+            .ThenByDescending(m => m.FechaRegistro)
+            .Take(10)
+            .ToList();
+
+        var mapaCuentas = datos.Cuentas.ToDictionary(c => c.Id, c => c.Nombre);
+        ultimosMovimientos = ultimos.Select(m => new MovimientoViewModel
+        {
+            FechaOcurrido = m.FechaOcurrido,
+            FechaRegistro = m.FechaRegistro,
+            NombreCuenta = mapaCuentas.GetValueOrDefault(m.CuentaId) ?? "Desconocida",
+            Categoria = m.Categoria,
+            Descripcion = m.Descripcion ?? "",
+            Monto = m.Monto,
+            Tipo = m.Tipo
+        }).ToList();
+
+        acreedoresResumen = deudas.acreedores;
+        deudoresResumen = deudas.deudores;
+
+        var todasMetas = datos.Metas ?? new List<Meta>();
+        var activas = todasMetas.Where(m => !m.Completada && !m.Archivada)
+            .OrderBy(m => m.Prioridad)
+            .ThenBy(m => m.FechaCreacion)
+            .ToList();
+
+        foreach (var meta in activas)
+        {
+            meta.AhorradoActual = datos.Movimientos
+                .Where(m => m.MetaId == meta.Id && m.Tipo == "Ingreso")
+                .Sum(m => m.Monto);
+        }
+        topMetas = activas.Take(3).ToList();
+    }
+
+    private (List<ResumenDeuda> acreedores, List<ResumenDeuda> deudores) CalcularDeudasResumidas()
+    {
+        var acreedores = new List<ResumenDeuda>();
+        var deudores = new List<ResumenDeuda>();
+
+        if (datos == null) return (acreedores, deudores);
+
+        var pagosPorReferencia = datos.Movimientos
+            .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && !string.IsNullOrEmpty(m.ReferenciaAuto))
+            .GroupBy(m => m.ReferenciaAuto!)
+            .ToDictionary(g => g.Key, g => g.Sum(m => m.Monto));
+
+        var abonosPorReferencia = datos.Movimientos
+            .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && !string.IsNullOrEmpty(m.ReferenciaAuto))
+            .GroupBy(m => m.ReferenciaAuto!)
+            .ToDictionary(g => g.Key, g => g.Sum(m => m.Monto));
+
+        var prestamosRecibidos = datos.Movimientos
+            .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
+            .ToList();
+
+        foreach (var prestamo in prestamosRecibidos)
+        {
+            var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
+            if (persona == null) continue;
+
+            decimal pagado = pagosPorReferencia.GetValueOrDefault(prestamo.ReferenciaAuto!, 0);
+            decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
+            decimal pendiente = montoOriginal - pagado;
+            if (pendiente > 0)
+            {
+                var existente = acreedores.FirstOrDefault(a => a.Contraparte == persona.Nombre);
+                if (existente != null)
+                    existente.SaldoPendiente += pendiente;
+                else
+                    acreedores.Add(new ResumenDeuda { Contraparte = persona.Nombre, SaldoPendiente = pendiente });
+            }
+        }
+
+        var prestamosOtorgados = datos.Movimientos
+            .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
+            .ToList();
+
+        foreach (var prestamo in prestamosOtorgados)
+        {
+            var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
+            if (persona == null) continue;
+
+            decimal abonado = abonosPorReferencia.GetValueOrDefault(prestamo.ReferenciaAuto!, 0);
+            decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
+            decimal pendiente = montoOriginal - abonado;
+            if (pendiente > 0)
+            {
+                var existente = deudores.FirstOrDefault(d => d.Contraparte == persona.Nombre);
+                if (existente != null)
+                    existente.SaldoPendiente += pendiente;
+                else
+                    deudores.Add(new ResumenDeuda { Contraparte = persona.Nombre, SaldoPendiente = pendiente });
+            }
+        }
+
+        return (acreedores, deudores);
+    }
+
+    private double PorcentajeMeta(Meta meta)
+    {
+        if (meta.MontoObjetivo == 0) return 0;
+        return (double)(meta.AhorradoActual / meta.MontoObjetivo) * 100;
+    }
+}

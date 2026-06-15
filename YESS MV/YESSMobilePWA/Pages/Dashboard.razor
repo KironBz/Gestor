@@ -1,18 +1,16 @@
 @page "/dashboard"
 @using YESSMobilePWA.Models
 @using YESSMobilePWA.Services
-@using Radzen
 @using Radzen.Blazor
 @using System.Globalization
 @inject ArchivoService ArchivoService
-@inject IJSRuntime JSRuntime
 
 <h3 class="text-center mb-4">Dashboard Financiero</h3>
 
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <label class="form-label">Año:</label>
-        <select class="form-select" @bind="anioSeleccionado">
+        <select class="form-select" value="@anioSeleccionado" @onchange="OnAnioChanged">
             <option value="todos">Todos</option>
             @foreach (var anio in aniosDisponibles)
             {
@@ -22,13 +20,14 @@
     </div>
     <div class="col-md-4">
         <label class="form-label">Período:</label>
-        <select class="form-select" @bind="periodoSeleccionado">
+        <select class="form-select" value="@periodoSeleccionado" @onchange="OnPeriodoChanged">
             <option value="total">Total histórico</option>
             <option value="semestre1">Semestre 1 (Ene-Jun)</option>
             <option value="semestre2">Semestre 2 (Jul-Dic)</option>
             @for (int i = 1; i <= 12; i++)
             {
-                <option value="mes@i">@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(i)</option>
+                var mesValue = $"mes{i}";
+                <option value="@mesValue">@CapitalizarMes(CultureInfo.GetCultureInfo("es-MX").DateTimeFormat.GetMonthName(i))</option>
             }
         </select>
     </div>
@@ -54,6 +53,12 @@ else if (!string.IsNullOrEmpty(mensajeError))
         <small>Revise la consola del navegador (F12) para más detalles.</small>
     </div>
 }
+else if (!hayDatos)
+{
+    <div class="alert alert-info text-center">
+        No hay movimientos registrados todavía. Agrega ingresos o egresos para ver tu dashboard.
+    </div>
+}
 else
 {
     <div class="row g-4 mb-4">
@@ -61,11 +66,9 @@ else
             <div class="card bg-dark text-white h-100">
                 <div class="card-body">
                     <h5 class="card-title text-center">Ingresos vs Egresos</h5>
-                    @if (datosBarras.Any() && datosBarras.Sum(x => x.Monto) > 0)
+                    @if (datosBarras.Sum(x => x.Monto) > 0)
                     {
                         <RadzenChart Style="height: 300px;">
-                            @* <RadzenChartTooltipOptions Shared="true" /> *@  @* Eliminado *@
-                            
                             <RadzenColumnSeries TItem="TotalItem"
                                                 Data="@datosBarras"
                                                 CategoryProperty="Categoria"
@@ -74,15 +77,15 @@ else
                                                 Fills="@paletaColoresBarras" />
                             <RadzenColumnOptions Radius="5" />
                             <RadzenCategoryAxis Padding="20" />
-                            
                             <RadzenValueAxis Min="0" Formatter="@FormatearMonedaEje">
                                 <RadzenGridLines Visible="true" />
                             </RadzenValueAxis>
+                            <RadzenChartTooltipOptions Shared="true" />
                         </RadzenChart>
                     }
                     else
                     {
-                        <p class="text-center text-muted py-5">Sin datos</p>
+                        <p class="text-center text-muted py-5">Sin datos para el período seleccionado</p>
                     }
                 </div>
             </div>
@@ -92,20 +95,20 @@ else
             <div class="card bg-dark text-white h-100">
                 <div class="card-body">
                     <h5 class="card-title text-center">Proporción Ingresos - Egresos</h5>
-                    @if (datosPastelTotal.Any() && datosPastelTotal.Sum(x => x.Monto) > 0)
+                    @if (datosPastelTotal.Sum(x => x.Monto) > 0)
                     {
                         <RadzenChart Style="height: 300px;">
-                            @* <RadzenChartTooltipOptions Shared="false" /> *@  @* Eliminado *@
-                            <RadzenPieSeries TItem="TotalItem" 
-                                             Data="@datosPastelTotal" 
-                                             CategoryProperty="Categoria" 
+                            <RadzenPieSeries TItem="TotalItem"
+                                             Data="@datosPastelTotal"
+                                             CategoryProperty="Categoria"
                                              ValueProperty="Monto"
                                              Fills="@paletaColoresBarras" />
+                            <RadzenChartTooltipOptions Shared="false" />
                         </RadzenChart>
                     }
                     else
                     {
-                        <p class="text-center text-muted py-5">Sin datos</p>
+                        <p class="text-center text-muted py-5">Sin datos para el período seleccionado</p>
                     }
                 </div>
             </div>
@@ -117,18 +120,19 @@ else
             <div class="card bg-dark text-white h-100">
                 <div class="card-body">
                     <h5 class="card-title text-center">Ingresos por Categoría</h5>
-                    @if (datosIngresosCategoria.Any() && datosIngresosCategoria.Sum(x => x.Monto) > 0)
+                    @if (datosIngresosCategoria.Any())
                     {
                         <RadzenChart Style="height: 300px;">
-                            <RadzenPieSeries TItem="CategoriaItem" 
-                                             Data="@datosIngresosCategoria" 
-                                             CategoryProperty="Categoria" 
+                            <RadzenPieSeries TItem="CategoriaItem"
+                                             Data="@datosIngresosCategoria"
+                                             CategoryProperty="Categoria"
                                              ValueProperty="Monto" />
+                            <RadzenChartTooltipOptions Shared="false" />
                         </RadzenChart>
                     }
                     else
                     {
-                        <p class="text-center text-muted py-5">Sin ingresos</p>
+                        <p class="text-center text-muted py-5">Sin ingresos en el período seleccionado</p>
                     }
                 </div>
             </div>
@@ -138,18 +142,19 @@ else
             <div class="card bg-dark text-white h-100">
                 <div class="card-body">
                     <h5 class="card-title text-center">Egresos por Categoría</h5>
-                    @if (datosEgresosCategoria.Any() && datosEgresosCategoria.Sum(x => x.Monto) > 0)
+                    @if (datosEgresosCategoria.Any())
                     {
                         <RadzenChart Style="height: 300px;">
-                            <RadzenPieSeries TItem="CategoriaItem" 
-                                             Data="@datosEgresosCategoria" 
-                                             CategoryProperty="Categoria" 
+                            <RadzenPieSeries TItem="CategoriaItem"
+                                             Data="@datosEgresosCategoria"
+                                             CategoryProperty="Categoria"
                                              ValueProperty="Monto" />
+                            <RadzenChartTooltipOptions Shared="false" />
                         </RadzenChart>
                     }
                     else
                     {
-                        <p class="text-center text-muted py-5">Sin egresos</p>
+                        <p class="text-center text-muted py-5">Sin egresos en el período seleccionado</p>
                     }
                 </div>
             </div>
@@ -160,24 +165,25 @@ else
         <div class="col-12">
             <div class="card bg-dark text-white">
                 <div class="card-body">
-                    <h5 class="card-title text-center">Evolución Gastos Mensual</h5>
-                    @if (datosLinea.Any() && datosLinea.Any(d => d.Gasto > 0))
+                    <h5 class="card-title text-center">Evolución de Gastos</h5>
+                    @if (datosLinea.Any(d => d.Gasto > 0))
                     {
                         <RadzenChart Style="height: 300px;">
-                            @* <RadzenChartTooltipOptions Shared="true" /> *@  @* Eliminado *@
-                            <RadzenLineSeries TItem="GastoMensual" 
-                                              Data="@datosLinea" 
-                                              CategoryProperty="Mes" 
-                                              ValueProperty="Gasto" />
-                            <RadzenCategoryAxis />
+                            <RadzenLineSeries TItem="GastoMensual"
+                                              Data="@datosLinea"
+                                              CategoryProperty="Mes"
+                                              ValueProperty="Gasto"
+                                              Title="Gastos" />
+                            <RadzenCategoryAxis Padding="20" />
                             <RadzenValueAxis Formatter="@FormatearMonedaEje">
                                 <RadzenGridLines Visible="true" />
                             </RadzenValueAxis>
+                            <RadzenChartTooltipOptions Shared="true" />
                         </RadzenChart>
                     }
                     else
                     {
-                        <p class="text-center text-muted py-5">Sin datos</p>
+                        <p class="text-center text-muted py-5">Sin gastos registrados en el período seleccionado</p>
                     }
                 </div>
             </div>
@@ -192,6 +198,7 @@ else
     private string periodoSeleccionado = "total";
     private string? mensajeError;
     private bool estaCargando = true;
+    private bool hayDatos;
 
     private List<TotalItem> datosBarras = new();
     private List<TotalItem> datosPastelTotal = new();
@@ -207,33 +214,44 @@ else
         {
             return numero.ToString("C0", CultureInfo.GetCultureInfo("es-MX"));
         }
+        if (value is decimal numeroDecimal)
+        {
+            return numeroDecimal.ToString("C0", CultureInfo.GetCultureInfo("es-MX"));
+        }
         return value?.ToString() ?? string.Empty;
+    }
+
+    private string CapitalizarMes(string mes)
+    {
+        if (string.IsNullOrEmpty(mes)) return mes;
+        return char.ToUpper(mes[0]) + mes.Substring(1);
     }
 
     protected override async Task OnInitializedAsync()
     {
+        estaCargando = true;
         try
         {
-            estaCargando = true;
             datos = await ArchivoService.CargarAsync();
-            if (datos?.Movimientos != null)
+
+            hayDatos = datos.Movimientos.Any(m =>
+                !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia");
+
+            if (hayDatos)
             {
                 aniosDisponibles = datos.Movimientos
-                    .Where(m => m.Categoria != null && m.Categoria != "Transferencia")
+                    .Where(m => !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia")
                     .Select(m => m.FechaOcurrido.Year)
                     .Distinct()
                     .OrderBy(a => a)
                     .ToList();
+
                 CalcularMetricas();
             }
-            else
-            {
-                mensajeError = "No se pudieron cargar los datos financieros.";
-            }
         }
-        catch (Exception ex) 
-        { 
-            mensajeError = $"Error de infraestructura: {ex.Message}"; 
+        catch (Exception ex)
+        {
+            mensajeError = $"Error al cargar datos: {ex.Message}";
             Console.WriteLine($"Excepción en OnInitializedAsync: {ex}");
         }
         finally
@@ -242,45 +260,47 @@ else
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private void OnAnioChanged(ChangeEventArgs e)
     {
-        if (!estaCargando && datos != null)
-        {
-            // Esperar un poco a que Radzen termine de dibujar
-            await Task.Delay(500);
-            await JSRuntime.InvokeVoidAsync("initCustomTooltips", 
-                datosBarras, datosPastelTotal, datosIngresosCategoria, datosEgresosCategoria, datosLinea);
-        }
-        await base.OnAfterRenderAsync(firstRender);
+        anioSeleccionado = e.Value?.ToString() ?? "todos";
     }
-    
+
+    private void OnPeriodoChanged(ChangeEventArgs e)
+    {
+        periodoSeleccionado = e.Value?.ToString() ?? "total";
+    }
 
     private void AplicarFiltros()
     {
-        estaCargando = true;
         try
         {
+            mensajeError = null;
             CalcularMetricas();
         }
         catch (Exception ex)
         {
-            mensajeError = $"Error en filtro: {ex.Message}";
-        }
-        finally
-        {
-            estaCargando = false;
-            StateHasChanged();
+            mensajeError = $"Error al aplicar filtros: {ex.Message}";
+            Console.WriteLine($"Excepción en AplicarFiltros: {ex}");
         }
     }
 
     private void CalcularMetricas()
     {
-        if (datos?.Movimientos == null) return;
+        if (datos?.Movimientos == null)
+        {
+            LimpiarDatos();
+            return;
+        }
 
         var movimientos = datos.Movimientos
-            .Where(m => !string.IsNullOrEmpty(m.Categoria) && m.Categoria != "Transferencia").ToList();
+            .Where(m => !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia")
+            .ToList();
 
-        if (!movimientos.Any()) { LimpiarDatos(); return; }
+        if (!movimientos.Any())
+        {
+            LimpiarDatos();
+            return;
+        }
 
         if (anioSeleccionado != "todos" && int.TryParse(anioSeleccionado, out int anioParsed))
         {
@@ -289,9 +309,9 @@ else
 
         if (periodoSeleccionado != "total")
         {
-            if (periodoSeleccionado == "semestre1") 
+            if (periodoSeleccionado == "semestre1")
                 movimientos = movimientos.Where(m => m.FechaOcurrido.Month <= 6).ToList();
-            else if (periodoSeleccionado == "semestre2") 
+            else if (periodoSeleccionado == "semestre2")
                 movimientos = movimientos.Where(m => m.FechaOcurrido.Month >= 7).ToList();
             else if (periodoSeleccionado.StartsWith("mes") && int.TryParse(periodoSeleccionado.AsSpan(3), out int mes))
             {
@@ -299,7 +319,11 @@ else
             }
         }
 
-        if (!movimientos.Any()) { LimpiarDatos(); return; }
+        if (!movimientos.Any())
+        {
+            LimpiarDatos();
+            return;
+        }
 
         decimal totalIngresos = movimientos.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto);
         decimal totalEgresos = movimientos.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
@@ -310,17 +334,23 @@ else
             new() { Categoria = "Egresos", Monto = (double)totalEgresos }
         };
 
-        datosPastelTotal = datosBarras.Select(x => new TotalItem { Categoria = x.Categoria, Monto = x.Monto }).ToList();
+        datosPastelTotal = datosBarras
+            .Select(x => new TotalItem { Categoria = x.Categoria, Monto = x.Monto })
+            .ToList();
 
-        datosIngresosCategoria = movimientos.Where(m => m.Tipo == "Ingreso")
+        datosIngresosCategoria = movimientos
+            .Where(m => m.Tipo == "Ingreso")
             .GroupBy(m => m.Categoria)
-            .Select(g => new CategoriaItem { Categoria = g.Key ?? "Otros", Monto = (double)g.Sum(m => m.Monto) })
-            .OrderByDescending(x => x.Monto).ToList();
+            .Select(g => new CategoriaItem { Categoria = g.Key, Monto = (double)g.Sum(m => m.Monto) })
+            .OrderByDescending(x => x.Monto)
+            .ToList();
 
-        datosEgresosCategoria = movimientos.Where(m => m.Tipo == "Egreso")
+        datosEgresosCategoria = movimientos
+            .Where(m => m.Tipo == "Egreso")
             .GroupBy(m => m.Categoria)
-            .Select(g => new CategoriaItem { Categoria = g.Key ?? "Otros", Monto = (double)g.Sum(m => m.Monto) })
-            .OrderByDescending(x => x.Monto).ToList();
+            .Select(g => new CategoriaItem { Categoria = g.Key, Monto = (double)g.Sum(m => m.Monto) })
+            .OrderByDescending(x => x.Monto)
+            .ToList();
 
         ConstruirLineaGastos(movimientos);
     }
@@ -328,27 +358,45 @@ else
     private void ConstruirLineaGastos(List<Movimiento> movimientos)
     {
         var lineData = new List<GastoMensual>();
+        var cultura = CultureInfo.GetCultureInfo("es-MX");
+
         if (anioSeleccionado != "todos" && int.TryParse(anioSeleccionado, out int anio))
         {
             for (int mes = 1; mes <= 12; mes++)
             {
-                decimal gasto = movimientos.Where(m => m.Tipo == "Egreso" && m.FechaOcurrido.Year == anio && m.FechaOcurrido.Month == mes).Sum(m => m.Monto);
-                lineData.Add(new GastoMensual { Mes = CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(mes), Gasto = (double)gasto });
+                decimal gasto = movimientos
+                    .Where(m => m.Tipo == "Egreso" && m.FechaOcurrido.Year == anio && m.FechaOcurrido.Month == mes)
+                    .Sum(m => m.Monto);
+                lineData.Add(new GastoMensual
+                {
+                    Mes = CapitalizarMes(cultura.DateTimeFormat.GetAbbreviatedMonthName(mes)),
+                    Gasto = (double)gasto
+                });
             }
         }
         else
         {
-            if (!movimientos.Any()) return;
             var fechas = movimientos.Select(m => m.FechaOcurrido).ToList();
             var primera = fechas.Min();
             var ultima = fechas.Max();
             var fecha = new DateTime(primera.Year, primera.Month, 1);
-            string formato = (primera.Year == ultima.Year) ? "MMM" : "MM/yy";
-            while (fecha <= ultima)
+            string formato = (primera.Year == ultima.Year) ? "MMM" : "MMM yy";
+
+            int maxIteraciones = 360;
+            int iteraciones = 0;
+
+            while (fecha <= ultima && iteraciones < maxIteraciones)
             {
-                decimal gasto = movimientos.Where(m => m.Tipo == "Egreso" && m.FechaOcurrido.Year == fecha.Year && m.FechaOcurrido.Month == fecha.Month).Sum(m => m.Monto);
-                lineData.Add(new GastoMensual { Mes = fecha.ToString(formato), Gasto = (double)gasto });
+                decimal gasto = movimientos
+                    .Where(m => m.Tipo == "Egreso" && m.FechaOcurrido.Year == fecha.Year && m.FechaOcurrido.Month == fecha.Month)
+                    .Sum(m => m.Monto);
+                lineData.Add(new GastoMensual
+                {
+                    Mes = CapitalizarMes(fecha.ToString(formato, cultura)),
+                    Gasto = (double)gasto
+                });
                 fecha = fecha.AddMonths(1);
+                iteraciones++;
             }
         }
         datosLinea = lineData;
@@ -356,11 +404,11 @@ else
 
     private void LimpiarDatos()
     {
-        datosBarras.Clear();
-        datosPastelTotal.Clear();
-        datosIngresosCategoria.Clear();
-        datosEgresosCategoria.Clear();
-        datosLinea.Clear();
+        datosBarras = new List<TotalItem>();
+        datosPastelTotal = new List<TotalItem>();
+        datosIngresosCategoria = new List<CategoriaItem>();
+        datosEgresosCategoria = new List<CategoriaItem>();
+        datosLinea = new List<GastoMensual>();
     }
 
     public class TotalItem

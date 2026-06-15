@@ -1,6 +1,7 @@
 @page "/configuracion"
 @using YESSMobilePWA.Models
 @using YESSMobilePWA.Services
+@using System.Text.Json
 @inject ArchivoService ArchivoService
 @inject IJSRuntime JS
 
@@ -178,10 +179,23 @@
             <input type="file" id="fileInput" accept=".json" class="form-control" />
         </div>
         <button class="btn btn-primary" @onclick="ImportarArchivo">Importar</button>
-        <button class="btn btn-secondary" @onclick="ExportarArchivo">Exportar datos</button>
-        @if (!string.IsNullOrEmpty(mensaje))
+        <button class="btn btn-secondary" @onclick="ExportarArchivo">Exportar datos (local)</button>
+        
+        <hr class="my-4" />
+        
+        <h5>Respaldo en GitHub Gist (Nube)</h5>
+        <p>Guarda automáticamente un respaldo en un Gist privado de GitHub.</p>
+        <div class="mb-3">
+            <label class="form-label">Token de acceso personal de GitHub</label>
+            <input type="password" class="form-control" @bind="gitHubTokenInput" placeholder="ghp_xxxxxx" />
+            <small class="form-text text-muted">Debe tener permiso "gist". Se guarda en localStorage.</small>
+        </div>
+        <button class="btn btn-success" @onclick="GuardarTokenGitHub" disabled="@string.IsNullOrEmpty(gitHubTokenInput)">Guardar token</button>
+        <button class="btn btn-info mt-2" @onclick="SubirAGitHub" disabled="@(string.IsNullOrEmpty(datosCache?.GitHubToken))">Subir respaldo a GitHub</button>
+        <button class="btn btn-secondary mt-2" @onclick="DescargarDesdeGitHub" disabled="@(string.IsNullOrEmpty(datosCache?.GitHubGistId))">Restaurar desde GitHub</button>
+        @if (!string.IsNullOrEmpty(mensajeGitHub))
         {
-            <div class="alert alert-info mt-3">@mensaje</div>
+            <div class="alert alert-info mt-3">@mensajeGitHub</div>
         }
     }
 </div>
@@ -321,6 +335,11 @@
     private Persona? personaEditando = null;
     private PersonaFormula personaFormulario = new();
 
+    // GitHub
+    private string gitHubTokenInput = "";
+    private string mensajeGitHub = "";
+    private DatosApp? datosCache;
+
     // Clases auxiliares para los formularios
     private class CuentaFormula
     {
@@ -340,12 +359,10 @@
         public string Tipo { get; set; } = "Ninguno";
     }
 
-    // Para cálculos internos
-    private DatosApp? datosCache;
-
     protected override async Task OnInitializedAsync()
     {
         await CargarDatos();
+        gitHubTokenInput = datosCache?.GitHubToken ?? "";
     }
 
     private async Task CargarDatos()
@@ -361,12 +378,10 @@
     private void CalcularSaldosActuales()
     {
         if (datosCache == null) return;
-        // Inicializar saldo actual con saldo inicial
         foreach (var cuenta in cuentas)
         {
             cuenta.SaldoActual = cuenta.SaldoInicial;
         }
-        // Sumar/restar movimientos
         foreach (var mov in datosCache.Movimientos)
         {
             var cuenta = cuentas.FirstOrDefault(c => c.Id == mov.CuentaId);
@@ -401,13 +416,11 @@
 
     private async Task GuardarCuentaModal()
     {
-        // Validación: nombre no vacío y no duplicado (ignorando mayúsculas)
         if (string.IsNullOrWhiteSpace(cuentaFormulario.Nombre))
         {
             await JS.InvokeVoidAsync("alert", "El nombre de la cuenta no puede estar vacío.");
             return;
         }
-
         var nombreNormalizado = cuentaFormulario.Nombre.Trim();
         var duplicado = cuentas.Any(c => c.Id != (cuentaEditando?.Id ?? "") &&
                                            c.Nombre.Equals(nombreNormalizado, StringComparison.OrdinalIgnoreCase));
@@ -416,46 +429,43 @@
             await JS.InvokeVoidAsync("alert", "Ya existe una cuenta con ese nombre.");
             return;
         }
-
-        // Recalcular SaldoInicial a partir del nuevo SaldoActual deseado
         if (datosCache == null) return;
 
         decimal netoMovimientos = 0;
         if (cuentaEditando != null)
         {
-            // Calcular neto de movimientos para esta cuenta (ingresos - egresos)
             netoMovimientos = datosCache.Movimientos
                 .Where(m => m.CuentaId == cuentaEditando.Id)
                 .Sum(m => m.Tipo == "Ingreso" ? m.Monto : -m.Monto);
         }
-        // Para cuenta nueva, netoMovimientos = 0
-
         decimal nuevoSaldoInicial = cuentaFormulario.NuevoSaldoActual - netoMovimientos;
 
         if (cuentaEditando == null)
         {
-            // Nueva cuenta
             var nueva = new Cuenta(nombreNormalizado, cuentaFormulario.Visibilidad, nuevoSaldoInicial);
             nueva.Color = cuentaFormulario.Color;
-            nueva.SaldoActual = cuentaFormulario.NuevoSaldoActual; // para mostrar inmediatamente
+            nueva.SaldoActual = cuentaFormulario.NuevoSaldoActual;
             cuentas.Add(nueva);
         }
         else
         {
-            // Editar cuenta existente
             cuentaEditando.Nombre = nombreNormalizado;
             cuentaEditando.Visibilidad = cuentaFormulario.Visibilidad;
             cuentaEditando.SaldoInicial = nuevoSaldoInicial;
             cuentaEditando.Color = cuentaFormulario.Color;
             cuentaEditando.SaldoActual = cuentaFormulario.NuevoSaldoActual;
         }
-
         modalCuentaVisible = false;
         await PersistirDatos();
     }
 
     private async Task EliminarCuenta(Cuenta cuenta)
     {
+        if (datosCache != null && datosCache.Movimientos.Any(m => m.CuentaId == cuenta.Id))
+        {
+            await JS.InvokeVoidAsync("alert", $"No se puede eliminar la cuenta '{cuenta.Nombre}' porque tiene movimientos asociados.");
+            return;
+        }
         if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar la cuenta '{cuenta.Nombre}'?"))
         {
             cuentas.Remove(cuenta);
@@ -489,7 +499,6 @@
             await JS.InvokeVoidAsync("alert", "El nombre de la categoría no puede estar vacío.");
             return;
         }
-
         var nombreNormalizado = categoriaFormulario.Nombre.Trim();
         var duplicado = categorias.Any(c => c.Id != (categoriaEditando?.Id ?? "") &&
                                              c.Nombre.Equals(nombreNormalizado, StringComparison.OrdinalIgnoreCase));
@@ -498,7 +507,6 @@
             await JS.InvokeVoidAsync("alert", "Ya existe una categoría con ese nombre.");
             return;
         }
-
         if (categoriaEditando == null)
         {
             categorias.Add(new Categoria(nombreNormalizado, categoriaFormulario.TipoPermitido));
@@ -508,13 +516,17 @@
             categoriaEditando.Nombre = nombreNormalizado;
             categoriaEditando.TipoPermitido = categoriaFormulario.TipoPermitido;
         }
-
         modalCategoriaVisible = false;
         await PersistirDatos();
     }
 
     private async Task EliminarCategoria(Categoria categoria)
     {
+        if (datosCache != null && datosCache.Movimientos.Any(m => m.CategoriaId == categoria.Id))
+        {
+            await JS.InvokeVoidAsync("alert", $"No se puede eliminar la categoría '{categoria.Nombre}' porque tiene movimientos asociados.");
+            return;
+        }
         if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar la categoría '{categoria.Nombre}'?"))
         {
             categorias.Remove(categoria);
@@ -548,7 +560,6 @@
             await JS.InvokeVoidAsync("alert", "El nombre de la persona no puede estar vacío.");
             return;
         }
-
         var nombreNormalizado = personaFormulario.Nombre.Trim();
         var duplicado = personas.Any(p => p.Id != (personaEditando?.Id ?? "") &&
                                            p.Nombre.Equals(nombreNormalizado, StringComparison.OrdinalIgnoreCase));
@@ -557,7 +568,6 @@
             await JS.InvokeVoidAsync("alert", "Ya existe una persona con ese nombre.");
             return;
         }
-
         if (personaEditando == null)
         {
             personas.Add(new Persona(nombreNormalizado, personaFormulario.Tipo));
@@ -567,13 +577,17 @@
             personaEditando.Nombre = nombreNormalizado;
             personaEditando.Tipo = personaFormulario.Tipo;
         }
-
         modalPersonaVisible = false;
         await PersistirDatos();
     }
 
     private async Task EliminarPersona(Persona persona)
     {
+        if (datosCache != null && datosCache.Movimientos.Any(m => m.PersonaId == persona.Id))
+        {
+            await JS.InvokeVoidAsync("alert", $"No se puede eliminar la persona '{persona.Nombre}' porque tiene movimientos asociados.");
+            return;
+        }
         if (await JS.InvokeAsync<bool>("confirm", $"¿Eliminar a '{persona.Nombre}'?"))
         {
             personas.Remove(persona);
@@ -581,7 +595,7 @@
         }
     }
 
-    // ================== PERSISTENCIA Y ACTUALIZACIÓN ==================
+    // ================== PERSISTENCIA ==================
     private async Task PersistirDatos()
     {
         if (datosCache == null) return;
@@ -589,13 +603,12 @@
         datosCache.Categorias = categorias;
         datosCache.Personas = personas;
         await ArchivoService.GuardarAsync(datosCache);
-        // Recargar para asegurar consistencia
         await CargarDatos();
         mensaje = "Cambios guardados.";
         StateHasChanged();
     }
 
-    // ================== IMPORTAR/EXPORTAR ==================
+    // ================== IMPORTAR/EXPORTAR LOCAL ==================
     private async Task ImportarArchivo()
     {
         var contenido = await JS.InvokeAsync<string>("getFileContent", "fileInput");
@@ -606,7 +619,7 @@
         }
         try
         {
-            var datos = System.Text.Json.JsonSerializer.Deserialize<DatosApp>(contenido);
+            var datos = JsonSerializer.Deserialize<DatosApp>(contenido);
             if (datos == null) throw new Exception("Archivo inválido");
             await ArchivoService.GuardarAsync(datos);
             await CargarDatos();
@@ -621,9 +634,165 @@
 
     private async Task ExportarArchivo()
     {
-        var datos = await ArchivoService.CargarAsync();
-        var json = System.Text.Json.JsonSerializer.Serialize(datos, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        if (datosCache == null) return;
+
+        // Actualizar fecha de última exportación (reinicia el contador del banner)
+        datosCache.UltimaExportacion = DateTime.Now;
+        await PersistirDatos(); // Guarda los datos con la nueva fecha
+
+        var json = JsonSerializer.Serialize(datosCache, new JsonSerializerOptions { WriteIndented = true });
         await JS.InvokeVoidAsync("downloadFile", "yes_gestor_data.json", json);
-        mensaje = "Exportación iniciada.";
+        mensaje = "Exportación local completada. El recordatorio de backup se ha reiniciado.";
+    }
+
+    // ================== GITHUB GIST ==================
+    private async Task GuardarTokenGitHub()
+    {
+        if (datosCache == null) return;
+        datosCache.GitHubToken = gitHubTokenInput;
+        await PersistirDatos();
+        mensajeGitHub = "Token guardado correctamente.";
+    }
+
+    private async Task SubirAGitHub()
+    {
+        if (datosCache == null) return;
+        if (string.IsNullOrEmpty(datosCache.GitHubToken))
+        {
+            mensajeGitHub = "Primero guarda tu token de GitHub.";
+            return;
+        }
+
+        var datosParaGist = new
+        {
+            version = datosCache.Version,
+            ultimaExportacion = datosCache.UltimaExportacion,
+            movimientos = datosCache.Movimientos,
+            cuentas = datosCache.Cuentas,
+            categorias = datosCache.Categorias,
+            personas = datosCache.Personas,
+            metas = datosCache.Metas
+        };
+
+        var json = JsonSerializer.Serialize(datosParaGist, new JsonSerializerOptions { WriteIndented = true });
+
+        try
+        {
+            using var http = new HttpClient();
+            http.DefaultRequestHeaders.Add("Authorization", $"token {datosCache.GitHubToken}");
+            http.DefaultRequestHeaders.Add("User-Agent", "YESSMobilePWA");
+
+            if (string.IsNullOrEmpty(datosCache.GitHubGistId))
+            {
+                // Crear nuevo Gist
+                var gist = new
+                {
+                    description = $"Backup de YESSMobilePWA - {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                    @public = false,
+                    files = new Dictionary<string, object>
+                    {
+                        ["yes_gestor_data.json"] = new { content = json }
+                    }
+                };
+                var content = new StringContent(JsonSerializer.Serialize(gist), System.Text.Encoding.UTF8, "application/json");
+                var response = await http.PostAsync("https://api.github.com/gists", content);
+                var responseJson = await response.Content.ReadAsStringAsync();
+                if (response.IsSuccessStatusCode)
+                {
+                    var gistObj = JsonSerializer.Deserialize<Dictionary<string, object>>(responseJson);
+                    if (gistObj != null && gistObj.ContainsKey("id"))
+                    {
+                        datosCache.GitHubGistId = gistObj["id"].ToString();
+                        // Actualizar fecha de última exportación
+                        datosCache.UltimaExportacion = DateTime.Now;
+                        await PersistirDatos();
+                        mensajeGitHub = $"Respaldo creado en Gist. ID: {datosCache.GitHubGistId}. Recordatorio de backup reiniciado.";
+                    }
+                }
+                else
+                {
+                    mensajeGitHub = $"Error al crear Gist: {response.StatusCode} - {responseJson}";
+                }
+            }
+            else
+            {
+                // Actualizar Gist existente
+                var update = new
+                {
+                    files = new Dictionary<string, object>
+                    {
+                        ["yes_gestor_data.json"] = new { content = json }
+                    }
+                };
+                var content = new StringContent(JsonSerializer.Serialize(update), System.Text.Encoding.UTF8, "application/json");
+                var response = await http.PatchAsync($"https://api.github.com/gists/{datosCache.GitHubGistId}", content);
+                if (response.IsSuccessStatusCode)
+                {
+                    // Actualizar fecha de última exportación
+                    datosCache.UltimaExportacion = DateTime.Now;
+                    await PersistirDatos();
+                    mensajeGitHub = "Respaldo actualizado correctamente. Recordatorio de backup reiniciado.";
+                }
+                else
+                {
+                    var error = await response.Content.ReadAsStringAsync();
+                    mensajeGitHub = $"Error al actualizar Gist: {response.StatusCode} - {error}";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeGitHub = $"Excepción: {ex.Message}";
+        }
+    }
+
+    private async Task DescargarDesdeGitHub()
+    {
+        if (datosCache == null || string.IsNullOrEmpty(datosCache.GitHubGistId))
+        {
+            mensajeGitHub = "No hay Gist asociado. Primero sube un respaldo.";
+            return;
+        }
+        try
+        {
+            using var http = new HttpClient();
+            var response = await http.GetAsync($"https://api.github.com/gists/{datosCache.GitHubGistId}");
+            if (response.IsSuccessStatusCode)
+            {
+                var responseJson = await response.Content.ReadAsStringAsync();
+                var gist = JsonSerializer.Deserialize<Dictionary<string, object>>(responseJson);
+                if (gist != null && gist.ContainsKey("files"))
+                {
+                    var files = JsonSerializer.Deserialize<Dictionary<string, object>>(gist["files"].ToString());
+                    if (files != null && files.ContainsKey("yes_gestor_data.json"))
+                    {
+                        var fileContent = JsonSerializer.Deserialize<Dictionary<string, string>>(files["yes_gestor_data.json"].ToString());
+                        var json = fileContent["content"];
+                        var nuevosDatos = JsonSerializer.Deserialize<DatosApp>(json);
+                        if (nuevosDatos != null)
+                        {
+                            // Conservar el token y el gistId actuales (no sobrescribir con los del Gist, que vendrían nulos)
+                            var tokenActual = datosCache.GitHubToken;
+                            var gistIdActual = datosCache.GitHubGistId;
+                            nuevosDatos.GitHubToken = tokenActual;
+                            nuevosDatos.GitHubGistId = gistIdActual;
+                            nuevosDatos.UltimaExportacion = DateTime.Now; // opcional: actualizar fecha de exportación
+                            datosCache = nuevosDatos;
+                            await ArchivoService.GuardarAsync(datosCache);
+                            await CargarDatos();
+                            mensajeGitHub = "Datos restaurados desde GitHub. (Token y GistId locales conservados)";
+                        }
+                    }
+                }
+            }
+            else
+            {
+                mensajeGitHub = $"Error al descargar Gist: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeGitHub = $"Excepción: {ex.Message}";
+        }
     }
 }

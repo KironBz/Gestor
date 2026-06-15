@@ -1,16 +1,103 @@
 ﻿@inherits LayoutComponentBase
+@using YESSMobilePWA.Services
+@using YESSMobilePWA.Models
+@inject ArchivoService ArchivoService
+@inject IJSRuntime JS
+
 <div class="page">
-    <div class="sidebar">
+    <!-- Sidebar: solo visible en escritorio (md y superiores) -->
+    <div class="sidebar d-none d-md-block">
         <NavMenu />
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4" style="padding-bottom: 3rem;">
+        <article class="content px-4" style="padding-bottom: 6rem;">
+            @* Banner de recordatorio de backup *@
+            @if (mostrarBannerBackup)
+            {
+                <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+                    <strong>📁 ¡Importante!</strong> Han pasado más de 7 días desde tu última exportación de datos.
+                    <button class="btn btn-sm btn-primary ms-2" @onclick="ExportarAhora">Exportar ahora</button>
+                    <button type="button" class="btn-close" @onclick="CerrarBanner" aria-label="Close"></button>
+                </div>
+            }
             @Body
         </article>
     </main>
 </div>
+
+<!-- Barra inferior para móvil (solo iconos, incluye Dashboard) -->
+<div class="bottom-nav d-md-none">
+    <div class="bottom-nav-scroll">
+        <NavLink class="nav-item" href="resumen">
+            <span class="oi oi-home" aria-hidden="true"></span>
+        </NavLink>
+        <NavLink class="nav-item" href="balance">
+            <span class="oi oi-chart" aria-hidden="true"></span>
+        </NavLink>
+        <NavLink class="nav-item" href="movimientos">
+            <span class="oi oi-list" aria-hidden="true"></span>
+        </NavLink>
+        <NavLink class="nav-item" href="prestamos">
+            <span class="oi oi-credit-card" aria-hidden="true"></span>
+        </NavLink>
+        <NavLink class="nav-item" href="dashboard">
+            <span class="oi oi-graph" aria-hidden="true"></span>
+        </NavLink>
+        <NavLink class="nav-item" href="metas">
+            <span class="oi oi-target" aria-hidden="true"></span>
+        </NavLink>
+        <NavLink class="nav-item" href="configuracion">
+            <span class="oi oi-cog" aria-hidden="true"></span>
+        </NavLink>
+    </div>
+</div>
+
+@code {
+    private bool mostrarBannerBackup = false;
+    private DatosApp? datos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await VerificarBackup();
+    }
+
+    private async Task VerificarBackup()
+    {
+        try
+        {
+            datos = await ArchivoService.CargarAsync();
+            if (datos == null) return;
+
+            if (datos.UltimaExportacion == null || (DateTime.Now - datos.UltimaExportacion.Value).Days >= 7)
+            {
+                mostrarBannerBackup = true;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al verificar backup: {ex.Message}");
+        }
+    }
+
+    private async Task ExportarAhora()
+    {
+        if (datos == null) return;
+
+        var json = System.Text.Json.JsonSerializer.Serialize(datos, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        await JS.InvokeVoidAsync("downloadFile", $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.json", json);
+        datos.UltimaExportacion = DateTime.Now;
+        await ArchivoService.GuardarAsync(datos);
+        mostrarBannerBackup = false;
+        StateHasChanged();
+
+        await JS.InvokeVoidAsync("alert", "¡Exportación completada! Recuerda guardar el archivo en un lugar seguro.");
+    }
+
+    private void CerrarBanner()
+    {
+        mostrarBannerBackup = false;
+        StateHasChanged();
+    }
+}

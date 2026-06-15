@@ -13,6 +13,112 @@
     <button class="btn btn-primary" @onclick="() => AbrirModal()">Agregar movimiento</button>
 </div>
 
+<!-- ===================== FILTROS ===================== -->
+<!-- Botón para mostrar/ocultar filtros (solo en móvil) -->
+<div class="mb-2 text-end d-md-none">
+    <button class="btn btn-sm btn-outline-light" @onclick="ToggleFiltros">
+        @(mostrarFiltros ? "Ocultar filtros" : "Mostrar filtros")
+        @if (HayFiltrosActivos())
+        {
+            <span class="badge bg-primary ms-1">!</span>
+        }
+    </button>
+</div>
+
+<!-- Panel de filtros: en móvil se oculta/muestra; en escritorio siempre visible -->
+<div class="card bg-dark text-white mb-3 @(mostrarFiltros ? "" : "d-none d-md-block")">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Filtros</h6>
+            <button class="btn btn-sm btn-outline-light" @onclick="LimpiarFiltros">Limpiar filtros</button>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-3">
+                <label class="form-label small">Buscar (descripción / referencia / meta)</label>
+                <input type="text" class="form-control form-control-sm" placeholder="Ej. renta, PR-..."
+                       value="@filtroTexto" @oninput="OnFiltroTextoChanged" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Tipo</label>
+                <select class="form-select form-select-sm" value="@filtroTipo" @onchange="OnFiltroTipoChanged">
+                    <option value="">Todos</option>
+                    <option value="Ingreso">Ingreso</option>
+                    <option value="Egreso">Egreso</option>
+                    <option value="Transferencia">Transferencia</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Cuenta</label>
+                <select class="form-select form-select-sm" value="@filtroCuentaId" @onchange="OnFiltroCuentaChanged">
+                    <option value="">Todas</option>
+                    @foreach (var cuenta in cuentasDisponibles)
+                    {
+                        <option value="@cuenta.Id">@cuenta.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Categoría</label>
+                <select class="form-select form-select-sm" value="@filtroCategoriaId" @onchange="OnFiltroCategoriaChanged">
+                    <option value="">Todas</option>
+                    @foreach (var categoria in categoriasDisponibles)
+                    {
+                        <option value="@categoria.Id">@categoria.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Persona</label>
+                <select class="form-select form-select-sm" value="@filtroPersonaId" @onchange="OnFiltroPersonaChanged">
+                    <option value="">Todas</option>
+                    @foreach (var persona in personasDisponibles)
+                    {
+                        <option value="@persona.Id">@persona.Nombre</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="row g-2 mt-2">
+            <div class="col-md-2">
+                <label class="form-label small">Meta</label>
+                <select class="form-select form-select-sm" value="@filtroMetaId" @onchange="OnFiltroMetaChanged">
+                    <option value="">Todas</option>
+                    @foreach (var meta in metasActivas)
+                    {
+                        <option value="@meta.Id">@meta.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Fecha desde</label>
+                <input type="date" class="form-control form-control-sm"
+                       value="@(filtroFechaDesde?.ToString("yyyy-MM-dd"))" @onchange="OnFiltroFechaDesdeChanged" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Fecha hasta</label>
+                <input type="date" class="form-control form-control-sm"
+                       value="@(filtroFechaHasta?.ToString("yyyy-MM-dd"))" @onchange="OnFiltroFechaHastaChanged" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Monto mínimo</label>
+                <input type="number" step="0.01" class="form-control form-control-sm"
+                       value="@filtroMontoMin" @onchange="OnFiltroMontoMinChanged" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Monto máximo</label>
+                <input type="number" step="0.01" class="form-control form-control-sm"
+                       value="@filtroMontoMax" @onchange="OnFiltroMontoMaxChanged" />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <small class="text-muted">
+                    Mostrando @movimientosFiltrados.Count de @(movimientos?.Count ?? 0) movimientos
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- =================== FIN FILTROS =================== -->
+
 @if (movimientos == null)
 {
     <p>Cargando...</p>
@@ -36,25 +142,35 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var mov in movimientos.OrderByDescending(m => m.FechaOcurrido) .ThenByDescending(m => m.FechaRegistro))
+                @if (!movimientosFiltrados.Any())
                 {
                     <tr>
-                        <td>@mov.FechaOcurrido.ToString("dd/MM/yyyy")</td>
-                        <td>@mov.NombreCuenta</td
-                        <td>@mov.Tipo</td
-                        <td>@mov.Categoria</td
-                        <td>@mov.NombrePersona</td
-                        <td style="max-width:150px;">@mov.Descripcion</td
-                        <td style="max-width:125px; overflow:hidden; text-overflow:ellipsis;" title="@mov.ReferenciaAuto">@mov.ReferenciaAuto</td
-                        <td>@mov.Monto.ToString("C")</td
-            
-                        <td style="min-width: 110px;">
-                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                <button class="btn btn-sm btn-warning" @onclick="() => AbrirModal(mov)">Editar</button>
-                                <button class="btn btn-sm btn-danger" @onclick="() => EliminarMovimiento(mov)">Eliminar</button>
-                            </div>
-                        </td
+                        <td colspan="9" class="text-center text-muted py-4">
+                            No hay movimientos que coincidan con los filtros aplicados.
+                        </td>
                     </tr>
+                }
+                else
+                {
+                    @foreach (var mov in movimientosFiltrados)
+                    {
+                        <tr>
+                            <td>@mov.FechaOcurrido.ToString("dd/MM/yyyy")</td
+                            <td>@mov.NombreCuenta</td
+                            <td>@mov.Tipo</td
+                            <td>@mov.Categoria</td
+                            <td>@mov.NombrePersona</td
+                            <td style="max-width:150px;">@mov.Descripcion</td
+                            <td style="max-width:125px; overflow:hidden; text-overflow:ellipsis;" title="@mov.ReferenciaAuto">@mov.ReferenciaAuto</td
+                            <td>@mov.Monto.ToString("C")</td
+                            <td style="min-width: 110px;">
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                    <button class="btn btn-sm btn-warning" @onclick="() => AbrirModal(mov)">Editar</button>
+                                    <button class="btn btn-sm btn-danger" @onclick="() => EliminarMovimiento(mov)">Eliminar</button>
+                                </div>
+                            </td
+                        </tr>
+                    }
                 }
             </tbody>
         </table>
@@ -62,21 +178,28 @@ else
 
     <!-- Tarjetas móvil -->
     <div class="d-block d-md-none">
-        @foreach (var mov in movimientos.OrderByDescending(m => m.FechaOcurrido).ThenByDescending(m => m.FechaRegistro))
+        @if (!movimientosFiltrados.Any())
         {
-            <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @mov.ColorCuenta;">
-                <div class="card-body">
-                    <h5 class="card-title">@mov.Descripcion</h5>
-                    <p class="card-text">
-                        <strong>@mov.Monto.ToString("C")</strong><br />
-                        @mov.FechaOcurrido.ToString("dd/MM/yyyy") - @mov.NombreCuenta<br />
-                        @mov.Tipo / @mov.Categoria
-                    </p>
-                    <p class="card-text"><small>Ref: @mov.ReferenciaAuto</small></p>
-                    <button class="btn btn-sm btn-warning" @onclick="() => AbrirModal(mov)">Editar</button>
-                    <button class="btn btn-sm btn-danger" @onclick="() => EliminarMovimiento(mov)">Eliminar</button>
+            <p class="text-center text-muted py-4">No hay movimientos que coincidan con los filtros aplicados.</p>
+        }
+        else
+        {
+            @foreach (var mov in movimientosFiltrados)
+            {
+                <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @mov.ColorCuenta;">
+                    <div class="card-body">
+                        <h5 class="card-title">@mov.Descripcion</h5>
+                        <p class="card-text">
+                            <strong>@mov.Monto.ToString("C")</strong><br />
+                            @mov.FechaOcurrido.ToString("dd/MM/yyyy") - @mov.NombreCuenta<br />
+                            @mov.Tipo / @mov.Categoria
+                        </p>
+                        <p class="card-text"><small>Ref: @mov.ReferenciaAuto</small></p>
+                        <button class="btn btn-sm btn-warning" @onclick="() => AbrirModal(mov)">Editar</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => EliminarMovimiento(mov)">Eliminar</button>
+                    </div>
                 </div>
-            </div>
+            }
         }
     </div>
 }
@@ -93,12 +216,10 @@ else
                     <button type="button" class="btn-close btn-close-white" @onclick="CerrarModal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Fecha -->
                     <div class="mb-3">
                         <label class="form-label">Fecha</label>
                         <InputDate @bind-Value="formulario.Fecha" class="form-control" />
                     </div>
-                    <!-- Tipo -->
                     <div class="mb-3">
                         <label class="form-label">Tipo</label>
                         <select class="form-select" @bind="formulario.Tipo">
@@ -196,6 +317,19 @@ else
                             <input type="number" class="form-control" @bind="formulario.Plazos" />
                         </div>
                     }
+                    @if (formulario.Tipo == "Ingreso" && (cuentaSeleccionada?.Nombre == "Nu" || cuentaSeleccionada?.Nombre == "Revolut"))
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Meta de ahorro (opcional)</label>
+                            <select class="form-select" @bind="formulario.MetaId">
+                                <option value="">(Ninguna)</option>
+                                @foreach (var meta in metasActivas)
+                                {
+                                    <option value="@meta.Id">@meta.Nombre</option>
+                                }
+                            </select>
+                        </div>
+                    }
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
@@ -229,13 +363,30 @@ else
     private List<Cuenta> cuentasDisponibles = new();
     private List<Categoria> categoriasDisponibles = new();
     private List<Persona> personasDisponibles = new();
+    private List<Meta> metasActivas = new();
     private Dictionary<string, string> mapaNombresCuentas = new();
     private Dictionary<string, string> mapaColoresCuentas = new();
     private Dictionary<string, string> mapaNombresPersonas = new();
-    
+    private Dictionary<string, string> mapaNombresMetas = new();
+
     private bool mostrarModalCuenta = false;
     private bool mostrarModalCategoria = false;
     private bool mostrarModalPersona = false;
+
+    // ========== ESTADO DE FILTROS ==========
+    private string filtroTexto = "";
+    private string filtroTipo = "";
+    private string filtroCuentaId = "";
+    private string filtroCategoriaId = "";
+    private string filtroPersonaId = "";
+    private string filtroMetaId = "";
+    private DateTime? filtroFechaDesde = null;
+    private DateTime? filtroFechaHasta = null;
+    private decimal? filtroMontoMin = null;
+    private decimal? filtroMontoMax = null;
+
+    // Para el toggle en móvil
+    private bool mostrarFiltros = false;
 
     private List<Categoria> categoriasFiltradas => formulario.Tipo switch
     {
@@ -254,6 +405,147 @@ else
         }
     }
 
+    // ========== LISTA FILTRADA (computed) ==========
+    private List<MovimientoViewModel> movimientosFiltrados
+    {
+        get
+        {
+            if (movimientos == null) return new List<MovimientoViewModel>();
+
+            IEnumerable<MovimientoViewModel> query = movimientos;
+
+            if (!string.IsNullOrWhiteSpace(filtroTexto))
+            {
+                var texto = filtroTexto.Trim();
+                query = query.Where(m =>
+                    (m.Descripcion?.Contains(texto, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.ReferenciaAuto?.Contains(texto, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.NombreMeta?.Contains(texto, StringComparison.OrdinalIgnoreCase) ?? false));
+            }
+
+            if (!string.IsNullOrEmpty(filtroTipo))
+                query = query.Where(m => m.Tipo == filtroTipo);
+
+            if (!string.IsNullOrEmpty(filtroCuentaId))
+                query = query.Where(m => m.CuentaId == filtroCuentaId);
+
+            if (!string.IsNullOrEmpty(filtroCategoriaId))
+                query = query.Where(m => m.CategoriaId == filtroCategoriaId);
+
+            if (!string.IsNullOrEmpty(filtroPersonaId))
+                query = query.Where(m => m.PersonaId == filtroPersonaId);
+
+            if (!string.IsNullOrEmpty(filtroMetaId))
+                query = query.Where(m => m.MetaId == filtroMetaId);
+
+            if (filtroFechaDesde.HasValue)
+                query = query.Where(m => m.FechaOcurrido.Date >= filtroFechaDesde.Value.Date);
+
+            if (filtroFechaHasta.HasValue)
+                query = query.Where(m => m.FechaOcurrido.Date <= filtroFechaHasta.Value.Date);
+
+            if (filtroMontoMin.HasValue)
+                query = query.Where(m => m.Monto >= filtroMontoMin.Value);
+
+            if (filtroMontoMax.HasValue)
+                query = query.Where(m => m.Monto <= filtroMontoMax.Value);
+
+            return query
+                .OrderByDescending(m => m.FechaOcurrido)
+                .ThenByDescending(m => m.FechaRegistro)
+                .ToList();
+        }
+    }
+
+    // ========== HANDLERS DE FILTROS ==========
+    private void OnFiltroTextoChanged(ChangeEventArgs e)
+    {
+        filtroTexto = e.Value?.ToString() ?? "";
+    }
+
+    private void OnFiltroTipoChanged(ChangeEventArgs e)
+    {
+        filtroTipo = e.Value?.ToString() ?? "";
+    }
+
+    private void OnFiltroCuentaChanged(ChangeEventArgs e)
+    {
+        filtroCuentaId = e.Value?.ToString() ?? "";
+    }
+
+    private void OnFiltroCategoriaChanged(ChangeEventArgs e)
+    {
+        filtroCategoriaId = e.Value?.ToString() ?? "";
+    }
+
+    private void OnFiltroPersonaChanged(ChangeEventArgs e)
+    {
+        filtroPersonaId = e.Value?.ToString() ?? "";
+    }
+
+    private void OnFiltroFechaDesdeChanged(ChangeEventArgs e)
+    {
+        var valor = e.Value?.ToString();
+        filtroFechaDesde = string.IsNullOrEmpty(valor) ? null : DateTime.Parse(valor);
+    }
+
+    private void OnFiltroFechaHastaChanged(ChangeEventArgs e)
+    {
+        var valor = e.Value?.ToString();
+        filtroFechaHasta = string.IsNullOrEmpty(valor) ? null : DateTime.Parse(valor);
+    }
+
+    private void OnFiltroMontoMinChanged(ChangeEventArgs e)
+    {
+        var valor = e.Value?.ToString();
+        filtroMontoMin = (string.IsNullOrEmpty(valor) || !decimal.TryParse(valor, out var m)) ? null : m;
+    }
+
+    private void OnFiltroMontoMaxChanged(ChangeEventArgs e)
+    {
+        var valor = e.Value?.ToString();
+        filtroMontoMax = (string.IsNullOrEmpty(valor) || !decimal.TryParse(valor, out var m)) ? null : m;
+    }
+
+    private void OnFiltroMetaChanged(ChangeEventArgs e)
+    {
+        filtroMetaId = e.Value?.ToString() ?? "";
+    }
+
+    private bool HayFiltrosActivos()
+    {
+        return !string.IsNullOrEmpty(filtroTexto) ||
+               !string.IsNullOrEmpty(filtroTipo) ||
+               !string.IsNullOrEmpty(filtroCuentaId) ||
+               !string.IsNullOrEmpty(filtroCategoriaId) ||
+               !string.IsNullOrEmpty(filtroPersonaId) ||
+               !string.IsNullOrEmpty(filtroMetaId) ||
+               filtroFechaDesde.HasValue ||
+               filtroFechaHasta.HasValue ||
+               filtroMontoMin.HasValue ||
+               filtroMontoMax.HasValue;
+    }
+
+    private void ToggleFiltros()
+    {
+        mostrarFiltros = !mostrarFiltros;
+    }
+
+    private void LimpiarFiltros()
+    {
+        filtroTexto = "";
+        filtroTipo = "";
+        filtroCuentaId = "";
+        filtroCategoriaId = "";
+        filtroPersonaId = "";
+        filtroMetaId = "";
+        filtroFechaDesde = null;
+        filtroFechaHasta = null;
+        filtroMontoMin = null;
+        filtroMontoMax = null;
+        mostrarFiltros = false; // Tras limpiar, ocultamos el panel en móvil
+    }
+
     protected override async Task OnInitializedAsync()
     {
         await CargarDatos();
@@ -262,16 +554,18 @@ else
     private async Task CargarDatos()
     {
         datos = await ArchivoService.CargarAsync();
-        PrecalcularMapas();
+        PrecalcularMapas(datos);
         CargarMovimientos();
         CargarListas();
+        CargarMetasActivas();
     }
 
-    private void PrecalcularMapas()
+    private void PrecalcularMapas(DatosApp datos)
     {
         mapaNombresCuentas = datos.Cuentas.ToDictionary(c => c.Id, c => c.Nombre);
         mapaColoresCuentas = datos.Cuentas.ToDictionary(c => c.Id, c => c.Color);
         mapaNombresPersonas = datos.Personas.ToDictionary(p => p.Id, p => p.Nombre);
+        mapaNombresMetas = datos.Metas.ToDictionary(m => m.Id, m => m.Nombre);
     }
 
     private void CargarListas()
@@ -279,6 +573,15 @@ else
         cuentasDisponibles = datos.Cuentas.ToList();
         categoriasDisponibles = datos.Categorias.ToList();
         personasDisponibles = datos.Personas.ToList();
+    }
+
+    private void CargarMetasActivas()
+    {
+        metasActivas = datos.Metas
+            .Where(m => !m.Completada && !m.Archivada)
+            .OrderBy(m => m.Prioridad)
+            .ThenBy(m => m.FechaCreacion)
+            .ToList();
     }
 
     private void CargarMovimientos()
@@ -298,7 +601,9 @@ else
             NombreCuenta = mapaNombresCuentas.GetValueOrDefault(m.CuentaId) ?? "Desconocida",
             ColorCuenta = mapaColoresCuentas.GetValueOrDefault(m.CuentaId) ?? "#FFFFFF",
             NombrePersona = m.PersonaId != null ? mapaNombresPersonas.GetValueOrDefault(m.PersonaId) ?? "" : "",
-            ReferenciaAuto = m.ReferenciaAuto ?? ""
+            ReferenciaAuto = m.ReferenciaAuto ?? "",
+            MetaId = m.MetaId,
+            NombreMeta = m.MetaId != null ? mapaNombresMetas.GetValueOrDefault(m.MetaId) ?? "" : ""
         }).ToList();
         StateHasChanged();
     }
@@ -334,11 +639,13 @@ else
             {
                 formulario.MontoFinal = original.MontoFinal;
                 formulario.Plazos = original.Plazos;
+                formulario.MetaId = original.MetaId;
             }
         }
         modalVisible = true;
     }
 
+    // ========== AGREGAR ELEMENTOS ==========
     private void AgregarCuenta()
     {
         mostrarModalCuenta = true;
@@ -386,6 +693,7 @@ else
         StateHasChanged();
     }
 
+    // ========== GUARDAR MOVIMIENTO ==========
     private async Task GuardarMovimiento()
     {
         if (formulario.Tipo == "Transferencia")
@@ -461,7 +769,8 @@ else
                 personaId: string.IsNullOrEmpty(formulario.PersonaId) ? null : formulario.PersonaId,
                 descripcion: formulario.Descripcion,
                 montoFinal: esPrestamo || esCargo ? formulario.MontoFinal : null,
-                plazos: esPrestamo || esCargo ? formulario.Plazos : null
+                plazos: esPrestamo || esCargo ? formulario.Plazos : null,
+                metaId: string.IsNullOrEmpty(formulario.MetaId) ? null : formulario.MetaId
             );
 
             if (movimientoEditando != null)
@@ -500,11 +809,12 @@ else
         }
     }
 
+    // ========== CLASES AUXILIARES ==========
     private class MovimientoViewModel
     {
         public string Id { get; set; } = "";
         public DateTime FechaOcurrido { get; set; }
-        public DateTime FechaRegistro { get; set; }   // ← NUEVO
+        public DateTime FechaRegistro { get; set; }
         public string Tipo { get; set; } = "";
         public string Categoria { get; set; } = "";
         public string Descripcion { get; set; } = "";
@@ -516,6 +826,8 @@ else
         public string NombrePersona { get; set; } = "";
         public string ReferenciaAuto { get; set; } = "";
         public string ColorCuenta { get; set; } = "";
+        public string? MetaId { get; set; }
+        public string NombreMeta { get; set; } = "";
     }
 
     private class FormularioMovimiento
@@ -531,5 +843,8 @@ else
         public decimal Monto { get; set; }
         public decimal? MontoFinal { get; set; }
         public int? Plazos { get; set; }
+        public string? MetaId { get; set; }
     }
+
+    private Cuenta? cuentaSeleccionada => cuentasDisponibles.FirstOrDefault(c => c.Id == formulario.CuentaId);
 }

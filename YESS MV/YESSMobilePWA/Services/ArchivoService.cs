@@ -59,33 +59,8 @@ namespace YESSMobilePWA.Services
                     mov.MontoFinal = null;
             }
 
-            // 2. Unificar metas (si existiera la lista metasAhorro, la fusionamos)
-            // En tu JSON actual metasAhorro está vacía, pero por si acaso:
-            if (datos.GetType().GetProperty("MetasAhorro") != null)
-            {
-                var metasAhorro = datos.GetType().GetProperty("MetasAhorro")?.GetValue(datos) as System.Collections.IList;
-                if (metasAhorro != null && metasAhorro.Count > 0)
-                {
-                    // Convertir cada MetaAhorro a Meta y agregar a datos.Metas
-                    foreach (var item in metasAhorro)
-                    {
-                        dynamic ma = item;
-                        var nuevaMeta = new Meta
-                        {
-                            Id = ma.Id,
-                            Nombre = ma.Nombre,
-                            MontoObjetivo = ma.MontoObjetivo,
-                            Prioridad = 3, // prioridad media por defecto
-                            FechaCreacion = ma.FechaCreacion,
-                            Referencia = ma.Referencia,
-                            Completada = (ma.AhorradoManual >= ma.MontoObjetivo)
-                        };
-                        datos.Metas.Add(nuevaMeta);
-                    }
-                    // Eliminar la propiedad MetasAhorro de la instancia (no se guardará)
-                    // Nota: Esto es más complejo; como no tienes datos, lo omitimos.
-                }
-            }
+            // 2. Asegurar que todas las metas tengan un Id (ya lo tienen por constructor)
+            // No hay conversión de MetasAhorro porque ya no existe.
 
             // 3. Marcar versión migrada
             datos.Version = 1;

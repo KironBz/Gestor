@@ -1,0 +1,4 @@
+[build]
+  base = "YESS MV/YESSMobilePWA"
+  command = "dotnet publish -c Release -o publish"
+  publish = "YESS MV/YESSMobilePWA/publish/wwwroot"

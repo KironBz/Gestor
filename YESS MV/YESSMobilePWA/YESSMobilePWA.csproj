@@ -6,9 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
-    
-    <!-- NUEVA LÍNEA: la ruta desde la raíz del repositorio hasta la carpeta del proyecto publicada -->
-    <StaticWebAssetBasePath>gestor/YESS%20MV/YESSMobilePWA</StaticWebAssetBasePath>
   </PropertyGroup>
 
   <ItemGroup>

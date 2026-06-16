@@ -1,4 +1,4 @@
 [build]
   base = "YESS MV/YESSMobilePWA"
-  command = "dotnet publish -c Release -o publish"
+  command = "curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --version 8.0.422 --install-dir $HOME/dotnet8 && export PATH=$HOME/dotnet8:$PATH && export DOTNET_ROOT=$HOME/dotnet8 && dotnet publish -c Release -o publish"
   publish = "publish/wwwroot"

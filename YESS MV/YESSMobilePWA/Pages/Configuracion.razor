@@ -44,14 +44,14 @@
                     @foreach (var cuenta in cuentas)
                     {
                         <tr>
-                            <td>@cuenta.Nombre</td
-                            <td>@cuenta.Visibilidad</td
-                            <td>@cuenta.SaldoActual.ToString("C")</td
-                            <td><div style="width:30px; height:30px; background-color:@cuenta.Color; border:1px solid white;"></div></td
+                            <td>@cuenta.Nombre</td>
+                            <td>@cuenta.Visibilidad</td>
+                            <td>@cuenta.SaldoActual.ToString("C")</td>
+                            <td><div style="width:30px; height:30px; background-color:@cuenta.Color; border:1px solid white;"></div></td>
                             <td>
                                 <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarCuenta(cuenta)">Editar</button>
                                 <button class="btn btn-sm btn-danger" @onclick="() => EliminarCuenta(cuenta)">Eliminar</button>
-                            </td
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -96,12 +96,12 @@
                     @foreach (var categoria in categorias)
                     {
                         <tr>
-                            <td>@categoria.Nombre</td
-                            <td>@categoria.TipoPermitido</td
+                            <td>@categoria.Nombre</td>
+                            <td>@categoria.TipoPermitido</td>
                             <td>
                                 <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarCategoria(categoria)">Editar</button>
                                 <button class="btn btn-sm btn-danger" @onclick="() => EliminarCategoria(categoria)">Eliminar</button>
-                            </td
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -142,12 +142,12 @@
                     @foreach (var persona in personas)
                     {
                         <tr>
-                            <td>@persona.Nombre</td
-                            <td>@persona.Tipo</td
+                            <td>@persona.Nombre</td>
+                            <td>@persona.Tipo</td>
                             <td>
                                 <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditarPersona(persona)">Editar</button>
                                 <button class="btn btn-sm btn-danger" @onclick="() => EliminarPersona(persona)">Eliminar</button>
-                            </td
+                            </td>
                         </tr>
                     }
                 </tbody>

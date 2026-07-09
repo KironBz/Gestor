@@ -113,18 +113,13 @@ code {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
 /* ESTILOS PARA FONDO OSCURO GLOBAL */
 html, body, #app {
     background-color: #1a1a1a !important;
     color: #f0f0f0 !important;
 }
 
-/* Opcional: mejora el contraste de tarjetas y menú */
-/*.card {
-    background-color: #2c2c2c !important;
-    border: 1px solid #444 !important;
-}
-    */
 .navbar {
     background-color: #0f0f0f !important;
 }
@@ -134,8 +129,6 @@ html, body, #app {
 .navbar .nav-link:hover {
     color: #fff !important;
 }
-
-
 
 /* Fuerza separación entre botones en la tabla */
 .table-movimientos td:last-child {
@@ -148,15 +141,14 @@ html, body, #app {
 }
 
 .page-content {
-    padding-bottom: 3rem;  /* Ajusta el valor según prefieras: 2rem, 50px, etc. */
+    padding-bottom: 3rem;
 }
 
-
-
-
-/* Barra inferior de navegación para móvil (solo iconos) */
+/* ============================================
+   BARRA INFERIOR DE NAVEGACIÓN (MÓVIL)
+   ============================================ */
 .bottom-nav {
-    display: none; /* oculto por defecto en escritorio */
+    display: none;
     position: fixed;
     bottom: 0;
     left: 0;
@@ -166,21 +158,21 @@ html, body, #app {
     z-index: 9999;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin; /* opcional: scroll fino */
+    scrollbar-width: thin;
 }
 
 @media (max-width: 767.98px) {
     .bottom-nav {
-        display: block !important; /* visible solo en móvil */
+        display: block !important;
     }
 }
 
 .bottom-nav-scroll {
     display: flex;
-    justify-content: flex-start; /* en lugar de space-around, para evitar desborde */
+    justify-content: flex-start;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem; /* márgenes laterales */
+    padding: 0.5rem 1rem;
     min-width: min-content;
 }
 
@@ -195,7 +187,7 @@ html, body, #app {
     border-radius: 0.75rem;
     transition: all 0.2s;
     white-space: nowrap;
-    flex-shrink: 0; /* evita que los elementos se encojan */
+    flex-shrink: 0;
 }
 
 .bottom-nav .nav-item.active {
@@ -204,12 +196,11 @@ html, body, #app {
 }
 
 .bottom-nav .nav-item span {
-    font-size: 2.75rem; /* ligeramente menor para que quepan más elementos */
+    font-size: 2.75rem;
     line-height: 1;
     display: inline-block;
 }
 
-/* Para pantallas muy pequeñas (menos de 360px) */
 @media (max-width: 360px) {
     .bottom-nav .nav-item span {
         font-size: 1.6rem;
@@ -220,8 +211,35 @@ html, body, #app {
 }
 
 /* Asegurar que el contenido no quede oculto detrás de la barra inferior */
-@media (max-width: 767.98px) {
+@media (max-width: 700px) {
     .content {
         padding-bottom: 6rem !important;
+    }
+}
+
+/* ============================================
+   FIX MODAL EN MÓVIL
+   Reduce la altura del modal para que no quede
+   tapado por la barra de navegación inferior
+   ============================================ */
+@media (max-width: 767.98px) {
+    .modal {
+        padding-bottom: 5rem !important;
+    }
+
+    .modal-dialog {
+        margin-top: 0.5rem;
+        margin-bottom: 0;
+        max-height: calc(100vh - 5rem);
+    }
+
+    .modal-dialog-scrollable .modal-content {
+        max-height: calc(100vh - 5rem);
+        overflow: hidden;
+    }
+
+    .modal-dialog-scrollable .modal-body {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
     }
 }

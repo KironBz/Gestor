@@ -180,8 +180,13 @@
         </div>
         <button class="btn btn-primary" @onclick="ImportarArchivo">Importar</button>
         <button class="btn btn-secondary" @onclick="ExportarArchivo">Exportar datos (local)</button>
-        
-        <hr class="my-4" />
+
+        @if (!string.IsNullOrEmpty(mensaje))
+        {
+            <div class="alert alert-info mt-3">@mensaje</div>
+        }
+
+    <hr class="my-4" />
         
         <h5>Respaldo en GitHub Gist (Nube)</h5>
         <p>Guarda automáticamente un respaldo en un Gist privado de GitHub.</p>
@@ -223,6 +228,7 @@
                             <option value="Oculto">Oculto</option>
                             <option value="Ajeno">Ajeno</option>
                             <option value="Transporte">Transporte</option>
+                            <option value="Ahorro">Ahorro</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -391,6 +397,22 @@
             else if (mov.Tipo == "Egreso")
                 cuenta.SaldoActual -= mov.Monto;
         }
+    }
+
+    // Modelos tipados para la API de GitHub Gist
+    private class GistArchivo
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("content")]
+        public string Content { get; set; } = "";
+    }
+
+    private class GistRespuesta
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public string Id { get; set; } = "";
+
+        [System.Text.Json.Serialization.JsonPropertyName("files")]
+        public Dictionary<string, GistArchivo> Files { get; set; } = new();
     }
 
     // ================== CUENTAS ==================
@@ -697,16 +719,20 @@
                 var content = new StringContent(JsonSerializer.Serialize(gist), System.Text.Encoding.UTF8, "application/json");
                 var response = await http.PostAsync("https://api.github.com/gists", content);
                 var responseJson = await response.Content.ReadAsStringAsync();
+
                 if (response.IsSuccessStatusCode)
                 {
-                    var gistObj = JsonSerializer.Deserialize<Dictionary<string, object>>(responseJson);
-                    if (gistObj != null && gistObj.ContainsKey("id"))
+                    var gistObj = JsonSerializer.Deserialize<GistRespuesta>(responseJson);
+                    if (gistObj != null && !string.IsNullOrEmpty(gistObj.Id))
                     {
-                        datosCache.GitHubGistId = gistObj["id"].ToString();
-                        // Actualizar fecha de última exportación
+                        datosCache.GitHubGistId = gistObj.Id;
                         datosCache.UltimaExportacion = DateTime.Now;
                         await PersistirDatos();
                         mensajeGitHub = $"Respaldo creado en Gist. ID: {datosCache.GitHubGistId}. Recordatorio de backup reiniciado.";
+                    }
+                    else
+                    {
+                        mensajeGitHub = "Gist creado, pero no se pudo leer su ID en la respuesta.";
                     }
                 }
                 else
@@ -728,7 +754,6 @@
                 var response = await http.PatchAsync($"https://api.github.com/gists/{datosCache.GitHubGistId}", content);
                 if (response.IsSuccessStatusCode)
                 {
-                    // Actualizar fecha de última exportación
                     datosCache.UltimaExportacion = DateTime.Now;
                     await PersistirDatos();
                     mensajeGitHub = "Respaldo actualizado correctamente. Recordatorio de backup reiniciado.";
@@ -756,38 +781,48 @@
         try
         {
             using var http = new HttpClient();
+            http.DefaultRequestHeaders.Add("User-Agent", "YESSMobilePWA");
+            if (!string.IsNullOrEmpty(datosCache.GitHubToken))
+            {
+                http.DefaultRequestHeaders.Add("Authorization", $"token {datosCache.GitHubToken}");
+            }
+
             var response = await http.GetAsync($"https://api.github.com/gists/{datosCache.GitHubGistId}");
             if (response.IsSuccessStatusCode)
             {
                 var responseJson = await response.Content.ReadAsStringAsync();
-                var gist = JsonSerializer.Deserialize<Dictionary<string, object>>(responseJson);
-                if (gist != null && gist.ContainsKey("files"))
+                var gist = JsonSerializer.Deserialize<GistRespuesta>(responseJson);
+
+                if (gist != null && gist.Files.TryGetValue("yes_gestor_data.json", out var archivo))
                 {
-                    var files = JsonSerializer.Deserialize<Dictionary<string, object>>(gist["files"].ToString());
-                    if (files != null && files.ContainsKey("yes_gestor_data.json"))
+                    var nuevosDatos = JsonSerializer.Deserialize<DatosApp>(archivo.Content);
+                    if (nuevosDatos != null)
                     {
-                        var fileContent = JsonSerializer.Deserialize<Dictionary<string, string>>(files["yes_gestor_data.json"].ToString());
-                        var json = fileContent["content"];
-                        var nuevosDatos = JsonSerializer.Deserialize<DatosApp>(json);
-                        if (nuevosDatos != null)
-                        {
-                            // Conservar el token y el gistId actuales (no sobrescribir con los del Gist, que vendrían nulos)
-                            var tokenActual = datosCache.GitHubToken;
-                            var gistIdActual = datosCache.GitHubGistId;
-                            nuevosDatos.GitHubToken = tokenActual;
-                            nuevosDatos.GitHubGistId = gistIdActual;
-                            nuevosDatos.UltimaExportacion = DateTime.Now; // opcional: actualizar fecha de exportación
-                            datosCache = nuevosDatos;
-                            await ArchivoService.GuardarAsync(datosCache);
-                            await CargarDatos();
-                            mensajeGitHub = "Datos restaurados desde GitHub. (Token y GistId locales conservados)";
-                        }
+                        // Conservar el token y el gistId actuales (no sobrescribir con los del Gist, que vendrían nulos)
+                        var tokenActual = datosCache.GitHubToken;
+                        var gistIdActual = datosCache.GitHubGistId;
+                        nuevosDatos.GitHubToken = tokenActual;
+                        nuevosDatos.GitHubGistId = gistIdActual;
+                        nuevosDatos.UltimaExportacion = DateTime.Now;
+                        datosCache = nuevosDatos;
+                        await ArchivoService.GuardarAsync(datosCache);
+                        await CargarDatos();
+                        mensajeGitHub = "Datos restaurados desde GitHub. (Token y GistId locales conservados)";
                     }
+                    else
+                    {
+                        mensajeGitHub = "El contenido del Gist no se pudo interpretar como datos válidos.";
+                    }
+                }
+                else
+                {
+                    mensajeGitHub = "El Gist no contiene el archivo esperado 'yes_gestor_data.json'.";
                 }
             }
             else
             {
-                mensajeGitHub = $"Error al descargar Gist: {response.StatusCode}";
+                var error = await response.Content.ReadAsStringAsync();
+                mensajeGitHub = $"Error al descargar Gist: {response.StatusCode} - {error}";
             }
         }
         catch (Exception ex)
@@ -795,4 +830,5 @@
             mensajeGitHub = $"Excepción: {ex.Message}";
         }
     }
+
 }

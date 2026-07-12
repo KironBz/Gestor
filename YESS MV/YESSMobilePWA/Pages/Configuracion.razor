@@ -27,8 +27,6 @@
     @if (tabActiva == "cuentas")
     {
         <h5>Cuentas</h5>
-
-        <!-- Vista para PC (tabla) -->
         <div class="d-none d-md-block">
             <table class="table table-dark table-striped">
                 <thead>
@@ -57,8 +55,6 @@
                 </tbody>
             </table>
         </div>
-
-        <!-- Vista para móvil (tarjetas) -->
         <div class="d-block d-md-none">
             @foreach (var cuenta in cuentas)
             {
@@ -74,7 +70,6 @@
                 </div>
             }
         </div>
-
         <button class="btn btn-primary mt-2" @onclick="AbrirModalNuevaCuenta">+ Agregar cuenta</button>
     }
 
@@ -82,7 +77,6 @@
     else if (tabActiva == "categorias")
     {
         <h5>Categorías</h5>
-        <!-- Tabla PC -->
         <div class="d-none d-md-block">
             <table class="table table-dark table-striped">
                 <thead>
@@ -107,7 +101,6 @@
                 </tbody>
             </table>
         </div>
-        <!-- Tarjetas móvil -->
         <div class="d-block d-md-none">
             @foreach (var categoria in categorias)
             {
@@ -128,7 +121,6 @@
     else if (tabActiva == "personas")
     {
         <h5>Personas</h5>
-        <!-- Tabla PC -->
         <div class="d-none d-md-block">
             <table class="table table-dark table-striped">
                 <thead>
@@ -153,7 +145,6 @@
                 </tbody>
             </table>
         </div>
-        <!-- Tarjetas móvil -->
         <div class="d-block d-md-none">
             @foreach (var persona in personas)
             {
@@ -186,8 +177,8 @@
             <div class="alert alert-info mt-3">@mensaje</div>
         }
 
-    <hr class="my-4" />
-        
+        <hr class="my-4" />
+
         <h5>Respaldo en GitHub Gist (Nube)</h5>
         <p>Guarda automáticamente un respaldo en un Gist privado de GitHub.</p>
         <div class="mb-3">
@@ -210,7 +201,7 @@
 {
     <div class="modal-backdrop fade show"></div>
     <div class="modal show d-block" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
                     <h5 class="modal-title">@(cuentaEditando == null ? "Nueva cuenta" : "Editar cuenta")</h5>
@@ -240,10 +231,10 @@
                         <label class="form-label">Color</label>
                         <input type="color" class="form-control" @bind="cuentaFormulario.Color" />
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="() => modalCuentaVisible = false">Cancelar</button>
-                    <button type="button" class="btn btn-primary" @onclick="GuardarCuentaModal">Guardar</button>
+                    <div class="d-flex justify-content-end gap-2 mt-3 pb-3">
+                        <button type="button" class="btn btn-secondary" @onclick="() => modalCuentaVisible = false">Cancelar</button>
+                        <button type="button" class="btn btn-primary" @onclick="GuardarCuentaModal">Guardar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -255,7 +246,7 @@
 {
     <div class="modal-backdrop fade show"></div>
     <div class="modal show d-block" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
                     <h5 class="modal-title">@(categoriaEditando == null ? "Nueva categoría" : "Editar categoría")</h5>
@@ -274,10 +265,10 @@
                             <option value="Ambos">Ambos</option>
                         </select>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="() => modalCategoriaVisible = false">Cancelar</button>
-                    <button type="button" class="btn btn-primary" @onclick="GuardarCategoriaModal">Guardar</button>
+                    <div class="d-flex justify-content-end gap-2 mt-3 pb-3">
+                        <button type="button" class="btn btn-secondary" @onclick="() => modalCategoriaVisible = false">Cancelar</button>
+                        <button type="button" class="btn btn-primary" @onclick="GuardarCategoriaModal">Guardar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -289,7 +280,7 @@
 {
     <div class="modal-backdrop fade show"></div>
     <div class="modal show d-block" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
                     <h5 class="modal-title">@(personaEditando == null ? "Nueva persona" : "Editar persona")</h5>
@@ -309,10 +300,10 @@
                             <option value="Ninguno">Ninguno</option>
                         </select>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="() => modalPersonaVisible = false">Cancelar</button>
-                    <button type="button" class="btn btn-primary" @onclick="GuardarPersonaModal">Guardar</button>
+                    <div class="d-flex justify-content-end gap-2 mt-3 pb-3">
+                        <button type="button" class="btn btn-secondary" @onclick="() => modalPersonaVisible = false">Cancelar</button>
+                        <button type="button" class="btn btn-primary" @onclick="GuardarPersonaModal">Guardar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -326,27 +317,22 @@
     private List<Persona> personas = new();
     private string mensaje = "";
 
-    // Variables para modales de cuenta
     private bool modalCuentaVisible = false;
     private Cuenta? cuentaEditando = null;
     private CuentaFormula cuentaFormulario = new();
 
-    // Variables para modales de categoría
     private bool modalCategoriaVisible = false;
     private Categoria? categoriaEditando = null;
     private CategoriaFormula categoriaFormulario = new();
 
-    // Variables para modales de persona
     private bool modalPersonaVisible = false;
     private Persona? personaEditando = null;
     private PersonaFormula personaFormulario = new();
 
-    // GitHub
     private string gitHubTokenInput = "";
     private string mensajeGitHub = "";
     private DatosApp? datosCache;
 
-    // Clases auxiliares para los formularios
     private class CuentaFormula
     {
         public string Nombre { get; set; } = "";
@@ -399,7 +385,6 @@
         }
     }
 
-    // Modelos tipados para la API de GitHub Gist
     private class GistArchivo
     {
         [System.Text.Json.Serialization.JsonPropertyName("content")]
@@ -415,7 +400,6 @@
         public Dictionary<string, GistArchivo> Files { get; set; } = new();
     }
 
-    // ================== CUENTAS ==================
     private void AbrirModalNuevaCuenta()
     {
         cuentaEditando = null;
@@ -495,7 +479,6 @@
         }
     }
 
-    // ================== CATEGORÍAS ==================
     private void AbrirModalNuevaCategoria()
     {
         categoriaEditando = null;
@@ -556,7 +539,6 @@
         }
     }
 
-    // ================== PERSONAS ==================
     private void AbrirModalNuevaPersona()
     {
         personaEditando = null;
@@ -617,7 +599,6 @@
         }
     }
 
-    // ================== PERSISTENCIA ==================
     private async Task PersistirDatos()
     {
         if (datosCache == null) return;
@@ -630,7 +611,6 @@
         StateHasChanged();
     }
 
-    // ================== IMPORTAR/EXPORTAR LOCAL ==================
     private async Task ImportarArchivo()
     {
         var contenido = await JS.InvokeAsync<string>("getFileContent", "fileInput");
@@ -657,17 +637,13 @@
     private async Task ExportarArchivo()
     {
         if (datosCache == null) return;
-
-        // Actualizar fecha de última exportación (reinicia el contador del banner)
         datosCache.UltimaExportacion = DateTime.Now;
-        await PersistirDatos(); // Guarda los datos con la nueva fecha
-
+        await PersistirDatos();
         var json = JsonSerializer.Serialize(datosCache, new JsonSerializerOptions { WriteIndented = true });
         await JS.InvokeVoidAsync("downloadFile", "yes_gestor_data.json", json);
         mensaje = "Exportación local completada. El recordatorio de backup se ha reiniciado.";
     }
 
-    // ================== GITHUB GIST ==================
     private async Task GuardarTokenGitHub()
     {
         if (datosCache == null) return;
@@ -706,7 +682,6 @@
 
             if (string.IsNullOrEmpty(datosCache.GitHubGistId))
             {
-                // Crear nuevo Gist
                 var gist = new
                 {
                     description = $"Backup de YESSMobilePWA - {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
@@ -742,7 +717,6 @@
             }
             else
             {
-                // Actualizar Gist existente
                 var update = new
                 {
                     files = new Dictionary<string, object>
@@ -798,7 +772,6 @@
                     var nuevosDatos = JsonSerializer.Deserialize<DatosApp>(archivo.Content);
                     if (nuevosDatos != null)
                     {
-                        // Conservar el token y el gistId actuales (no sobrescribir con los del Gist, que vendrían nulos)
                         var tokenActual = datosCache.GitHubToken;
                         var gistIdActual = datosCache.GitHubGistId;
                         nuevosDatos.GitHubToken = tokenActual;
@@ -830,5 +803,4 @@
             mensajeGitHub = $"Excepción: {ex.Message}";
         }
     }
-
 }

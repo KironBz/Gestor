@@ -159,11 +159,11 @@ namespace YESSMobilePWA.Models
             string descripcionCorta = "SINDESC";
             if (!string.IsNullOrEmpty(Descripcion))
             {
-                string soloLetras = Regex.Replace(Descripcion, "[^a-zA-Z]", "");
-                if (soloLetras.Length >= 5)
-                    descripcionCorta = soloLetras.Substring(0, 5).ToUpper();
-                else if (soloLetras.Length > 0)
-                    descripcionCorta = soloLetras.ToUpper();
+                string soloLetrasYNumeros = Regex.Replace(Descripcion, "[^a-zA-Z0-9]", "");
+                if (soloLetrasYNumeros.Length >= 5)
+                    descripcionCorta = soloLetrasYNumeros.Substring(0, 5).ToUpper();
+                else if (soloLetrasYNumeros.Length > 0)
+                    descripcionCorta = soloLetrasYNumeros.ToUpper();
             }
 
             string fechaCorta = FechaOcurrido.ToString("ddMMyy");

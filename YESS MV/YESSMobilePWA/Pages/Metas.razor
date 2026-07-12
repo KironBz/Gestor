@@ -16,7 +16,7 @@
 }
 else
 {
-    <!-- ================= META PRINCIPAL ================= -->
+    <!-- META PRINCIPAL -->
     @if (metaPrincipal != null)
     {
         <div class="card bg-dark text-white mb-4">
@@ -49,16 +49,14 @@ else
         <div class="alert alert-info">No hay meta principal. Crea una nueva meta para que aparezca aquí.</div>
     }
 
-    <!-- Botón Nueva Meta -->
     <div class="mb-3">
         <button class="btn btn-primary" @onclick="AbrirModalNueva">+ Nueva Meta</button>
     </div>
 
-    <!-- ================= OTRAS METAS ACTIVAS ================= -->
+    <!-- OTRAS METAS ACTIVAS -->
     <h5 class="mt-4">Otras Metas Activas</h5>
     @if (otrasMetasActivas.Any())
     {
-        <!-- Vista para PC (tabla) -->
         <div class="d-none d-md-block">
             <div class="table-responsive">
                 <table class="table table-dark table-striped">
@@ -76,9 +74,9 @@ else
                         @foreach (var meta in otrasMetasActivas)
                         {
                             <tr>
-                                <td>@meta.Nombre</td
-                                <td>@meta.MontoObjetivo.ToString("C")</td
-                                <td>@meta.AhorradoActual.ToString("C")</td
+                                <td>@meta.Nombre</td>
+                                <td>@meta.MontoObjetivo.ToString("C")</td>
+                                <td>@meta.AhorradoActual.ToString("C")</td>
                                 <td>
                                     <div class="progress" style="width: 100px;">
                                         <div class="progress-bar bg-info" role="progressbar"
@@ -86,15 +84,15 @@ else
                                             @Porcentaje(meta).ToString("F0")%
                                         </div>
                                     </div>
-                                 </td
-                                <td>@meta.Prioridad</td
+                                </td>
+                                <td>@meta.Prioridad</td>
                                 <td>
                                     <div class="btn-group" role="group">
                                         <button class="btn btn-sm btn-success" title="Completar" @onclick="() => CompletarMeta(meta)">✔</button>
                                         <button class="btn btn-sm btn-warning" title="Editar" @onclick="() => AbrirModalEditar(meta)">✏</button>
                                         <button class="btn btn-sm btn-secondary" title="Archivar" @onclick="() => ArchivarMeta(meta)">📦</button>
                                     </div>
-                                 </td
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -102,7 +100,6 @@ else
             </div>
         </div>
 
-        <!-- Vista para móvil (tarjetas) -->
         <div class="d-block d-md-none">
             @foreach (var meta in otrasMetasActivas)
             {
@@ -135,11 +132,10 @@ else
         <p>No hay otras metas activas.</p>
     }
 
-    <!-- ================= METAS COMPLETADAS ================= -->
+    <!-- METAS COMPLETADAS -->
     <h5 class="mt-4">Metas completadas</h5>
     @if (metasCompletadas.Any())
     {
-        <!-- Vista PC (tabla) -->
         <div class="d-none d-md-block">
             <div class="table-responsive">
                 <table class="table table-dark table-striped">
@@ -155,12 +151,12 @@ else
                         @foreach (var meta in metasCompletadas)
                         {
                             <tr>
-                                <td>@meta.Nombre</td
-                                <td>@meta.MontoObjetivo.ToString("C")</td
-                                <td>@(meta.FechaCompletada?.ToString("dd/MM/yyyy") ?? "")</td
+                                <td>@meta.Nombre</td>
+                                <td>@meta.MontoObjetivo.ToString("C")</td>
+                                <td>@(meta.FechaCompletada?.ToString("dd/MM/yyyy") ?? "")</td>
                                 <td>
                                     <button class="btn btn-sm btn-secondary" @onclick="() => ArchivarMeta(meta)">Archivar</button>
-                                 </td
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -168,7 +164,6 @@ else
             </div>
         </div>
 
-        <!-- Vista móvil (tarjetas) -->
         <div class="d-block d-md-none">
             @foreach (var meta in metasCompletadas)
             {
@@ -190,11 +185,10 @@ else
         <p>No hay metas completadas.</p>
     }
 
-    <!-- ================= METAS ARCHIVADAS ================= -->
+    <!-- METAS ARCHIVADAS -->
     <h5 class="mt-4">Metas archivadas</h5>
     @if (metasArchivadas.Any())
     {
-        <!-- Vista PC (tabla) -->
         <div class="d-none d-md-block">
             <div class="table-responsive">
                 <table class="table table-dark table-striped">
@@ -210,15 +204,15 @@ else
                         @foreach (var meta in metasArchivadas)
                         {
                             <tr>
-                                <td>@meta.Nombre</td
-                                <td>@meta.MontoObjetivo.ToString("C")</td
-                                <td>@(meta.FechaArchivada?.ToString("dd/MM/yyyy") ?? "")</td
+                                <td>@meta.Nombre</td>
+                                <td>@meta.MontoObjetivo.ToString("C")</td>
+                                <td>@(meta.FechaArchivada?.ToString("dd/MM/yyyy") ?? "")</td>
                                 <td>
                                     <div class="btn-group" role="group">
                                         <button class="btn btn-sm btn-success" @onclick="() => RestaurarMeta(meta)">Restaurar</button>
                                         <button class="btn btn-sm btn-danger" @onclick="() => EliminarMeta(meta)">Eliminar</button>
                                     </div>
-                                 </td
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -226,7 +220,6 @@ else
             </div>
         </div>
 
-        <!-- Vista móvil (tarjetas) -->
         <div class="d-block d-md-none">
             @foreach (var meta in metasArchivadas)
             {
@@ -252,12 +245,12 @@ else
     }
 }
 
-<!-- ================= MODAL PARA CREAR/EDITAR META ================= -->
+<!-- MODAL PARA CREAR/EDITAR META -->
 @if (modalVisible)
 {
     <div class="modal-backdrop fade show"></div>
     <div class="modal show d-block" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
                     <h5 class="modal-title">@(metaEditando == null ? "Nueva meta" : "Editar meta")</h5>
@@ -276,10 +269,11 @@ else
                         <label class="form-label">Prioridad (1 = más urgente)</label>
                         <input type="number" step="1" min="1" class="form-control" @bind="formulario.Prioridad" />
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
-                    <button class="btn btn-primary" @onclick="GuardarMeta">Guardar</button>
+
+                    <div class="d-flex justify-content-end gap-2 mt-3 pb-3">
+                        <button class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
+                        <button class="btn btn-primary" @onclick="GuardarMeta">Guardar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -294,7 +288,6 @@ else
     private List<Meta> metasCompletadas = new();
     private List<Meta> metasArchivadas = new();
 
-    // Modal
     private bool modalVisible = false;
     private Meta? metaEditando = null;
     private MetaFormulario formulario = new();

@@ -16,9 +16,7 @@
 }
 else
 {
-    <!-- ================================================================ -->
     <!-- DEUDORES (me deben) - Tabla para PC -->
-    <!-- ================================================================ -->
     <div class="d-none d-md-block">
         <h5 class="text-warning mt-3">Deudores (me deben)</h5>
         <table class="table table-dark table-striped">
@@ -37,10 +35,10 @@ else
                 @foreach (var deuda in deudores)
                 {
                     <tr>
-                        <td>@deuda.Contraparte</td
-                        <td>@deuda.MontoTotal.ToString("C")</td
-                        <td>@deuda.Pagado.ToString("C")</td
-                        <td>@deuda.SaldoPendiente.ToString("C")</td
+                        <td>@deuda.Contraparte</td>
+                        <td>@deuda.MontoTotal.ToString("C")</td>
+                        <td>@deuda.Pagado.ToString("C")</td>
+                        <td>@deuda.SaldoPendiente.ToString("C")</td>
                         <td>
                             @if (deuda.PlazosTotales.HasValue)
                             {
@@ -62,11 +60,11 @@ else
                                     </div>
                                 </div>
                             }
-                         </td
-                        <td>@deuda.ReferenciaAuto</td
+                        </td>
+                        <td>@deuda.ReferenciaAuto</td>
                         <td>
                             <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, false)">Registrar abono</button>
-                         </td
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -92,10 +90,10 @@ else
                 @foreach (var deuda in acreedores)
                 {
                     <tr>
-                        <td>@deuda.Contraparte</td
-                        <td>@deuda.MontoTotal.ToString("C")</td
-                        <td>@deuda.Pagado.ToString("C")</td
-                        <td>@deuda.SaldoPendiente.ToString("C")</td
+                        <td>@deuda.Contraparte</td>
+                        <td>@deuda.MontoTotal.ToString("C")</td>
+                        <td>@deuda.Pagado.ToString("C")</td>
+                        <td>@deuda.SaldoPendiente.ToString("C")</td>
                         <td>
                             @if (deuda.PlazosTotales.HasValue)
                             {
@@ -117,20 +115,18 @@ else
                                     </div>
                                 </div>
                             }
-                         </td
-                        <td>@deuda.ReferenciaAuto</td
+                        </td>
+                        <td>@deuda.ReferenciaAuto</td>
                         <td>
                             <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, true)">Pagar</button>
-                         </td
+                        </td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
 
-    <!-- ================================================================ -->
     <!-- VISTA MÓVIL (tarjetas) -->
-    <!-- ================================================================ -->
     <div class="d-block d-md-none">
         <h5 class="text-warning mt-3">Deudores (me deben)</h5>
         @foreach (var deuda in deudores)
@@ -205,9 +201,7 @@ else
         }
     </div>
 
-    <!-- ================================================================ -->
     <!-- PRÉSTAMOS COMPLETADOS -->
-    <!-- ================================================================ -->
     <hr class="my-4" />
     <h4 class="text-success">Préstamos completados</h4>
 
@@ -226,11 +220,11 @@ else
                 @foreach (var item in completados)
                 {
                     <tr>
-                        <td>@item.FechaCompletado?.ToString("dd/MM/yyyy")</td
-                        <td>@(item.Tipo == "Acreedor" ? "Deuda pagada" : "Préstamo cobrado")</td
-                        <td>@item.Contraparte</td
-                        <td>@item.ReferenciaAuto</td
-                        <td>@item.MontoTotal.ToString("C")</td
+                        <td>@item.FechaCompletado?.ToString("dd/MM/yyyy")</td>
+                        <td>@(item.Tipo == "Acreedor" ? "Deuda pagada" : "Préstamo cobrado")</td>
+                        <td>@item.Contraparte</td>
+                        <td>@item.ReferenciaAuto</td>
+                        <td>@item.MontoTotal.ToString("C")</td>
                     </tr>
                 }
             </tbody>
@@ -255,14 +249,12 @@ else
     </div>
 }
 
-<!-- ================================================================ -->
 <!-- MODAL PARA REGISTRAR PAGO / ABONO -->
-<!-- ================================================================ -->
 @if (modalVisible)
 {
     <div class="modal-backdrop fade show"></div>
     <div class="modal show d-block" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
                     <h5 class="modal-title">Registrar @(esPagoPropio ? "pago" : "abono")</h5>
@@ -287,10 +279,11 @@ else
                             }
                         </select>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="() => modalVisible = false">Cancelar</button>
-                    <button type="button" class="btn btn-primary" @onclick="GuardarPago">Guardar</button>
+
+                    <div class="d-flex justify-content-end gap-2 mt-3 pb-3">
+                        <button type="button" class="btn btn-secondary" @onclick="() => modalVisible = false">Cancelar</button>
+                        <button type="button" class="btn btn-primary" @onclick="GuardarPago">Guardar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -298,9 +291,6 @@ else
 }
 
 @code {
-    // =================================================================
-    // VARIABLES PRIVADAS
-    // =================================================================
     private List<DeudaPendiente>? acreedores;
     private List<DeudaPendiente>? deudores;
     private List<DeudaPendiente>? completados;
@@ -316,9 +306,6 @@ else
     private Dictionary<string, Persona> mapaPersonas = new();
     private Dictionary<string, Cuenta> mapaCuentas = new();
 
-    // =================================================================
-    // CICLO DE VIDA Y CARGA
-    // =================================================================
     protected override async Task OnInitializedAsync()
     {
         await CargarDeudas();
@@ -339,16 +326,12 @@ else
         mapaCuentas = datos.Cuentas.ToDictionary(c => c.Id, c => c);
     }
 
-    // =================================================================
-    // CÁLCULO DE DEUDAS (OPTIMIZADO)
-    // =================================================================
     private (List<DeudaPendiente> acreedores, List<DeudaPendiente> deudores, List<DeudaPendiente> completados) CalcularDeudasCompletas(DatosApp datos)
     {
         var acreedoresList = new List<DeudaPendiente>();
         var deudoresList = new List<DeudaPendiente>();
         var completadosList = new List<DeudaPendiente>();
 
-        // Precalcular pagos/abonos agrupados por referencia (usando ! para evitar string? como clave)
         var pagosPorReferencia = datos.Movimientos
             .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && !string.IsNullOrEmpty(m.ReferenciaAuto))
             .GroupBy(m => m.ReferenciaAuto!)
@@ -359,7 +342,6 @@ else
             .GroupBy(m => m.ReferenciaAuto!)
             .ToDictionary(g => g.Key, g => new { Total = g.Sum(m => m.Monto), Count = g.Count(), Ultimo = g.Max(m => m.FechaOcurrido) });
 
-        // Préstamos recibidos (debo)
         var prestamosRecibidos = datos.Movimientos
             .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
             .ToList();
@@ -398,7 +380,6 @@ else
             }
         }
 
-        // Préstamos otorgados (me deben)
         var prestamosOtorgados = datos.Movimientos
             .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
             .ToList();
@@ -441,9 +422,6 @@ else
         return (acreedoresList, deudoresList, completadosList);
     }
 
-    // =================================================================
-    // MODAL DE PAGO
-    // =================================================================
     private void RegistrarPago(DeudaPendiente deuda, bool esPago)
     {
         deudaSeleccionada = deuda;

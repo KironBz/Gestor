@@ -1,14 +1,79 @@
 @page "/prestamos"
 @using YESSMobilePWA.Models
 @using YESSMobilePWA.Services
+@using YESSMobilePWA.Components
 @inject ArchivoService ArchivoService
+@inject DeudaCalculatorService DeudaCalculatorService
 @inject IJSRuntime JS
 
 <h3>Préstamos y deudas</h3>
 
-<div class="mb-3">
-    <button class="btn btn-primary" @onclick="CargarDeudas">Refrescar</button>
+<div class="mb-3 d-flex gap-2">
+    <button class="btn btn-outline-light" @onclick="CargarDeudas">Refrescar</button>
+    <button class="btn btn-primary" @onclick="AbrirModalNuevoPrestamo">+ Nuevo préstamo/cargo</button>
 </div>
+
+<!-- ================================================================ -->
+<!-- FILTROS -->
+<!-- ================================================================ -->
+<div class="mb-2 text-end d-md-none">
+    <button class="btn btn-sm btn-outline-light" @onclick="ToggleFiltros">
+        @(mostrarFiltros ? "Ocultar filtros" : "Mostrar filtros")
+        @if (HayFiltrosActivos())
+        {
+            <span class="badge bg-primary ms-1">!</span>
+        }
+    </button>
+</div>
+
+<div class="card bg-dark text-white mb-3 @(mostrarFiltros ? "" : "d-none d-md-block")">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">Filtros</h6>
+            <button class="btn btn-sm btn-outline-light" @onclick="LimpiarFiltros">Limpiar filtros</button>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-3">
+                <label class="form-label small">Persona</label>
+                <select class="form-select form-select-sm" value="@filtroPersonaId" @onchange="OnFiltroPersonaChanged">
+                    <option value="">Todas</option>
+                    @foreach (var persona in personasDisponibles)
+                    {
+                        <option value="@persona.Id">@persona.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Referencia</label>
+                <input type="text" class="form-control form-control-sm" placeholder="Ej. PR-..."
+                       value="@filtroReferencia" @oninput="OnFiltroReferenciaChanged" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Monto mínimo</label>
+                <input type="number" step="0.01" class="form-control form-control-sm"
+                       value="@filtroMontoMin" @onchange="OnFiltroMontoMinChanged" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small">Monto máximo</label>
+                <input type="number" step="0.01" class="form-control form-control-sm"
+                       value="@filtroMontoMax" @onchange="OnFiltroMontoMaxChanged" />
+            </div>
+        </div>
+        <div class="row g-2 mt-2">
+            <div class="col-md-3">
+                <label class="form-label small">Fecha desde</label>
+                <input type="date" class="form-control form-control-sm"
+                       value="@(filtroFechaDesde?.ToString("yyyy-MM-dd"))" @onchange="OnFiltroFechaDesdeChanged" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small">Fecha hasta</label>
+                <input type="date" class="form-control form-control-sm"
+                       value="@(filtroFechaHasta?.ToString("yyyy-MM-dd"))" @onchange="OnFiltroFechaHastaChanged" />
+            </div>
+        </div>
+    </div>
+</div>
+<!-- =================== FIN FILTROS =================== -->
 
 @if (acreedores == null || deudores == null || completados == null)
 {
@@ -16,255 +81,408 @@
 }
 else
 {
-    <!-- DEUDORES (me deben) - Tabla para PC -->
-    <div class="d-none d-md-block">
-        <h5 class="text-warning mt-3">Deudores (me deben)</h5>
-        <table class="table table-dark table-striped">
-            <thead>
-                <tr>
-                    <th>Contraparte</th>
-                    <th>Monto total</th>
-                    <th>Abonado</th>
-                    <th>Saldo pendiente</th>
-                    <th>Progreso</th>
-                    <th>Referencia</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var deuda in deudores)
-                {
+    <!-- ================================================================ -->
+    <!-- DEUDORES (me deben) -->
+    <!-- ================================================================ -->
+    <div class="d-flex justify-content-between align-items-center mt-3" style="cursor:pointer; user-select:none;" @onclick="() => mostrarDeudores = !mostrarDeudores">
+        <h5 class="text-warning mb-0">
+            <span class="oi @(mostrarDeudores ? "oi-caret-bottom" : "oi-caret-right")" aria-hidden="true"></span>
+            Deudores (me deben)
+            <span class="badge bg-secondary ms-1">@deudoresFiltrados.Count</span>
+        </h5>
+    </div>
+
+    @if (mostrarDeudores)
+    {
+        <!-- Tabla desktop -->
+        <div class="d-none d-md-block">
+            <table class="table table-dark table-striped">
+                <thead>
                     <tr>
-                        <td>@deuda.Contraparte</td>
-                        <td>@deuda.MontoTotal.ToString("C")</td>
-                        <td>@deuda.Pagado.ToString("C")</td>
-                        <td>@deuda.SaldoPendiente.ToString("C")</td>
-                        <td>
+                        <th>Contraparte</th>
+                        <th>Monto total</th>
+                        <th>Abonado</th>
+                        <th>Saldo pendiente</th>
+                        <th>Progreso</th>
+                        <th>Referencia</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!deudoresFiltrados.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-3">No hay deudores que coincidan con los filtros.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var deuda in deudoresFiltrados)
+                        {
+                            <tr>
+                                <td>@deuda.Contraparte</td>
+                                <td>@deuda.MontoTotal.ToString("C")</td>
+                                <td>@deuda.Pagado.ToString("C")</td>
+                                <td>@deuda.SaldoPendiente.ToString("C")</td>
+                                <td>
+                                    @if (deuda.PlazosTotales.HasValue)
+                                    {
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-info" role="progressbar"
+                                                 style="width: @(Math.Round((double)deuda.PagosRealizados / (double)deuda.PlazosTotales.Value * 100))%;"
+                                                 aria-valuenow="@deuda.PagosRealizados" aria-valuemin="0" aria-valuemax="@deuda.PlazosTotales.Value">
+                                                @deuda.PagosRealizados / @deuda.PlazosTotales
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" role="progressbar"
+                                                 style="width: @(Math.Round((double)deuda.Pagado / (double)deuda.MontoTotal * 100))%;"
+                                                 aria-valuenow="@deuda.Pagado" aria-valuemin="0" aria-valuemax="@deuda.MontoTotal">
+                                                @((deuda.Pagado / deuda.MontoTotal).ToString("P0"))
+                                            </div>
+                                        </div>
+                                    }
+                                </td>
+                                <td>@deuda.ReferenciaAuto</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, false)">Registrar abono</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tarjetas móvil -->
+        <div class="d-block d-md-none">
+            @if (!deudoresFiltrados.Any())
+            {
+                <p class="text-center text-muted py-3">No hay deudores que coincidan con los filtros.</p>
+            }
+            else
+            {
+                @foreach (var deuda in deudoresFiltrados)
+                {
+                    <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @deuda.ColorCuenta;">
+                        <div class="card-body">
+                            <h6 class="card-title">@deuda.Contraparte</h6>
+                            <p>
+                                Total: @deuda.MontoTotal.ToString("C")<br />
+                                Abonado: @deuda.Pagado.ToString("C")<br />
+                                Pendiente: @deuda.SaldoPendiente.ToString("C")<br />
+                                <strong>Referencia:</strong> @deuda.ReferenciaAuto
+                            </p>
                             @if (deuda.PlazosTotales.HasValue)
                             {
-                                <div class="progress" style="height: 20px;">
+                                <div class="progress mb-2" style="height: 20px;">
                                     <div class="progress-bar bg-info" role="progressbar"
-                                         style="width: @(Math.Round((double)deuda.PagosRealizados / (double)deuda.PlazosTotales.Value * 100))%;"
-                                         aria-valuenow="@deuda.PagosRealizados" aria-valuemin="0" aria-valuemax="@deuda.PlazosTotales.Value">
+                                         style="width: @(Math.Round((double)deuda.PagosRealizados / (double)deuda.PlazosTotales.Value * 100))%;">
                                         @deuda.PagosRealizados / @deuda.PlazosTotales
                                     </div>
                                 </div>
                             }
                             else
                             {
-                                <div class="progress" style="height: 20px;">
+                                <div class="progress mb-2" style="height: 20px;">
                                     <div class="progress-bar bg-success" role="progressbar"
-                                         style="width: @(Math.Round((double)deuda.Pagado / (double)deuda.MontoTotal * 100))%;"
-                                         aria-valuenow="@deuda.Pagado" aria-valuemin="0" aria-valuemax="@deuda.MontoTotal">
+                                         style="width: @(Math.Round((double)deuda.Pagado / (double)deuda.MontoTotal * 100))%;">
                                         @((deuda.Pagado / deuda.MontoTotal).ToString("P0"))
                                     </div>
                                 </div>
                             }
-                        </td>
-                        <td>@deuda.ReferenciaAuto</td>
-                        <td>
                             <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, false)">Registrar abono</button>
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                 }
-            </tbody>
-        </table>
+            }
+        </div>
+    }
 
-        <hr class="my-3" />
+    <!-- ================================================================ -->
+    <!-- ACREEDORES (debo) -->
+    <!-- ================================================================ -->
+    <div class="d-flex justify-content-between align-items-center mt-4" style="cursor:pointer; user-select:none;" @onclick="() => mostrarAcreedores = !mostrarAcreedores">
+        <h5 class="text-danger mb-0">
+            <span class="oi @(mostrarAcreedores ? "oi-caret-bottom" : "oi-caret-right")" aria-hidden="true"></span>
+            Acreedores (debo)
+            <span class="badge bg-secondary ms-1">@acreedoresFiltrados.Count</span>
+        </h5>
+    </div>
 
-        <!-- ACREEDORES (debo) - Tabla para PC -->
-        <h5 class="text-danger mt-4">Acreedores (debo)</h5>
-        <table class="table table-dark table-striped">
-            <thead>
-                <tr>
-                    <th>Contraparte</th>
-                    <th>Monto total</th>
-                    <th>Pagado</th>
-                    <th>Saldo pendiente</th>
-                    <th>Progreso</th>
-                    <th>Referencia</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var deuda in acreedores)
-                {
+    @if (mostrarAcreedores)
+    {
+        <!-- Tabla desktop -->
+        <div class="d-none d-md-block">
+            <table class="table table-dark table-striped">
+                <thead>
                     <tr>
-                        <td>@deuda.Contraparte</td>
-                        <td>@deuda.MontoTotal.ToString("C")</td>
-                        <td>@deuda.Pagado.ToString("C")</td>
-                        <td>@deuda.SaldoPendiente.ToString("C")</td>
-                        <td>
+                        <th>Contraparte</th>
+                        <th>Monto total</th>
+                        <th>Pagado</th>
+                        <th>Saldo pendiente</th>
+                        <th>Progreso</th>
+                        <th>Referencia</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!acreedoresFiltrados.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-3">No hay acreedores que coincidan con los filtros.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var deuda in acreedoresFiltrados)
+                        {
+                            <tr>
+                                <td>@deuda.Contraparte</td>
+                                <td>@deuda.MontoTotal.ToString("C")</td>
+                                <td>@deuda.Pagado.ToString("C")</td>
+                                <td>@deuda.SaldoPendiente.ToString("C")</td>
+                                <td>
+                                    @if (deuda.PlazosTotales.HasValue)
+                                    {
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-danger" role="progressbar"
+                                                 style="width: @(Math.Round((double)deuda.PagosRealizados / (double)deuda.PlazosTotales.Value * 100))%;"
+                                                 aria-valuenow="@deuda.PagosRealizados" aria-valuemin="0" aria-valuemax="@deuda.PlazosTotales.Value">
+                                                @deuda.PagosRealizados / @deuda.PlazosTotales
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-warning" role="progressbar"
+                                                 style="width: @(Math.Round((double)deuda.Pagado / (double)deuda.MontoTotal * 100))%;"
+                                                 aria-valuenow="@deuda.Pagado" aria-valuemin="0" aria-valuemax="@deuda.MontoTotal">
+                                                @((deuda.Pagado / deuda.MontoTotal).ToString("P0"))
+                                            </div>
+                                        </div>
+                                    }
+                                </td>
+                                <td>@deuda.ReferenciaAuto</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, true)">Pagar</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Tarjetas móvil -->
+        <div class="d-block d-md-none">
+            @if (!acreedoresFiltrados.Any())
+            {
+                <p class="text-center text-muted py-3">No hay acreedores que coincidan con los filtros.</p>
+            }
+            else
+            {
+                @foreach (var deuda in acreedoresFiltrados)
+                {
+                    <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @deuda.ColorCuenta;">
+                        <div class="card-body">
+                            <h6 class="card-title">@deuda.Contraparte</h6>
+                            <p>
+                                Total: @deuda.MontoTotal.ToString("C")<br />
+                                Pagado: @deuda.Pagado.ToString("C")<br />
+                                Pendiente: @deuda.SaldoPendiente.ToString("C")<br />
+                                <strong>Referencia:</strong> @deuda.ReferenciaAuto
+                            </p>
                             @if (deuda.PlazosTotales.HasValue)
                             {
-                                <div class="progress" style="height: 20px;">
+                                <div class="progress mb-2" style="height: 20px;">
                                     <div class="progress-bar bg-danger" role="progressbar"
-                                         style="width: @(Math.Round((double)deuda.PagosRealizados / (double)deuda.PlazosTotales.Value * 100))%;"
-                                         aria-valuenow="@deuda.PagosRealizados" aria-valuemin="0" aria-valuemax="@deuda.PlazosTotales.Value">
+                                         style="width: @(Math.Round((double)deuda.PagosRealizados / (double)deuda.PlazosTotales.Value * 100))%;">
                                         @deuda.PagosRealizados / @deuda.PlazosTotales
                                     </div>
                                 </div>
                             }
                             else
                             {
-                                <div class="progress" style="height: 20px;">
+                                <div class="progress mb-2" style="height: 20px;">
                                     <div class="progress-bar bg-warning" role="progressbar"
-                                         style="width: @(Math.Round((double)deuda.Pagado / (double)deuda.MontoTotal * 100))%;"
-                                         aria-valuenow="@deuda.Pagado" aria-valuemin="0" aria-valuemax="@deuda.MontoTotal">
+                                         style="width: @(Math.Round((double)deuda.Pagado / (double)deuda.MontoTotal * 100))%;">
                                         @((deuda.Pagado / deuda.MontoTotal).ToString("P0"))
                                     </div>
                                 </div>
                             }
-                        </td>
-                        <td>@deuda.ReferenciaAuto</td>
-                        <td>
                             <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, true)">Pagar</button>
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                 }
-            </tbody>
-        </table>
-    </div>
+            }
+        </div>
+    }
 
-    <!-- VISTA MÓVIL (tarjetas) -->
-    <div class="d-block d-md-none">
-        <h5 class="text-warning mt-3">Deudores (me deben)</h5>
-        @foreach (var deuda in deudores)
-        {
-            <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @deuda.ColorCuenta;">
-                <div class="card-body">
-                    <h6 class="card-title">@deuda.Contraparte</h6>
-                    <p>
-                        Total: @deuda.MontoTotal.ToString("C")<br />
-                        Abonado: @deuda.Pagado.ToString("C")<br />
-                        Pendiente: @deuda.SaldoPendiente.ToString("C")<br />
-                        <strong>Referencia:</strong> @deuda.ReferenciaAuto
-                    </p>
-                    @if (deuda.PlazosTotales.HasValue)
-                    {
-                        <div class="progress mb-2" style="height: 20px;">
-                            <div class="progress-bar bg-info" role="progressbar"
-                                 style="width: @(Math.Round((double)deuda.PagosRealizados / (double)deuda.PlazosTotales.Value * 100))%;">
-                                @deuda.PagosRealizados / @deuda.PlazosTotales
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="progress mb-2" style="height: 20px;">
-                            <div class="progress-bar bg-success" role="progressbar"
-                                 style="width: @(Math.Round((double)deuda.Pagado / (double)deuda.MontoTotal * 100))%;">
-                                @((deuda.Pagado / deuda.MontoTotal).ToString("P0"))
-                            </div>
-                        </div>
-                    }
-                    <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, false)">Registrar abono</button>
-                </div>
-            </div>
-        }
-
-        <hr class="my-3" />
-
-        <h5 class="text-danger mt-3">Acreedores (debo)</h5>
-        @foreach (var deuda in acreedores)
-        {
-            <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @deuda.ColorCuenta;">
-                <div class="card-body">
-                    <h6 class="card-title">@deuda.Contraparte</h6>
-                    <p>
-                        Total: @deuda.MontoTotal.ToString("C")<br />
-                        Pagado: @deuda.Pagado.ToString("C")<br />
-                        Pendiente: @deuda.SaldoPendiente.ToString("C")<br />
-                        <strong>Referencia:</strong> @deuda.ReferenciaAuto
-                    </p>
-                    @if (deuda.PlazosTotales.HasValue)
-                    {
-                        <div class="progress mb-2" style="height: 20px;">
-                            <div class="progress-bar bg-danger" role="progressbar"
-                                 style="width: @(Math.Round((double)deuda.PagosRealizados / (double)deuda.PlazosTotales.Value * 100))%;">
-                                @deuda.PagosRealizados / @deuda.PlazosTotales
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="progress mb-2" style="height: 20px;">
-                            <div class="progress-bar bg-warning" role="progressbar"
-                                 style="width: @(Math.Round((double)deuda.Pagado / (double)deuda.MontoTotal * 100))%;">
-                                @((deuda.Pagado / deuda.MontoTotal).ToString("P0"))
-                            </div>
-                        </div>
-                    }
-                    <button class="btn btn-sm btn-primary" @onclick="() => RegistrarPago(deuda, true)">Pagar</button>
-                </div>
-            </div>
-        }
-    </div>
-
-    <!-- PRÉSTAMOS COMPLETADOS -->
+    <!-- ================================================================ -->
+    <!-- PRÉSTAMOS COMPLETADOS (cerrado por defecto) -->
+    <!-- ================================================================ -->
     <hr class="my-4" />
-    <h4 class="text-success">Préstamos completados</h4>
+    <div class="d-flex justify-content-between align-items-center" style="cursor:pointer; user-select:none;" @onclick="() => mostrarCompletados = !mostrarCompletados">
+        <h4 class="text-success mb-0">
+            <span class="oi @(mostrarCompletados ? "oi-caret-bottom" : "oi-caret-right")" aria-hidden="true"></span>
+            Préstamos completados
+            <span class="badge bg-secondary ms-1">@completadosFiltrados.Count</span>
+        </h4>
+    </div>
 
-    <div class="d-none d-md-block">
-        <table class="table table-dark table-striped">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Tipo</th>
-                    <th>Contraparte</th>
-                    <th>Referencia</th>
-                    <th>Monto total</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in completados)
-                {
+    @if (mostrarCompletados)
+    {
+        <div class="d-none d-md-block mt-2">
+            <table class="table table-dark table-striped">
+                <thead>
                     <tr>
-                        <td>@item.FechaCompletado?.ToString("dd/MM/yyyy")</td>
-                        <td>@(item.Tipo == "Acreedor" ? "Deuda pagada" : "Préstamo cobrado")</td>
-                        <td>@item.Contraparte</td>
-                        <td>@item.ReferenciaAuto</td>
-                        <td>@item.MontoTotal.ToString("C")</td>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Contraparte</th>
+                        <th>Referencia</th>
+                        <th>Monto total</th>
                     </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    @if (!completadosFiltrados.Any())
+                    {
+                        <tr><td colspan="5" class="text-center text-muted py-3">No hay préstamos completados que coincidan con los filtros.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in completadosFiltrados)
+                        {
+                            <tr>
+                                <td>@item.FechaCompletado?.ToString("dd/MM/yyyy")</td>
+                                <td>@(item.Tipo == "Acreedor" ? "Deuda pagada" : "Préstamo cobrado")</td>
+                                <td>@item.Contraparte</td>
+                                <td>@item.ReferenciaAuto</td>
+                                <td>@item.MontoTotal.ToString("C")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
 
-    <div class="d-block d-md-none">
-        @foreach (var item in completados)
-        {
-            <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @item.ColorCuenta;">
-                <div class="card-body">
-                    <h6 class="card-title">@item.Contraparte</h6>
-                    <p>
-                        Fecha: @item.FechaCompletado?.ToString("dd/MM/yyyy")<br />
-                        Tipo: @(item.Tipo == "Acreedor" ? "Deuda pagada" : "Préstamo cobrado")<br />
-                        Referencia: @item.ReferenciaAuto<br />
-                        Monto: @item.MontoTotal.ToString("C")
-                    </p>
-                </div>
-            </div>
-        }
-    </div>
+        <div class="d-block d-md-none mt-2">
+            @if (!completadosFiltrados.Any())
+            {
+                <p class="text-center text-muted py-3">No hay préstamos completados que coincidan con los filtros.</p>
+            }
+            else
+            {
+                @foreach (var item in completadosFiltrados)
+                {
+                    <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @item.ColorCuenta;">
+                        <div class="card-body">
+                            <h6 class="card-title">@item.Contraparte</h6>
+                            <p>
+                                Fecha: @item.FechaCompletado?.ToString("dd/MM/yyyy")<br />
+                                Tipo: @(item.Tipo == "Acreedor" ? "Deuda pagada" : "Préstamo cobrado")<br />
+                                Referencia: @item.ReferenciaAuto<br />
+                                Monto: @item.MontoTotal.ToString("C")
+                            </p>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    }
 }
 
-<!-- MODAL PARA REGISTRAR PAGO / ABONO -->
-@if (modalVisible)
+<!-- ================================================================ -->
+<!-- MODAL: NUEVO PRÉSTAMO / CARGO -->
+<!-- ================================================================ -->
+@if (modalNuevoPrestamoVisible)
 {
     <div class="modal-backdrop fade show"></div>
     <div class="modal show d-block" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
-                    <h5 class="modal-title">Registrar @(esPagoPropio ? "pago" : "abono")</h5>
-                    <button type="button" class="btn-close btn-close-white" @onclick="() => modalVisible = false"></button>
+                    <h5 class="modal-title">Nuevo préstamo/cargo</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarModalNuevoPrestamo"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Monto</label>
-                        <input type="number" step="0.01" min="0.01" class="form-control" @bind="montoPago" />
+                        <label class="form-label">¿Qué está pasando?</label>
+                        <select class="form-select" @bind="formularioPrestamo.TipoPrestamo">
+                            <option value="Acreedor">Recibí un préstamo (yo debo)</option>
+                            <option value="Deudor">Presto/cargo a alguien (me deben)</option>
+                        </select>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Persona</label>
+                        <div class="input-group">
+                            <select class="form-select" @bind="formularioPrestamo.PersonaId">
+                                <option value="">Seleccione persona</option>
+                                @foreach (var persona in personasDisponibles)
+                                {
+                                    <option value="@persona.Id">@persona.Nombre</option>
+                                }
+                            </select>
+                            <button type="button" class="btn btn-outline-success" @onclick="() => mostrarModalPersona = true">+</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Fecha</label>
+                        <InputDate @bind-Value="formularioPrestamo.Fecha" class="form-control" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cuenta</label>
+                        <div class="input-group">
+                            <select class="form-select" @bind="formularioPrestamo.CuentaId">
+                                <option value="">Seleccione cuenta</option>
+                                @foreach (var cuenta in cuentasDisponibles)
+                                {
+                                    <option value="@cuenta.Id">@cuenta.Nombre</option>
+                                }
+                            </select>
+                            <button type="button" class="btn btn-outline-success" @onclick="() => mostrarModalCuenta = true">+</button>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monto</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" @bind="formularioPrestamo.Monto" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Monto final con intereses (opcional)</label>
+                        <input type="number" step="0.01" class="form-control" @bind="formularioPrestamo.MontoFinal" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Plazos en meses (opcional)</label>
+                        <input type="number" class="form-control" @bind="formularioPrestamo.Plazos" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción (opcional)</label>
+                        <input type="text" class="form-control" @bind="formularioPrestamo.Descripcion" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CerrarModalNuevoPrestamo">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="GuardarNuevoPrestamo">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ================================================================ -->
+<!-- MODAL PARA REGISTRAR PAGO / ABONO -->
+<!-- ================================================================ -->
+@if (modalPagoVisible)
+{
+    <div class="modal-backdrop fade show"></div>
+    <div class="modal show d-block" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header">
+                    <h5 class="modal-title">Registrar @(esPagoPropio ? "pago" : "abono")</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="() => modalPagoVisible = false"></button>
+                </div>
+                <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Fecha</label>
                         <input type="date" class="form-control" @bind="fechaPago" />
@@ -279,33 +497,156 @@ else
                             }
                         </select>
                     </div>
-
-                    <div class="d-flex justify-content-end gap-2 mt-3 pb-3">
-                        <button type="button" class="btn btn-secondary" @onclick="() => modalVisible = false">Cancelar</button>
-                        <button type="button" class="btn btn-primary" @onclick="GuardarPago">Guardar</button>
+                    <div class="mb-3">
+                        <label class="form-label">Monto</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" @bind="montoPago" />
                     </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="() => modalPagoVisible = false">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="GuardarPago">Guardar</button>
                 </div>
             </div>
         </div>
     </div>
 }
 
+<!-- Modales para agregar entidades (usados desde el modal de nuevo préstamo) -->
+@if (mostrarModalCuenta)
+{
+    <ModalAgregarCuenta OnCuentaAgregada="OnCuentaAgregada" OnCancelar="() => mostrarModalCuenta = false" />
+}
+@if (mostrarModalPersona)
+{
+    <ModalAgregarPersona OnPersonaAgregada="OnPersonaAgregada" OnCancelar="() => mostrarModalPersona = false" />
+}
+
 @code {
+    // =================================================================
+    // VARIABLES PRIVADAS
+    // =================================================================
     private List<DeudaPendiente>? acreedores;
     private List<DeudaPendiente>? deudores;
     private List<DeudaPendiente>? completados;
     private List<Cuenta> cuentasDisponibles = new();
+    private List<Persona> personasDisponibles = new();
 
-    private bool modalVisible = false;
+    private bool modalPagoVisible = false;
     private DeudaPendiente? deudaSeleccionada;
     private bool esPagoPropio;
     private decimal montoPago;
     private DateTime fechaPago = DateTime.Today;
     private string cuentaIdPago = "";
 
-    private Dictionary<string, Persona> mapaPersonas = new();
-    private Dictionary<string, Cuenta> mapaCuentas = new();
+    private bool modalNuevoPrestamoVisible = false;
+    private FormularioPrestamo formularioPrestamo = new();
 
+    private bool mostrarModalCuenta = false;
+    private bool mostrarModalPersona = false;
+
+    // ========== SECCIONES DESPLEGABLES ==========
+    private bool mostrarDeudores = true;
+    private bool mostrarAcreedores = true;
+    private bool mostrarCompletados = false;
+
+    // ========== ESTADO DE FILTROS ==========
+    private string filtroPersonaId = "";
+    private string filtroReferencia = "";
+    private decimal? filtroMontoMin = null;
+    private decimal? filtroMontoMax = null;
+    private DateTime? filtroFechaDesde = null;
+    private DateTime? filtroFechaHasta = null;
+    private bool mostrarFiltros = false;
+
+    // ========== LISTAS FILTRADAS (computed) ==========
+    private List<DeudaPendiente> deudoresFiltrados => AplicarFiltros(deudores).ToList();
+    private List<DeudaPendiente> acreedoresFiltrados => AplicarFiltros(acreedores).ToList();
+    private List<DeudaPendiente> completadosFiltrados => AplicarFiltros(completados).ToList();
+
+    private IEnumerable<DeudaPendiente> AplicarFiltros(List<DeudaPendiente>? lista)
+    {
+        if (lista == null) return Enumerable.Empty<DeudaPendiente>();
+
+        IEnumerable<DeudaPendiente> query = lista;
+
+        if (!string.IsNullOrEmpty(filtroPersonaId))
+            query = query.Where(d => d.PersonaId == filtroPersonaId);
+
+        if (!string.IsNullOrWhiteSpace(filtroReferencia))
+        {
+            var texto = filtroReferencia.Trim();
+            query = query.Where(d => d.ReferenciaAuto?.Contains(texto, StringComparison.OrdinalIgnoreCase) ?? false);
+        }
+
+        if (filtroMontoMin.HasValue)
+            query = query.Where(d => d.MontoTotal >= filtroMontoMin.Value);
+
+        if (filtroMontoMax.HasValue)
+            query = query.Where(d => d.MontoTotal <= filtroMontoMax.Value);
+
+        if (filtroFechaDesde.HasValue)
+            query = query.Where(d => d.FechaOcurrido.Date >= filtroFechaDesde.Value.Date);
+
+        if (filtroFechaHasta.HasValue)
+            query = query.Where(d => d.FechaOcurrido.Date <= filtroFechaHasta.Value.Date);
+
+        return query;
+    }
+
+    // ========== HANDLERS DE FILTROS ==========
+    private void OnFiltroPersonaChanged(ChangeEventArgs e) => filtroPersonaId = e.Value?.ToString() ?? "";
+    private void OnFiltroReferenciaChanged(ChangeEventArgs e) => filtroReferencia = e.Value?.ToString() ?? "";
+
+    private void OnFiltroMontoMinChanged(ChangeEventArgs e)
+    {
+        var valor = e.Value?.ToString();
+        filtroMontoMin = (string.IsNullOrEmpty(valor) || !decimal.TryParse(valor, out var m)) ? null : m;
+    }
+
+    private void OnFiltroMontoMaxChanged(ChangeEventArgs e)
+    {
+        var valor = e.Value?.ToString();
+        filtroMontoMax = (string.IsNullOrEmpty(valor) || !decimal.TryParse(valor, out var m)) ? null : m;
+    }
+
+    private void OnFiltroFechaDesdeChanged(ChangeEventArgs e)
+    {
+        var valor = e.Value?.ToString();
+        filtroFechaDesde = string.IsNullOrEmpty(valor) ? null : DateTime.Parse(valor);
+    }
+
+    private void OnFiltroFechaHastaChanged(ChangeEventArgs e)
+    {
+        var valor = e.Value?.ToString();
+        filtroFechaHasta = string.IsNullOrEmpty(valor) ? null : DateTime.Parse(valor);
+    }
+
+    private bool HayFiltrosActivos()
+    {
+        return !string.IsNullOrEmpty(filtroPersonaId) ||
+               !string.IsNullOrEmpty(filtroReferencia) ||
+               filtroMontoMin.HasValue ||
+               filtroMontoMax.HasValue ||
+               filtroFechaDesde.HasValue ||
+               filtroFechaHasta.HasValue;
+    }
+
+    private void ToggleFiltros() => mostrarFiltros = !mostrarFiltros;
+
+    private void LimpiarFiltros()
+    {
+        filtroPersonaId = "";
+        filtroReferencia = "";
+        filtroMontoMin = null;
+        filtroMontoMax = null;
+        filtroFechaDesde = null;
+        filtroFechaHasta = null;
+        mostrarFiltros = false;
+    }
+
+    // =================================================================
+    // CICLO DE VIDA Y CARGA
+    // =================================================================
     protected override async Task OnInitializedAsync()
     {
         await CargarDeudas();
@@ -314,114 +655,15 @@ else
     private async Task CargarDeudas()
     {
         var datos = await ArchivoService.CargarAsync();
-        PrecalcularMapas(datos);
         cuentasDisponibles = datos.Cuentas.ToList();
-        (acreedores, deudores, completados) = CalcularDeudasCompletas(datos);
+        personasDisponibles = datos.Personas.ToList();
+        (acreedores, deudores, completados) = DeudaCalculatorService.CalcularDeudasDetalle(datos);
         StateHasChanged();
     }
 
-    private void PrecalcularMapas(DatosApp datos)
-    {
-        mapaPersonas = datos.Personas.ToDictionary(p => p.Id, p => p);
-        mapaCuentas = datos.Cuentas.ToDictionary(c => c.Id, c => c);
-    }
-
-    private (List<DeudaPendiente> acreedores, List<DeudaPendiente> deudores, List<DeudaPendiente> completados) CalcularDeudasCompletas(DatosApp datos)
-    {
-        var acreedoresList = new List<DeudaPendiente>();
-        var deudoresList = new List<DeudaPendiente>();
-        var completadosList = new List<DeudaPendiente>();
-
-        var pagosPorReferencia = datos.Movimientos
-            .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && !string.IsNullOrEmpty(m.ReferenciaAuto))
-            .GroupBy(m => m.ReferenciaAuto!)
-            .ToDictionary(g => g.Key, g => new { Total = g.Sum(m => m.Monto), Count = g.Count(), Ultimo = g.Max(m => m.FechaOcurrido) });
-
-        var abonosPorReferencia = datos.Movimientos
-            .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && !string.IsNullOrEmpty(m.ReferenciaAuto))
-            .GroupBy(m => m.ReferenciaAuto!)
-            .ToDictionary(g => g.Key, g => new { Total = g.Sum(m => m.Monto), Count = g.Count(), Ultimo = g.Max(m => m.FechaOcurrido) });
-
-        var prestamosRecibidos = datos.Movimientos
-            .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
-            .ToList();
-
-        foreach (var prestamo in prestamosRecibidos)
-        {
-            if (!mapaPersonas.TryGetValue(prestamo.PersonaId!, out var persona)) continue;
-            if (!mapaCuentas.TryGetValue(prestamo.CuentaId, out var cuenta)) continue;
-
-            var pagoInfo = pagosPorReferencia.GetValueOrDefault(prestamo.ReferenciaAuto!);
-            decimal pagado = pagoInfo?.Total ?? 0;
-            int pagosRealizados = pagoInfo?.Count ?? 0;
-            decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
-            decimal pendiente = montoOriginal - pagado;
-
-            var deuda = new DeudaPendiente
-            {
-                Contraparte = persona.Nombre,
-                MontoTotal = montoOriginal,
-                Pagado = pagado,
-                SaldoPendiente = pendiente,
-                ReferenciaAuto = prestamo.ReferenciaAuto!,
-                PersonaId = prestamo.PersonaId!,
-                PagosRealizados = pagosRealizados,
-                PlazosTotales = prestamo.Plazos,
-                ColorCuenta = cuenta.Color,
-                Tipo = "Acreedor"
-            };
-
-            if (pendiente > 0)
-                acreedoresList.Add(deuda);
-            else if (pendiente == 0 && pagado > 0)
-            {
-                deuda.FechaCompletado = pagoInfo?.Ultimo;
-                completadosList.Add(deuda);
-            }
-        }
-
-        var prestamosOtorgados = datos.Movimientos
-            .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
-            .ToList();
-
-        foreach (var prestamo in prestamosOtorgados)
-        {
-            if (!mapaPersonas.TryGetValue(prestamo.PersonaId!, out var persona)) continue;
-            if (!mapaCuentas.TryGetValue(prestamo.CuentaId, out var cuenta)) continue;
-
-            var abonoInfo = abonosPorReferencia.GetValueOrDefault(prestamo.ReferenciaAuto!);
-            decimal abonado = abonoInfo?.Total ?? 0;
-            int abonosRealizados = abonoInfo?.Count ?? 0;
-            decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
-            decimal pendiente = montoOriginal - abonado;
-
-            var deuda = new DeudaPendiente
-            {
-                Contraparte = persona.Nombre,
-                MontoTotal = montoOriginal,
-                Pagado = abonado,
-                SaldoPendiente = pendiente,
-                ReferenciaAuto = prestamo.ReferenciaAuto!,
-                PersonaId = prestamo.PersonaId!,
-                PagosRealizados = abonosRealizados,
-                PlazosTotales = prestamo.Plazos,
-                ColorCuenta = cuenta.Color,
-                Tipo = "Deudor"
-            };
-
-            if (pendiente > 0)
-                deudoresList.Add(deuda);
-            else if (pendiente == 0 && abonado > 0)
-            {
-                deuda.FechaCompletado = abonoInfo?.Ultimo;
-                completadosList.Add(deuda);
-            }
-        }
-
-        completadosList = completadosList.OrderByDescending(c => c.FechaCompletado).ToList();
-        return (acreedoresList, deudoresList, completadosList);
-    }
-
+    // =================================================================
+    // MODAL DE PAGO / ABONO
+    // =================================================================
     private void RegistrarPago(DeudaPendiente deuda, bool esPago)
     {
         deudaSeleccionada = deuda;
@@ -429,7 +671,7 @@ else
         montoPago = 0;
         fechaPago = DateTime.Today;
         cuentaIdPago = "";
-        modalVisible = true;
+        modalPagoVisible = true;
     }
 
     private async Task GuardarPago()
@@ -476,8 +718,104 @@ else
         datos.Movimientos.Add(movimiento);
         await ArchivoService.GuardarAsync(datos);
         await CargarDeudas();
-        modalVisible = false;
+        modalPagoVisible = false;
 
         await JS.InvokeVoidAsync("alert", $"{categoria} registrado correctamente.");
+    }
+
+    // =================================================================
+    // MODAL NUEVO PRÉSTAMO / CARGO
+    // =================================================================
+    private void AbrirModalNuevoPrestamo()
+    {
+        formularioPrestamo = new FormularioPrestamo();
+        modalNuevoPrestamoVisible = true;
+    }
+
+    private void CerrarModalNuevoPrestamo()
+    {
+        modalNuevoPrestamoVisible = false;
+        formularioPrestamo = new FormularioPrestamo();
+    }
+
+    private async Task GuardarNuevoPrestamo()
+    {
+        if (string.IsNullOrEmpty(formularioPrestamo.PersonaId))
+        {
+            await JS.InvokeVoidAsync("alert", "Seleccione una persona.");
+            return;
+        }
+        if (string.IsNullOrEmpty(formularioPrestamo.CuentaId))
+        {
+            await JS.InvokeVoidAsync("alert", "Seleccione una cuenta.");
+            return;
+        }
+        if (formularioPrestamo.Monto <= 0)
+        {
+            await JS.InvokeVoidAsync("alert", "El monto debe ser mayor a cero.");
+            return;
+        }
+
+        bool esAcreedor = formularioPrestamo.TipoPrestamo == "Acreedor";
+        string tipo = esAcreedor ? "Ingreso" : "Egreso";
+        string categoria = esAcreedor ? "Préstamo" : "Cargo";
+
+        var datos = await ArchivoService.CargarAsync();
+
+        var movimiento = new Movimiento(
+            fechaOcurrido: formularioPrestamo.Fecha,
+            tipo: tipo,
+            categoria: categoria,
+            cuentaId: formularioPrestamo.CuentaId,
+            categoriaId: null,
+            monto: formularioPrestamo.Monto,
+            personaId: formularioPrestamo.PersonaId,
+            descripcion: string.IsNullOrWhiteSpace(formularioPrestamo.Descripcion) ? null : formularioPrestamo.Descripcion,
+            montoFinal: formularioPrestamo.MontoFinal,
+            plazos: formularioPrestamo.Plazos,
+            metaId: null
+        );
+
+        datos.Movimientos.Add(movimiento);
+        await ArchivoService.GuardarAsync(datos);
+        await CargarDeudas();
+        CerrarModalNuevoPrestamo();
+
+        await JS.InvokeVoidAsync("alert", "Préstamo/cargo registrado correctamente.");
+    }
+
+    private async Task OnCuentaAgregada(Cuenta nuevaCuenta)
+    {
+        var datos = await ArchivoService.CargarAsync();
+        datos.Cuentas.Add(nuevaCuenta);
+        await ArchivoService.GuardarAsync(datos);
+        await CargarDeudas();
+        mostrarModalCuenta = false;
+        formularioPrestamo.CuentaId = nuevaCuenta.Id;
+        StateHasChanged();
+    }
+
+    private async Task OnPersonaAgregada(Persona nuevaPersona)
+    {
+        var datos = await ArchivoService.CargarAsync();
+        datos.Personas.Add(nuevaPersona);
+        await ArchivoService.GuardarAsync(datos);
+        await CargarDeudas();
+        mostrarModalPersona = false;
+        formularioPrestamo.PersonaId = nuevaPersona.Id;
+        StateHasChanged();
+    }
+
+    // ========== CLASE AUXILIAR ==========
+    private class FormularioPrestamo
+    {
+        public string TipoPrestamo { get; set; } = "Acreedor";
+        public DateTime Fecha { get; set; } = DateTime.Today;
+        public string CuentaId { get; set; } = "";
+        public string PersonaId { get; set; } = "";
+        public string Descripcion { get; set; } = "";
+        public decimal Monto { get; set; }
+        public decimal? MontoFinal { get; set; }
+        public int? Plazos { get; set; }
     }
 }

@@ -14,6 +14,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddSingleton<ArchivoService>();
+builder.Services.AddSingleton<DeudaCalculatorService>();
 
 // === NUEVO: Registrar los servicios de Radzen ===
 builder.Services.AddRadzenComponents();

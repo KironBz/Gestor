@@ -72,10 +72,10 @@ else
                         @foreach (var mov in ultimosMovimientos)
                         {
                             <tr>
-                                <td>@mov.FechaOcurrido.ToString("dd/MM/yyyy")</td
-                                <td>@mov.NombreCuenta</td
-                                <td>@mov.Categoria</td
-                                <td>@mov.Descripcion</td
+                                <td>@mov.FechaOcurrido.ToString("dd/MM/yyyy")</td>
+                                <td>@mov.NombreCuenta</td>
+                                <td>@mov.Categoria</td>
+                                <td>@mov.Descripcion</td>
                                 <td class="@(mov.Tipo == "Ingreso" ? "text-success" : "text-danger")">
                                     @(mov.Tipo == "Ingreso" ? "+" : "-")@mov.Monto.ToString("C")
                                 </td>
@@ -208,6 +208,16 @@ else
     private List<ResumenDeuda> deudoresResumen = new();
     private List<Meta> topMetas = new();
 
+    // Categorías que representan movimiento de deuda (no ingreso/gasto real):
+    // Préstamo/Abono mueven dinero que no es tuyo o que te regresan; Cargo/Pago
+    // mueven dinero prestado a un tercero o su devolución. Se excluyen de las
+    // tarjetas de Ingresos/Egresos/Ahorro Neto, pero SÍ cuentan como movimiento
+    // de efectivo real para el cálculo de Patrimonio Neto.
+    private static readonly HashSet<string> CategoriasDeuda = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Préstamo", "Cargo", "Pago", "Abono"
+    };
+
     private class MovimientoViewModel
     {
         public DateTime FechaOcurrido { get; set; }
@@ -252,21 +262,46 @@ else
     {
         if (datos?.Movimientos == null) return;
 
-        var movimientos = datos.Movimientos
+        // Todos los movimientos con impacto real en efectivo (excluye Transferencia,
+        // ya que mover dinero entre tus propias cuentas no altera tu patrimonio).
+        var todosMovimientos = datos.Movimientos
             .Where(m => !string.IsNullOrEmpty(m.Categoria) && m.Categoria != "Transferencia")
             .ToList();
 
-        totalIngresos = movimientos.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto);
-        totalEgresos = movimientos.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
+        // Subconjunto de "ingreso/gasto real" — excluye préstamos, cargos, pagos y abonos,
+        // que son flujo de deuda, no ingreso o gasto genuino.
+        var movimientosReales = todosMovimientos
+            .Where(m => !CategoriasDeuda.Contains(m.Categoria))
+            .ToList();
+
+        totalIngresos = movimientosReales.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto);
+        totalEgresos = movimientosReales.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
         ahorroNeto = totalIngresos - totalEgresos;
+
+        // Patrimonio Neto: usa la MISMA definición que Balance.razor —
+        // saldo real de cuentas Corriente + Oculto (SaldoInicial + todos sus movimientos,
+        // sin excluir ninguna categoría) + cuentas por cobrar - cuentas por pagar.
+        // Ahorro, Transporte y Ajeno quedan fuera a propósito.
+        var saldosPorCuenta = datos.Cuentas.ToDictionary(c => c.Id, c => c.SaldoInicial);
+        foreach (var mov in datos.Movimientos)
+        {
+            if (!saldosPorCuenta.ContainsKey(mov.CuentaId)) continue;
+            if (mov.Tipo == "Ingreso") saldosPorCuenta[mov.CuentaId] += mov.Monto;
+            else if (mov.Tipo == "Egreso") saldosPorCuenta[mov.CuentaId] -= mov.Monto;
+        }
+
+        decimal totalGlobalCuentas = datos.Cuentas
+            .Where(c => c.Visibilidad == "Corriente" || c.Visibilidad == "Oculto")
+            .Sum(c => saldosPorCuenta.GetValueOrDefault(c.Id, c.SaldoInicial));
 
         var deudas = CalcularDeudasResumidas();
         decimal totalPorCobrar = deudas.deudores.Sum(d => d.SaldoPendiente);
         decimal totalPorPagar = deudas.acreedores.Sum(d => d.SaldoPendiente);
-        patrimonioNeto = ahorroNeto + (totalPorCobrar - totalPorPagar);
+        patrimonioNeto = totalGlobalCuentas + (totalPorCobrar - totalPorPagar);
 
-        // Últimos 10 movimientos con orden correcto
-        var ultimos = movimientos
+        // Últimos 10 movimientos (se muestran todos, incluidos préstamos/pagos/abonos,
+        // porque esta tabla es un registro de actividad, no un indicador financiero)
+        var ultimos = todosMovimientos
             .OrderByDescending(m => m.FechaOcurrido)
             .ThenByDescending(m => m.FechaRegistro)
             .Take(10)

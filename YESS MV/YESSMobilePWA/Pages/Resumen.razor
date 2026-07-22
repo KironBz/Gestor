@@ -4,6 +4,7 @@
 @using YESSMobilePWA.Services
 @using System.Globalization
 @inject ArchivoService ArchivoService
+@inject DeudaCalculatorService DeudaCalculatorService
 
 <h3 class="text-center mb-4">Resumen Financiero</h3>
 
@@ -212,7 +213,7 @@ else
     // Préstamo/Abono mueven dinero que no es tuyo o que te regresan; Cargo/Pago
     // mueven dinero prestado a un tercero o su devolución. Se excluyen de las
     // tarjetas de Ingresos/Egresos/Ahorro Neto, pero SÍ cuentan como movimiento
-    // de efectivo real para el cálculo de Patrimonio Neto.
+    // de efectivo real dentro del saldo de cada cuenta.
     private static readonly HashSet<string> CategoriasDeuda = new(StringComparer.OrdinalIgnoreCase)
     {
         "Préstamo", "Cargo", "Pago", "Abono"
@@ -227,12 +228,6 @@ else
         public string Descripcion { get; set; } = "";
         public decimal Monto { get; set; }
         public string Tipo { get; set; } = "";
-    }
-
-    private class ResumenDeuda
-    {
-        public string Contraparte { get; set; } = "";
-        public decimal SaldoPendiente { get; set; }
     }
 
     protected override async Task OnInitializedAsync()
@@ -278,10 +273,10 @@ else
         totalEgresos = movimientosReales.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
         ahorroNeto = totalIngresos - totalEgresos;
 
-        // Patrimonio Neto: usa la MISMA definición que Balance.razor —
-        // saldo real de cuentas Corriente + Oculto (SaldoInicial + todos sus movimientos,
-        // sin excluir ninguna categoría) + cuentas por cobrar - cuentas por pagar.
-        // Ahorro, Transporte y Ajeno quedan fuera a propósito.
+        // Patrimonio Neto: misma definición que Balance.razor — saldo real de cuentas
+        // Corriente + Oculto (SaldoInicial + todos sus movimientos, sin excluir ninguna
+        // categoría) + cuentas por cobrar - cuentas por pagar. Ahorro, Transporte y
+        // Ajeno quedan fuera a propósito.
         var saldosPorCuenta = datos.Cuentas.ToDictionary(c => c.Id, c => c.SaldoInicial);
         foreach (var mov in datos.Movimientos)
         {
@@ -294,9 +289,9 @@ else
             .Where(c => c.Visibilidad == "Corriente" || c.Visibilidad == "Oculto")
             .Sum(c => saldosPorCuenta.GetValueOrDefault(c.Id, c.SaldoInicial));
 
-        var deudas = CalcularDeudasResumidas();
-        decimal totalPorCobrar = deudas.deudores.Sum(d => d.SaldoPendiente);
-        decimal totalPorPagar = deudas.acreedores.Sum(d => d.SaldoPendiente);
+        var deudas = DeudaCalculatorService.CalcularDeudasResumen(datos);
+        decimal totalPorCobrar = deudas.Deudores.Sum(d => d.SaldoPendiente);
+        decimal totalPorPagar = deudas.Acreedores.Sum(d => d.SaldoPendiente);
         patrimonioNeto = totalGlobalCuentas + (totalPorCobrar - totalPorPagar);
 
         // Últimos 10 movimientos (se muestran todos, incluidos préstamos/pagos/abonos,
@@ -319,8 +314,8 @@ else
             Tipo = m.Tipo
         }).ToList();
 
-        acreedoresResumen = deudas.acreedores;
-        deudoresResumen = deudas.deudores;
+        acreedoresResumen = deudas.Acreedores;
+        deudoresResumen = deudas.Deudores;
 
         var todasMetas = datos.Metas ?? new List<Meta>();
         var activas = todasMetas.Where(m => !m.Completada && !m.Archivada)
@@ -335,70 +330,6 @@ else
                 .Sum(m => m.Monto);
         }
         topMetas = activas.Take(3).ToList();
-    }
-
-    private (List<ResumenDeuda> acreedores, List<ResumenDeuda> deudores) CalcularDeudasResumidas()
-    {
-        var acreedores = new List<ResumenDeuda>();
-        var deudores = new List<ResumenDeuda>();
-
-        if (datos == null) return (acreedores, deudores);
-
-        var pagosPorReferencia = datos.Movimientos
-            .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && !string.IsNullOrEmpty(m.ReferenciaAuto))
-            .GroupBy(m => m.ReferenciaAuto!)
-            .ToDictionary(g => g.Key, g => g.Sum(m => m.Monto));
-
-        var abonosPorReferencia = datos.Movimientos
-            .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && !string.IsNullOrEmpty(m.ReferenciaAuto))
-            .GroupBy(m => m.ReferenciaAuto!)
-            .ToDictionary(g => g.Key, g => g.Sum(m => m.Monto));
-
-        var prestamosRecibidos = datos.Movimientos
-            .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
-            .ToList();
-
-        foreach (var prestamo in prestamosRecibidos)
-        {
-            var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
-            if (persona == null) continue;
-
-            decimal pagado = pagosPorReferencia.GetValueOrDefault(prestamo.ReferenciaAuto!, 0);
-            decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
-            decimal pendiente = montoOriginal - pagado;
-            if (pendiente > 0)
-            {
-                var existente = acreedores.FirstOrDefault(a => a.Contraparte == persona.Nombre);
-                if (existente != null)
-                    existente.SaldoPendiente += pendiente;
-                else
-                    acreedores.Add(new ResumenDeuda { Contraparte = persona.Nombre, SaldoPendiente = pendiente });
-            }
-        }
-
-        var prestamosOtorgados = datos.Movimientos
-            .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
-            .ToList();
-
-        foreach (var prestamo in prestamosOtorgados)
-        {
-            var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
-            if (persona == null) continue;
-
-            decimal abonado = abonosPorReferencia.GetValueOrDefault(prestamo.ReferenciaAuto!, 0);
-            decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
-            decimal pendiente = montoOriginal - abonado;
-            if (pendiente > 0)
-            {
-                var existente = deudores.FirstOrDefault(d => d.Contraparte == persona.Nombre);
-                if (existente != null)
-                    existente.SaldoPendiente += pendiente;
-                else
-                    deudores.Add(new ResumenDeuda { Contraparte = persona.Nombre, SaldoPendiente = pendiente });
-            }
-        }
-
-        return (acreedores, deudores);
     }
 
     private double PorcentajeMeta(Meta meta)

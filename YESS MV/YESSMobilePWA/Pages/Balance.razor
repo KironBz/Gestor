@@ -2,6 +2,7 @@
 @using YESSMobilePWA.Models
 @using YESSMobilePWA.Services
 @inject ArchivoService ArchivoService
+@inject DeudaCalculatorService DeudaCalculatorService
 @inject NavigationManager Navigation
 
 <h3 class="text-center mb-4">Balance General</h3>
@@ -311,7 +312,9 @@ else
             totalAhorro = cuentasAhorro.Sum(c => c.Saldo);
             totalGlobal = totalCorriente + totalOculto;
 
-            (acreedores, deudores) = CalcularDeudasResumidas(datos);
+            var deudas = DeudaCalculatorService.CalcularDeudasResumen(datos);
+            acreedores = deudas.Acreedores;
+            deudores = deudas.Deudores;
             totalPorCobrar = deudores.Sum(d => d.SaldoPendiente);
             totalPorPagar = acreedores.Sum(d => d.SaldoPendiente);
 
@@ -324,65 +327,6 @@ else
         }
     }
 
-    private (List<ResumenDeuda> acreedores, List<ResumenDeuda> deudores) CalcularDeudasResumidas(DatosApp datos)
-    {
-        var acreedoresDict = new Dictionary<string, decimal>();
-        var deudoresDict = new Dictionary<string, decimal>();
-
-        var pagosPorReferencia = datos.Movimientos
-            .Where(m => m.Tipo == "Egreso" && m.Categoria == "Pago" && !string.IsNullOrEmpty(m.ReferenciaAuto))
-            .GroupBy(m => m.ReferenciaAuto)
-            .ToDictionary(g => g.Key!, g => g.Sum(m => m.Monto));
-
-        var abonosPorReferencia = datos.Movimientos
-            .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Abono" && !string.IsNullOrEmpty(m.ReferenciaAuto))
-            .GroupBy(m => m.ReferenciaAuto)
-            .ToDictionary(g => g.Key!, g => g.Sum(m => m.Monto));
-
-        var prestamosRecibidos = datos.Movimientos
-            .Where(m => m.Tipo == "Ingreso" && m.Categoria == "Préstamo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
-            .ToList();
-
-        foreach (var prestamo in prestamosRecibidos)
-        {
-            var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
-            if (persona == null) continue;
-
-            decimal pagado = pagosPorReferencia.GetValueOrDefault(prestamo.ReferenciaAuto!, 0);
-            decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
-            decimal pendiente = montoOriginal - pagado;
-            if (pendiente > 0)
-            {
-                acreedoresDict.TryGetValue(persona.Nombre, out var current);
-                acreedoresDict[persona.Nombre] = current + pendiente;
-            }
-        }
-
-        var prestamosOtorgados = datos.Movimientos
-            .Where(m => m.Tipo == "Egreso" && m.Categoria == "Cargo" && m.PersonaId != null && !string.IsNullOrEmpty(m.ReferenciaAuto))
-            .ToList();
-
-        foreach (var prestamo in prestamosOtorgados)
-        {
-            var persona = datos.Personas.FirstOrDefault(p => p.Id == prestamo.PersonaId);
-            if (persona == null) continue;
-
-            decimal abonado = abonosPorReferencia.GetValueOrDefault(prestamo.ReferenciaAuto!, 0);
-            decimal montoOriginal = prestamo.MontoFinal ?? prestamo.Monto;
-            decimal pendiente = montoOriginal - abonado;
-            if (pendiente > 0)
-            {
-                deudoresDict.TryGetValue(persona.Nombre, out var current);
-                deudoresDict[persona.Nombre] = current + pendiente;
-            }
-        }
-
-        var acreedoresList = acreedoresDict.Select(kv => new ResumenDeuda { Contraparte = kv.Key, SaldoPendiente = kv.Value }).ToList();
-        var deudoresList = deudoresDict.Select(kv => new ResumenDeuda { Contraparte = kv.Key, SaldoPendiente = kv.Value }).ToList();
-
-        return (acreedoresList, deudoresList);
-    }
-
     public class CuentaSaldo
     {
         public string Id { get; set; } = "";
@@ -390,11 +334,5 @@ else
         public string Visibilidad { get; set; } = "";
         public decimal Saldo { get; set; }
         public string Color { get; set; } = "#FFFFFF";
-    }
-
-    public class ResumenDeuda
-    {
-        public string Contraparte { get; set; } = "";
-        public decimal SaldoPendiente { get; set; }
     }
 }

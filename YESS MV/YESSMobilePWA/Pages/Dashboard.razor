@@ -208,6 +208,16 @@ else
 
     private readonly string[] paletaColoresBarras = new string[] { "#28a745", "#dc3545" };
 
+    // Categorías que representan movimiento de deuda (no ingreso/gasto real) —
+    // misma definición usada en Resumen.razor. Se excluyen para que los gráficos
+    // reflejen ingreso/gasto genuino, no flujo de préstamos/pagos/abonos.
+    // TODO: centralizar junto con la copia de Resumen.razor cuando toquemos
+    // ese tema de arquitectura.
+    private static readonly HashSet<string> CategoriasDeuda = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Préstamo", "Cargo", "Pago", "Abono"
+    };
+
     private string FormatearMonedaEje(object value)
     {
         if (value is double numero)
@@ -235,12 +245,12 @@ else
             datos = await ArchivoService.CargarAsync();
 
             hayDatos = datos.Movimientos.Any(m =>
-                !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia");
+                !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia" && !CategoriasDeuda.Contains(m.Categoria));
 
             if (hayDatos)
             {
                 aniosDisponibles = datos.Movimientos
-                    .Where(m => !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia")
+                    .Where(m => !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia" && !CategoriasDeuda.Contains(m.Categoria))
                     .Select(m => m.FechaOcurrido.Year)
                     .Distinct()
                     .OrderBy(a => a)
@@ -293,7 +303,7 @@ else
         }
 
         var movimientos = datos.Movimientos
-            .Where(m => !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia")
+            .Where(m => !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia" && !CategoriasDeuda.Contains(m.Categoria))
             .ToList();
 
         if (!movimientos.Any())
@@ -409,23 +419,5 @@ else
         datosIngresosCategoria = new List<CategoriaItem>();
         datosEgresosCategoria = new List<CategoriaItem>();
         datosLinea = new List<GastoMensual>();
-    }
-
-    public class TotalItem
-    {
-        public string Categoria { get; set; } = string.Empty;
-        public double Monto { get; set; }
-    }
-
-    public class CategoriaItem
-    {
-        public string Categoria { get; set; } = string.Empty;
-        public double Monto { get; set; }
-    }
-
-    public class GastoMensual
-    {
-        public string Mes { get; set; } = string.Empty;
-        public double Gasto { get; set; }
     }
 }

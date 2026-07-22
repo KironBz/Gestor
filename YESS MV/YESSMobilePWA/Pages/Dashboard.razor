@@ -81,6 +81,7 @@ else
                                 <RadzenGridLines Visible="true" />
                             </RadzenValueAxis>
                             <RadzenChartTooltipOptions Shared="true" />
+                            <RadzenLegend Visible="false" />
                         </RadzenChart>
                     }
                     else
@@ -209,10 +210,8 @@ else
     private readonly string[] paletaColoresBarras = new string[] { "#28a745", "#dc3545" };
 
     // Categorías que representan movimiento de deuda (no ingreso/gasto real) —
-    // misma definición usada en Resumen.razor. Se excluyen para que los gráficos
-    // reflejen ingreso/gasto genuino, no flujo de préstamos/pagos/abonos.
-    // TODO: centralizar junto con la copia de Resumen.razor cuando toquemos
-    // ese tema de arquitectura.
+    // misma definición usada en Resumen.razor.
+    // TODO: centralizar junto con la copia de Resumen.razor.
     private static readonly HashSet<string> CategoriasDeuda = new(StringComparer.OrdinalIgnoreCase)
     {
         "Préstamo", "Cargo", "Pago", "Abono"

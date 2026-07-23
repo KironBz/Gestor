@@ -209,16 +209,6 @@ else
     private List<ResumenDeuda> deudoresResumen = new();
     private List<Meta> topMetas = new();
 
-    // Categorías que representan movimiento de deuda (no ingreso/gasto real):
-    // Préstamo/Abono mueven dinero que no es tuyo o que te regresan; Cargo/Pago
-    // mueven dinero prestado a un tercero o su devolución. Se excluyen de las
-    // tarjetas de Ingresos/Egresos/Ahorro Neto, pero SÍ cuentan como movimiento
-    // de efectivo real dentro del saldo de cada cuenta.
-    private static readonly HashSet<string> CategoriasDeuda = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Préstamo", "Cargo", "Pago", "Abono"
-    };
-
     private class MovimientoViewModel
     {
         public DateTime FechaOcurrido { get; set; }
@@ -266,7 +256,7 @@ else
         // Subconjunto de "ingreso/gasto real" — excluye préstamos, cargos, pagos y abonos,
         // que son flujo de deuda, no ingreso o gasto genuino.
         var movimientosReales = todosMovimientos
-            .Where(m => !CategoriasDeuda.Contains(m.Categoria))
+            .Where(m => !DeudaCalculatorService.CategoriasDeuda.Contains(m.Categoria))
             .ToList();
 
         totalIngresos = movimientosReales.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto);

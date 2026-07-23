@@ -4,6 +4,7 @@
 @using Radzen.Blazor
 @using System.Globalization
 @inject ArchivoService ArchivoService
+@inject DeudaCalculatorService DeudaCalculatorService
 
 <h3 class="text-center mb-4">Dashboard Financiero</h3>
 
@@ -74,7 +75,15 @@ else
                                                 CategoryProperty="Categoria"
                                                 ValueProperty="Monto"
                                                 Title="Monto Total"
-                                                Fills="@paletaColoresBarras" />
+                                                Fills="@paletaColoresBarras">
+                                <TooltipTemplate Context="data">
+                                    <div style="padding: 4px 8px;">
+                                        <div>@data.Categoria</div>
+                                        <div><strong>@data.Monto.ToString("C0", CultureInfo.GetCultureInfo("es-MX"))</strong></div>
+                                        <div>@((data.Monto / datosBarras.Sum(x => x.Monto) * 100).ToString("F1"))%</div>
+                                    </div>
+                                </TooltipTemplate>
+                            </RadzenColumnSeries>
                             <RadzenColumnOptions Radius="5" />
                             <RadzenCategoryAxis Padding="20" />
                             <RadzenValueAxis Min="0" Formatter="@FormatearMonedaEje">
@@ -103,7 +112,15 @@ else
                                              Data="@datosPastelTotal"
                                              CategoryProperty="Categoria"
                                              ValueProperty="Monto"
-                                             Fills="@paletaColoresBarras" />
+                                             Fills="@paletaColoresBarras">
+                                <TooltipTemplate Context="data">
+                                    <div style="padding: 4px 8px;">
+                                        <div>@data.Categoria</div>
+                                        <div><strong>@data.Monto.ToString("C0", CultureInfo.GetCultureInfo("es-MX"))</strong></div>
+                                        <div>@((data.Monto / datosPastelTotal.Sum(x => x.Monto) * 100).ToString("F1"))%</div>
+                                    </div>
+                                </TooltipTemplate>
+                            </RadzenPieSeries>
                             <RadzenChartTooltipOptions Shared="false" />
                         </RadzenChart>
                     }
@@ -127,7 +144,15 @@ else
                             <RadzenPieSeries TItem="CategoriaItem"
                                              Data="@datosIngresosCategoria"
                                              CategoryProperty="Categoria"
-                                             ValueProperty="Monto" />
+                                             ValueProperty="Monto">
+                                <TooltipTemplate Context="data">
+                                    <div style="padding: 4px 8px;">
+                                        <div>@data.Categoria</div>
+                                        <div><strong>@data.Monto.ToString("C0", CultureInfo.GetCultureInfo("es-MX"))</strong></div>
+                                        <div>@((data.Monto / datosIngresosCategoria.Sum(x => x.Monto) * 100).ToString("F1"))%</div>
+                                    </div>
+                                </TooltipTemplate>
+                            </RadzenPieSeries>
                             <RadzenChartTooltipOptions Shared="false" />
                         </RadzenChart>
                     }
@@ -149,7 +174,15 @@ else
                             <RadzenPieSeries TItem="CategoriaItem"
                                              Data="@datosEgresosCategoria"
                                              CategoryProperty="Categoria"
-                                             ValueProperty="Monto" />
+                                             ValueProperty="Monto">
+                                <TooltipTemplate Context="data">
+                                    <div style="padding: 4px 8px;">
+                                        <div>@data.Categoria</div>
+                                        <div><strong>@data.Monto.ToString("C0", CultureInfo.GetCultureInfo("es-MX"))</strong></div>
+                                        <div>@((data.Monto / datosEgresosCategoria.Sum(x => x.Monto) * 100).ToString("F1"))%</div>
+                                    </div>
+                                </TooltipTemplate>
+                            </RadzenPieSeries>
                             <RadzenChartTooltipOptions Shared="false" />
                         </RadzenChart>
                     }
@@ -171,10 +204,14 @@ else
                     {
                         <RadzenChart Style="height: 300px;">
                             <RadzenLineSeries TItem="GastoMensual"
-                                              Data="@datosLinea"
-                                              CategoryProperty="Mes"
-                                              ValueProperty="Gasto"
-                                              Title="Gastos" />
+                                            Data="@datosLinea"
+                                            CategoryProperty="Mes"
+                                            ValueProperty="Gasto"
+                                            Title="Gastos"
+                                            Stroke="#fd7e14"
+                                            StrokeWidth="2.8">
+                                <RadzenMarkers MarkerType="MarkerType.Circle" Size="5" />
+                            </RadzenLineSeries>
                             <RadzenCategoryAxis Padding="20" />
                             <RadzenValueAxis Formatter="@FormatearMonedaEje">
                                 <RadzenGridLines Visible="true" />
@@ -209,13 +246,10 @@ else
 
     private readonly string[] paletaColoresBarras = new string[] { "#28a745", "#dc3545" };
 
-    // Categorías que representan movimiento de deuda (no ingreso/gasto real) —
-    // misma definición usada en Resumen.razor.
-    // TODO: centralizar junto con la copia de Resumen.razor.
-    private static readonly HashSet<string> CategoriasDeuda = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Préstamo", "Cargo", "Pago", "Abono"
-    };
+    // Categorías con menos de este % del total se agrupan en "Diversos" en los
+    // pasteles de categoría, para que no queden rebanadas ilegibles. Ajustable
+    // entre 10 y 15 según qué tan agresivo quieras el agrupamiento.
+    private const double UmbralAgrupacionCategoria = 10.0;
 
     private string FormatearMonedaEje(object value)
     {
@@ -244,12 +278,12 @@ else
             datos = await ArchivoService.CargarAsync();
 
             hayDatos = datos.Movimientos.Any(m =>
-                !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia" && !CategoriasDeuda.Contains(m.Categoria));
+                !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia" && !DeudaCalculatorService.CategoriasDeuda.Contains(m.Categoria));
 
             if (hayDatos)
             {
                 aniosDisponibles = datos.Movimientos
-                    .Where(m => !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia" && !CategoriasDeuda.Contains(m.Categoria))
+                    .Where(m => !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia" && !DeudaCalculatorService.CategoriasDeuda.Contains(m.Categoria))
                     .Select(m => m.FechaOcurrido.Year)
                     .Distinct()
                     .OrderBy(a => a)
@@ -302,7 +336,7 @@ else
         }
 
         var movimientos = datos.Movimientos
-            .Where(m => !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia" && !CategoriasDeuda.Contains(m.Categoria))
+            .Where(m => !string.IsNullOrWhiteSpace(m.Categoria) && m.Categoria != "Transferencia" && !DeudaCalculatorService.CategoriasDeuda.Contains(m.Categoria))
             .ToList();
 
         if (!movimientos.Any())
@@ -347,21 +381,43 @@ else
             .Select(x => new TotalItem { Categoria = x.Categoria, Monto = x.Monto })
             .ToList();
 
-        datosIngresosCategoria = movimientos
+        var ingresosPorCategoria = movimientos
             .Where(m => m.Tipo == "Ingreso")
             .GroupBy(m => m.Categoria)
             .Select(g => new CategoriaItem { Categoria = g.Key, Monto = (double)g.Sum(m => m.Monto) })
             .OrderByDescending(x => x.Monto)
             .ToList();
+        datosIngresosCategoria = AgruparCategoriasMenores(ingresosPorCategoria);
 
-        datosEgresosCategoria = movimientos
+        var egresosPorCategoria = movimientos
             .Where(m => m.Tipo == "Egreso")
             .GroupBy(m => m.Categoria)
             .Select(g => new CategoriaItem { Categoria = g.Key, Monto = (double)g.Sum(m => m.Monto) })
             .OrderByDescending(x => x.Monto)
             .ToList();
+        datosEgresosCategoria = AgruparCategoriasMenores(egresosPorCategoria);
 
         ConstruirLineaGastos(movimientos);
+    }
+
+    private List<CategoriaItem> AgruparCategoriasMenores(List<CategoriaItem> items)
+    {
+        double total = items.Sum(x => x.Monto);
+        if (total <= 0) return items;
+
+        var principales = items.Where(x => (x.Monto / total * 100) >= UmbralAgrupacionCategoria).ToList();
+        var menores = items.Where(x => (x.Monto / total * 100) < UmbralAgrupacionCategoria).ToList();
+
+        if (menores.Count >= 2)
+        {
+            principales.Add(new CategoriaItem { Categoria = "Diversos", Monto = menores.Sum(x => x.Monto) });
+        }
+        else
+        {
+            principales.AddRange(menores);
+        }
+
+        return principales.OrderByDescending(x => x.Monto).ToList();
     }
 
     private void ConstruirLineaGastos(List<Movimiento> movimientos)
@@ -371,6 +427,9 @@ else
 
         if (anioSeleccionado != "todos" && int.TryParse(anioSeleccionado, out int anio))
         {
+            // Año específico: siempre 12 meses de ese año, sin importar si
+            // además hay un filtro de mes/semestre aplicado (un solo año no
+            // sufre el problema de huecos, porque no hay nada que comparar).
             for (int mes = 1; mes <= 12; mes++)
             {
                 decimal gasto = movimientos
@@ -383,8 +442,38 @@ else
                 });
             }
         }
+        else if (periodoSeleccionado != "total")
+        {
+            // "Todos" los años + un mes o semestre específico: en vez de recorrer
+            // mes a mes (lo cual dejaba huecos en cero para los meses fuera del
+            // filtro), se compara ese mismo período año contra año — un punto
+            // por cada año que tenga datos.
+            var aniosConDatos = movimientos.Select(m => m.FechaOcurrido.Year).Distinct().OrderBy(a => a).ToList();
+
+            string etiquetaPeriodo = periodoSeleccionado switch
+            {
+                "semestre1" => "Sem1",
+                "semestre2" => "Sem2",
+                _ when periodoSeleccionado.StartsWith("mes") && int.TryParse(periodoSeleccionado.AsSpan(3), out int mesFiltro)
+                    => CapitalizarMes(cultura.DateTimeFormat.GetAbbreviatedMonthName(mesFiltro)),
+                _ => ""
+            };
+
+            foreach (var anioConDatos in aniosConDatos)
+            {
+                decimal gasto = movimientos
+                    .Where(m => m.Tipo == "Egreso" && m.FechaOcurrido.Year == anioConDatos)
+                    .Sum(m => m.Monto);
+                lineData.Add(new GastoMensual
+                {
+                    Mes = $"{etiquetaPeriodo} {anioConDatos}",
+                    Gasto = (double)gasto
+                });
+            }
+        }
         else
         {
+            // Total histórico, todos los años: línea mes a mes continua, sin huecos.
             var fechas = movimientos.Select(m => m.FechaOcurrido).ToList();
             var primera = fechas.Min();
             var ultima = fechas.Max();

@@ -9,6 +9,16 @@ namespace YESSMobilePWA.Services
     public class DeudaCalculatorService
     {
         /// <summary>
+        /// Categorías que representan movimiento de deuda (préstamo, cargo, pago, abono),
+        /// no ingreso/gasto real. Fuente única de verdad — consumida por Resumen.razor y
+        /// Dashboard.razor para excluir flujo de deuda de sus métricas de ingreso/gasto.
+        /// </summary>
+        public readonly HashSet<string> CategoriasDeuda = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Préstamo", "Cargo", "Pago", "Abono"
+        };
+
+        /// <summary>
         /// Detalle completo por préstamo/cargo individual: acreedores (debo), deudores
         /// (me deben) y completados. Es el nivel de detalle que necesita Prestamos.razor.
         /// </summary>

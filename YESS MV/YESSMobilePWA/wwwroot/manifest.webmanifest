@@ -1,6 +1,6 @@
 {
   "name": "YESSMobilePWA",
-  "short_name": "YESSMobilePWA",
+  "short_name": "YESS",
   "id": "./",
   "start_url": "./",
   "display": "standalone",
@@ -11,7 +11,8 @@
     {
       "src": "icon-512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "maskable"
     },
     {
       "src": "icon-192.png",

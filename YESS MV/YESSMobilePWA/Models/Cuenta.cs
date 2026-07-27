@@ -5,8 +5,9 @@ namespace YESSMobilePWA.Models
     public class Cuenta
     {
         [JsonPropertyName("id")]
-        public string Id { get; set; }
-        private string _nombre;
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+
+        private string _nombre = "";
         [JsonPropertyName("nombre")]
         public string Nombre
         {
@@ -18,7 +19,7 @@ namespace YESSMobilePWA.Models
                 _nombre = value.Trim();
             }
         }
-        private string _visibilidad;
+        private string _visibilidad = "";
         [JsonPropertyName("visibilidad")]
         public string Visibilidad
         {

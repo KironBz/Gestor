@@ -94,7 +94,6 @@ else
 
     @if (mostrarDeudores)
     {
-        <!-- Tabla desktop -->
         <div class="d-none d-md-block">
             <table class="table table-dark table-striped">
                 <thead>
@@ -155,7 +154,6 @@ else
             </table>
         </div>
 
-        <!-- Tarjetas móvil -->
         <div class="d-block d-md-none">
             @if (!deudoresFiltrados.Any())
             {
@@ -213,7 +211,6 @@ else
 
     @if (mostrarAcreedores)
     {
-        <!-- Tabla desktop -->
         <div class="d-none d-md-block">
             <table class="table table-dark table-striped">
                 <thead>
@@ -274,7 +271,6 @@ else
             </table>
         </div>
 
-        <!-- Tarjetas móvil -->
         <div class="d-block d-md-none">
             @if (!acreedoresFiltrados.Any())
             {
@@ -407,10 +403,14 @@ else
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
+                        <label class="form-label">Fecha</label>
+                        <InputDate @bind-Value="formularioPrestamo.Fecha" class="form-control" />
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">¿Qué está pasando?</label>
                         <select class="form-select" @bind="formularioPrestamo.TipoPrestamo">
-                            <option value="Acreedor">Recibí un préstamo (yo debo)</option>
-                            <option value="Deudor">Presto/cargo a alguien (me deben)</option>
+                            <option value="Deudor">Préstamo (di un préstamo)</option>
+                            <option value="Acreedor">Crédito (me prestaron)</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -425,10 +425,6 @@ else
                             </select>
                             <button type="button" class="btn btn-outline-success" @onclick="() => mostrarModalPersona = true">+</button>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Fecha</label>
-                        <InputDate @bind-Value="formularioPrestamo.Fecha" class="form-control" />
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Cuenta</label>
@@ -522,9 +518,6 @@ else
 }
 
 @code {
-    // =================================================================
-    // VARIABLES PRIVADAS
-    // =================================================================
     private List<DeudaPendiente>? acreedores;
     private List<DeudaPendiente>? deudores;
     private List<DeudaPendiente>? completados;
@@ -544,12 +537,10 @@ else
     private bool mostrarModalCuenta = false;
     private bool mostrarModalPersona = false;
 
-    // ========== SECCIONES DESPLEGABLES ==========
     private bool mostrarDeudores = true;
     private bool mostrarAcreedores = true;
     private bool mostrarCompletados = false;
 
-    // ========== ESTADO DE FILTROS ==========
     private string filtroPersonaId = "";
     private string filtroReferencia = "";
     private decimal? filtroMontoMin = null;
@@ -558,7 +549,6 @@ else
     private DateTime? filtroFechaHasta = null;
     private bool mostrarFiltros = false;
 
-    // ========== LISTAS FILTRADAS (computed) ==========
     private List<DeudaPendiente> deudoresFiltrados => AplicarFiltros(deudores).ToList();
     private List<DeudaPendiente> acreedoresFiltrados => AplicarFiltros(acreedores).ToList();
     private List<DeudaPendiente> completadosFiltrados => AplicarFiltros(completados).ToList();
@@ -593,7 +583,6 @@ else
         return query;
     }
 
-    // ========== HANDLERS DE FILTROS ==========
     private void OnFiltroPersonaChanged(ChangeEventArgs e) => filtroPersonaId = e.Value?.ToString() ?? "";
     private void OnFiltroReferenciaChanged(ChangeEventArgs e) => filtroReferencia = e.Value?.ToString() ?? "";
 
@@ -644,9 +633,6 @@ else
         mostrarFiltros = false;
     }
 
-    // =================================================================
-    // CICLO DE VIDA Y CARGA
-    // =================================================================
     protected override async Task OnInitializedAsync()
     {
         await CargarDeudas();
@@ -661,9 +647,6 @@ else
         StateHasChanged();
     }
 
-    // =================================================================
-    // MODAL DE PAGO / ABONO
-    // =================================================================
     private void RegistrarPago(DeudaPendiente deuda, bool esPago)
     {
         deudaSeleccionada = deuda;
@@ -723,9 +706,6 @@ else
         await JS.InvokeVoidAsync("alert", $"{categoria} registrado correctamente.");
     }
 
-    // =================================================================
-    // MODAL NUEVO PRÉSTAMO / CARGO
-    // =================================================================
     private void AbrirModalNuevoPrestamo()
     {
         formularioPrestamo = new FormularioPrestamo();
@@ -806,10 +786,9 @@ else
         StateHasChanged();
     }
 
-    // ========== CLASE AUXILIAR ==========
     private class FormularioPrestamo
     {
-        public string TipoPrestamo { get; set; } = "Acreedor";
+        public string TipoPrestamo { get; set; } = "Deudor";
         public DateTime Fecha { get; set; } = DateTime.Today;
         public string CuentaId { get; set; } = "";
         public string PersonaId { get; set; } = "";

@@ -3,6 +3,7 @@
 @using YESSMobilePWA.Services
 @using YESSMobilePWA.Components
 @using Microsoft.AspNetCore.Components.Forms
+@using System.Globalization
 @inject ArchivoService ArchivoService
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
@@ -14,7 +15,6 @@
 </div>
 
 <!-- ===================== FILTROS ===================== -->
-<!-- Botón para mostrar/ocultar filtros (solo en móvil) -->
 <div class="mb-2 text-end d-md-none">
     <button class="btn btn-sm btn-outline-light" @onclick="ToggleFiltros">
         @(mostrarFiltros ? "Ocultar filtros" : "Mostrar filtros")
@@ -25,7 +25,6 @@
     </button>
 </div>
 
-<!-- Panel de filtros: en móvil se oculta/muestra; en escritorio siempre visible -->
 <div class="card bg-dark text-white mb-3 @(mostrarFiltros ? "" : "d-none d-md-block")">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -125,58 +124,89 @@
 }
 else
 {
-    <!-- Tabla desktop -->
+    <!-- Tabla desktop, agrupada por mes -->
     <div class="d-none d-md-block">
-        <table class="table table-dark table-striped">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Cuenta</th>
-                    <th>Tipo</th>
-                    <th>Categoría</th>
-                    <th>Persona</th>
-                    <th>Descripción</th>
-                    <th>Referencia</th>
-                    <th>Monto</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (!movimientosFiltrados.Any())
-                {
+        @if (!movimientosFiltrados.Any())
+        {
+            <table class="table table-dark table-striped">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cuenta</th>
+                        <th>Tipo</th>
+                        <th>Categoría</th>
+                        <th>Persona</th>
+                        <th>Descripción</th>
+                        <th>Referencia</th>
+                        <th>Monto</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
                     <tr>
                         <td colspan="9" class="text-center text-muted py-4">
                             No hay movimientos que coincidan con los filtros aplicados.
                         </td>
                     </tr>
-                }
-                else
+                </tbody>
+            </table>
+        }
+        else
+        {
+            @foreach (var grupo in movimientosAgrupados)
+            {
+                <div class="d-flex justify-content-between align-items-center mt-3" style="cursor:pointer; user-select:none;" @onclick="() => ToggleGrupo(grupo.Clave)">
+                    <h5 class="mb-0">
+                        <span class="oi @(EstaAbierto(grupo.Clave) ? "oi-caret-bottom" : "oi-caret-right")" aria-hidden="true"></span>
+                        @grupo.Etiqueta
+                        <span class="badge bg-secondary ms-1">@grupo.Movimientos.Count</span>
+                    </h5>
+                </div>
+
+                @if (EstaAbierto(grupo.Clave))
                 {
-                    @foreach (var mov in movimientosFiltrados)
-                    {
-                        <tr>
-                            <td>@mov.FechaOcurrido.ToString("dd/MM/yyyy")</td
-                            <td>@mov.NombreCuenta</td
-                            <td>@mov.Tipo</td
-                            <td>@mov.Categoria</td
-                            <td>@mov.NombrePersona</td
-                            <td style="max-width:150px;">@mov.Descripcion</td
-                            <td style="max-width:125px; overflow:hidden; text-overflow:ellipsis;" title="@mov.ReferenciaAuto">@mov.ReferenciaAuto</td
-                            <td>@mov.Monto.ToString("C")</td
-                            <td style="min-width: 110px;">
-                                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                    <button class="btn btn-sm btn-warning" @onclick="() => AbrirModal(mov)">Editar</button>
-                                    <button class="btn btn-sm btn-danger" @onclick="() => EliminarMovimiento(mov)">Eliminar</button>
-                                </div>
-                            </td
-                        </tr>
-                    }
+                    <table class="table table-dark table-striped">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Cuenta</th>
+                                <th>Tipo</th>
+                                <th>Categoría</th>
+                                <th>Persona</th>
+                                <th>Descripción</th>
+                                <th>Referencia</th>
+                                <th>Monto</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var mov in grupo.Movimientos)
+                            {
+                                <tr>
+                                    <td>@mov.FechaOcurrido.ToString("dd/MM/yyyy")</td>
+                                    <td>@mov.NombreCuenta</td>
+                                    <td>@mov.Tipo</td>
+                                    <td>@mov.Categoria</td>
+                                    <td>@mov.NombrePersona</td>
+                                    <td style="max-width:150px;">@mov.Descripcion</td>
+                                    <td style="max-width:125px; overflow:hidden; text-overflow:ellipsis;" title="@mov.ReferenciaAuto">@mov.ReferenciaAuto</td>
+                                    <td class="@ClaseColorMonto(mov)"><strong>@mov.Monto.ToString("C")</strong></td>
+                                    <td style="min-width: 110px;">
+                                        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                            <button class="btn btn-sm btn-warning" @onclick="() => AbrirModal(mov)">Editar</button>
+                                            <button class="btn btn-sm btn-danger" @onclick="() => EliminarMovimiento(mov)">Eliminar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 }
-            </tbody>
-        </table>
+            }
+        }
     </div>
 
-    <!-- Tarjetas móvil -->
+    <!-- Tarjetas móvil, agrupadas por mes -->
     <div class="d-block d-md-none">
         @if (!movimientosFiltrados.Any())
         {
@@ -184,21 +214,37 @@ else
         }
         else
         {
-            @foreach (var mov in movimientosFiltrados)
+            @foreach (var grupo in movimientosAgrupados)
             {
-                <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @mov.ColorCuenta;">
-                    <div class="card-body">
-                        <h5 class="card-title">@mov.Descripcion</h5>
-                        <p class="card-text">
-                            <strong>@mov.Monto.ToString("C")</strong><br />
-                            @mov.FechaOcurrido.ToString("dd/MM/yyyy") - @mov.NombreCuenta<br />
-                            @mov.Tipo / @mov.Categoria
-                        </p>
-                        <p class="card-text"><small>Ref: @mov.ReferenciaAuto</small></p>
-                        <button class="btn btn-sm btn-warning" @onclick="() => AbrirModal(mov)">Editar</button>
-                        <button class="btn btn-sm btn-danger" @onclick="() => EliminarMovimiento(mov)">Eliminar</button>
-                    </div>
+                <div class="d-flex justify-content-between align-items-center mt-3" style="cursor:pointer; user-select:none;" @onclick="() => ToggleGrupo(grupo.Clave)">
+                    <h6 class="mb-0">
+                        <span class="oi @(EstaAbierto(grupo.Clave) ? "oi-caret-bottom" : "oi-caret-right")" aria-hidden="true"></span>
+                        @grupo.Etiqueta
+                        <span class="badge bg-secondary ms-1">@grupo.Movimientos.Count</span>
+                    </h6>
                 </div>
+
+                @if (EstaAbierto(grupo.Clave))
+                {
+                    @foreach (var mov in grupo.Movimientos)
+                    {
+                        <div class="card bg-dark text-white mb-3" style="border-left: 5px solid @ColorBorde(mov);">
+                            <div class="card-body">
+                                <h5 class="card-title">@mov.Descripcion</h5>
+                                <p class="card-text mb-1 @ClaseColorMonto(mov)" style="font-size: 2rem; font-weight: bold;">
+                                    @mov.Monto.ToString("C")
+                                </p>
+                                <p class="card-text">
+                                    @mov.FechaOcurrido.ToString("dd/MM/yyyy") - @mov.NombreCuenta<br />
+                                    @mov.Tipo / @mov.Categoria
+                                </p>
+                                <p class="card-text"><small>Ref: @mov.ReferenciaAuto</small></p>
+                                <button class="btn btn-sm btn-warning" @onclick="() => AbrirModal(mov)">Editar</button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => EliminarMovimiento(mov)">Eliminar</button>
+                            </div>
+                        </div>
+                    }
+                }
             }
         }
     </div>
@@ -209,9 +255,7 @@ else
 {
     <div class="modal-backdrop fade show"></div>
     <div class="modal show d-block" tabindex="-1" role="dialog">
-        
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="margin-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));">
-
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-dark text-white">
                 <div class="modal-header">
                     <h5 class="modal-title">@(movimientoEditando == null ? "Nuevo movimiento" : "Editar movimiento")</h5>
@@ -319,7 +363,7 @@ else
                             <input type="number" class="form-control" @bind="formulario.Plazos" />
                         </div>
                     }
-                    @if (formulario.Tipo == "Ingreso" && cuentaSeleccionada?.Visibilidad == "Ahorro")
+                    @if (formulario.Tipo == "Ingreso" && (cuentaSeleccionada?.Nombre == "Nu" || cuentaSeleccionada?.Nombre == "Revolut"))
                     {
                         <div class="mb-3">
                             <label class="form-label">Meta de ahorro (opcional)</label>
@@ -332,14 +376,11 @@ else
                             </select>
                         </div>
                     }
-
-                    <div class="d-flex justify-content-end gap-2 mt-3 pb-3">
-                        <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" @onclick="GuardarMovimiento">Guardar</button>
-                    </div>
-
                 </div>
-                <!-- modal-footer eliminado -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" @onclick="GuardarMovimiento">Guardar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -390,8 +431,17 @@ else
     private decimal? filtroMontoMin = null;
     private decimal? filtroMontoMax = null;
 
-    // Para el toggle en móvil
     private bool mostrarFiltros = false;
+
+    // ========== ESTADO DE GRUPOS (por mes) ==========
+    private HashSet<string> gruposAbiertos = new();
+
+    private class GrupoMovimientos
+    {
+        public string Clave { get; set; } = "";
+        public string Etiqueta { get; set; } = "";
+        public List<MovimientoViewModel> Movimientos { get; set; } = new();
+    }
 
     private List<Categoria> categoriasFiltradas => formulario.Tipo switch
     {
@@ -460,6 +510,47 @@ else
                 .ThenByDescending(m => m.FechaRegistro)
                 .ToList();
         }
+    }
+
+    // ========== AGRUPACIÓN POR MES (computed) ==========
+    private List<GrupoMovimientos> movimientosAgrupados
+    {
+        get
+        {
+            var cultura = CultureInfo.GetCultureInfo("es-MX");
+            return movimientosFiltrados
+                .GroupBy(m => new { m.FechaOcurrido.Year, m.FechaOcurrido.Month })
+                .Select(g => new GrupoMovimientos
+                {
+                    Clave = $"{g.Key.Year:D4}-{g.Key.Month:D2}",
+                    Etiqueta = $"{CapitalizarMes(cultura.DateTimeFormat.GetMonthName(g.Key.Month))} {g.Key.Year}",
+                    Movimientos = g.ToList()
+                })
+                .ToList();
+        }
+    }
+
+    private bool EstaAbierto(string clave) => gruposAbiertos.Contains(clave);
+
+    private void ToggleGrupo(string clave)
+    {
+        if (!gruposAbiertos.Add(clave))
+            gruposAbiertos.Remove(clave);
+    }
+
+    private string CapitalizarMes(string mes)
+    {
+        if (string.IsNullOrEmpty(mes)) return mes;
+        return char.ToUpper(mes[0]) + mes.Substring(1);
+    }
+
+    // ========== COLOR POR TIPO / TRANSFERENCIA ==========
+    private string ColorBorde(MovimientoViewModel mov) => mov.Categoria == "Transferencia" ? "#6c757d" : mov.ColorCuenta;
+
+    private string ClaseColorMonto(MovimientoViewModel mov)
+    {
+        if (mov.Categoria == "Transferencia") return "text-info";
+        return mov.Tipo == "Ingreso" ? "text-success" : "text-danger";
     }
 
     // ========== HANDLERS DE FILTROS ==========
@@ -548,7 +639,7 @@ else
         filtroFechaHasta = null;
         filtroMontoMin = null;
         filtroMontoMax = null;
-        mostrarFiltros = false; // Tras limpiar, ocultamos el panel en móvil
+        mostrarFiltros = false;
     }
 
     protected override async Task OnInitializedAsync()
@@ -610,6 +701,14 @@ else
             MetaId = m.MetaId,
             NombreMeta = m.MetaId != null ? mapaNombresMetas.GetValueOrDefault(m.MetaId) ?? "" : ""
         }).ToList();
+
+        // Al primer cargue, se abre por defecto el grupo del mes más reciente.
+        if (gruposAbiertos.Count == 0 && movimientos.Any())
+        {
+            var masReciente = movimientos.OrderByDescending(m => m.FechaOcurrido).First();
+            gruposAbiertos.Add($"{masReciente.FechaOcurrido.Year:D4}-{masReciente.FechaOcurrido.Month:D2}");
+        }
+
         StateHasChanged();
     }
 

@@ -155,12 +155,12 @@ else
         {
             @foreach (var grupo in movimientosAgrupados)
             {
-                <div class="d-flex justify-content-between align-items-center mt-3" style="cursor:pointer; user-select:none;" @onclick="() => ToggleGrupo(grupo.Clave)">
-                    <h5 class="mb-0">
+                <div class="d-flex justify-content-between align-items-center mt-4 mb-3" style="cursor:pointer; user-select:none;" @onclick="() => ToggleGrupo(grupo.Clave)">
+                    <h4 class="mb-0">
                         <span class="oi @(EstaAbierto(grupo.Clave) ? "oi-caret-bottom" : "oi-caret-right")" aria-hidden="true"></span>
                         @grupo.Etiqueta
                         <span class="badge bg-secondary ms-1">@grupo.Movimientos.Count</span>
-                    </h5>
+                    </h4>
                 </div>
 
                 @if (EstaAbierto(grupo.Clave))
@@ -216,12 +216,12 @@ else
         {
             @foreach (var grupo in movimientosAgrupados)
             {
-                <div class="d-flex justify-content-between align-items-center mt-3" style="cursor:pointer; user-select:none;" @onclick="() => ToggleGrupo(grupo.Clave)">
-                    <h6 class="mb-0">
+                <div class="d-flex justify-content-between align-items-center mt-4 mb-3" style="cursor:pointer; user-select:none;" @onclick="() => ToggleGrupo(grupo.Clave)">
+                    <h5 class="mb-0">
                         <span class="oi @(EstaAbierto(grupo.Clave) ? "oi-caret-bottom" : "oi-caret-right")" aria-hidden="true"></span>
                         @grupo.Etiqueta
                         <span class="badge bg-secondary ms-1">@grupo.Movimientos.Count</span>
-                    </h6>
+                    </h5>
                 </div>
 
                 @if (EstaAbierto(grupo.Clave))

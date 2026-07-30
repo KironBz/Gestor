@@ -22,20 +22,26 @@ else
     {
         <div class="card bg-dark text-white mb-4">
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-8">
-                        <h4>
-                            <span style="font-size:1.4rem;">@metaPrincipal.Icono</span>
-                            @metaPrincipal.Nombre
-                        </h4>
-                        <p><strong>Objetivo:</strong> @metaPrincipal.MontoObjetivo.ToString("C")</p>
-                        <p><strong>Ahorrado:</strong> @metaPrincipal.AhorradoActual.ToString("C")</p>
-                        <div class="progress" style="height: 25px;">
-                            <div class="progress-bar @ClaseColorBarra(metaPrincipal)" role="progressbar"
-                                 style="width: @Porcentaje(metaPrincipal)%;">
-                                @Porcentaje(metaPrincipal).ToString("F0")%
-                            </div>
-                        </div>
+                <div class="row align-items-center">
+                    <div class="col-md-3 d-flex justify-content-center mb-3 mb-md-0">
+                        <svg width="140" height="140" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="10" />
+                            <circle cx="60" cy="60" r="50" fill="none"
+                                    stroke="@ColorBordePanel(metaPrincipal)"
+                                    stroke-width="10"
+                                    stroke-linecap="round"
+                                    stroke-dasharray="@CircunferenciaAnillo"
+                                    stroke-dashoffset="@DashOffsetAnillo(metaPrincipal)"
+                                    transform="rotate(-90 60 60)"
+                                    style="transition: stroke-dashoffset 0.4s ease;" />
+                            <text x="60" y="56" text-anchor="middle" dominant-baseline="middle" font-size="26" font-weight="bold" fill="white">@Porcentaje(metaPrincipal).ToString("F0")%</text>
+                            <text x="60" y="82" text-anchor="middle" dominant-baseline="middle" font-size="18" fill="#adb5bd">@metaPrincipal.Icono</text>
+                        </svg>
+                    </div>
+                    <div class="col-md-5">
+                        <h4 class="mb-2">@metaPrincipal.Nombre</h4>
+                        <p class="mb-1"><strong>Objetivo:</strong> @metaPrincipal.MontoObjetivo.ToString("C")</p>
+                        <p class="mb-1"><strong>Ahorrado:</strong> @metaPrincipal.AhorradoActual.ToString("C")</p>
                         <p class="text-muted small mt-2 mb-0">@ProyeccionTexto(metaPrincipal)</p>
                     </div>
                     <div class="col-md-4 mt-3 mt-md-0 d-flex flex-column justify-content-between">
@@ -362,6 +368,9 @@ else
 
     private readonly string[] iconosDisponibles = { "🎯", "🏠", "✈️", "🚗", "💻", "🎓", "🎁", "💍", "🏥", "📱" };
 
+    // Circunferencia del anillo SVG (radio 50): 2 * π * 50 ≈ 314.16
+    private const double CircunferenciaAnillo = 314.159;
+
     private class MetaFormulario
     {
         public string Nombre { get; set; } = "";
@@ -429,7 +438,6 @@ else
         return "bg-danger";
     }
 
-    // Fondo del panel de mensaje motivacional (translúcido, mismo umbral que la barra).
     private string ColorFondoPanel(Meta meta)
     {
         double pct = Porcentaje(meta);
@@ -439,8 +447,6 @@ else
         return "rgba(220,53,69,0.25)";
     }
 
-    // Borde sólido del panel — le da la definición de "caja" que tenía el
-    // badge verde original, ahora en las 4 fases.
     private string ColorBordePanel(Meta meta)
     {
         double pct = Porcentaje(meta);
@@ -448,6 +454,15 @@ else
         if (pct >= 50) return "#0dcaf0";
         if (pct >= 25) return "#ffc107";
         return "#dc3545";
+    }
+
+    // Desfase del trazo del anillo SVG — a mayor porcentaje, menor desfase
+    // (el trazo "avanza" alrededor del círculo). Se limita a 100% para que
+    // una meta sobre-ahorrada no intente dibujar más de una vuelta completa.
+    private double DashOffsetAnillo(Meta meta)
+    {
+        double pct = Math.Min(100, Math.Max(0, Porcentaje(meta)));
+        return CircunferenciaAnillo * (1 - pct / 100);
     }
 
     // Mensajes placeholder por fase — cámbialos por tu chiste real.

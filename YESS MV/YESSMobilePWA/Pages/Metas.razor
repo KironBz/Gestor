@@ -1,6 +1,7 @@
 @page "/metas"
 @using YESSMobilePWA.Models
 @using YESSMobilePWA.Services
+@using System.Globalization
 @inject ArchivoService ArchivoService
 @inject IJSRuntime JS
 
@@ -23,17 +24,25 @@ else
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-8">
-                        <h4>@metaPrincipal.Nombre</h4>
+                        <h4>
+                            <span style="font-size:1.4rem;">@metaPrincipal.Icono</span>
+                            @metaPrincipal.Nombre
+                        </h4>
                         <p><strong>Objetivo:</strong> @metaPrincipal.MontoObjetivo.ToString("C")</p>
                         <p><strong>Ahorrado:</strong> @metaPrincipal.AhorradoActual.ToString("C")</p>
                         <div class="progress" style="height: 25px;">
-                            <div class="progress-bar bg-success" role="progressbar"
+                            <div class="progress-bar @ClaseColorBarra(metaPrincipal)" role="progressbar"
                                  style="width: @Porcentaje(metaPrincipal)%;">
                                 @Porcentaje(metaPrincipal).ToString("F0")%
                             </div>
                         </div>
+                        <p class="text-muted small mt-2 mb-0">@ProyeccionTexto(metaPrincipal)</p>
                     </div>
-                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <div class="col-md-4 mt-3 mt-md-0 d-flex flex-column justify-content-between">
+                        <div class="p-3 rounded text-center mb-3"
+                             style="background-color: @ColorFondoPanel(metaPrincipal); border: 2px solid @ColorBordePanel(metaPrincipal);">
+                            <span class="fw-bold" style="font-size:1.1rem;">@MensajeMotivacional(metaPrincipal)</span>
+                        </div>
                         <div class="d-flex flex-wrap gap-2 justify-content-md-end">
                             <button class="btn btn-sm btn-success" @onclick="() => CompletarMeta(metaPrincipal)">Completar</button>
                             <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditar(metaPrincipal)">Editar</button>
@@ -54,194 +63,237 @@ else
     </div>
 
     <!-- OTRAS METAS ACTIVAS -->
-    <h5 class="mt-4">Otras Metas Activas</h5>
-    @if (otrasMetasActivas.Any())
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-3" style="cursor:pointer; user-select:none;" @onclick="() => mostrarOtrasActivas = !mostrarOtrasActivas">
+        <h5 class="mb-0">
+            <span class="oi @(mostrarOtrasActivas ? "oi-caret-bottom" : "oi-caret-right")" aria-hidden="true"></span>
+            Otras Metas Activas
+            <span class="badge bg-secondary ms-1">@otrasMetasActivas.Count</span>
+        </h5>
+    </div>
+    @if (mostrarOtrasActivas)
     {
-        <div class="d-none d-md-block">
-            <div class="table-responsive">
-                <table class="table table-dark table-striped">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Objetivo</th>
-                            <th>Ahorrado</th>
-                            <th>Progreso</th>
-                            <th>Prioridad</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var meta in otrasMetasActivas)
-                        {
+        @if (otrasMetasActivas.Any())
+        {
+            <div class="d-none d-md-block">
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped">
+                        <thead>
                             <tr>
-                                <td>@meta.Nombre</td>
-                                <td>@meta.MontoObjetivo.ToString("C")</td>
-                                <td>@meta.AhorradoActual.ToString("C")</td>
-                                <td>
-                                    <div class="progress" style="width: 100px;">
-                                        <div class="progress-bar bg-info" role="progressbar"
-                                             style="width: @Porcentaje(meta)%;">
-                                            @Porcentaje(meta).ToString("F0")%
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>@meta.Prioridad</td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <button class="btn btn-sm btn-success" title="Completar" @onclick="() => CompletarMeta(meta)">✔</button>
-                                        <button class="btn btn-sm btn-warning" title="Editar" @onclick="() => AbrirModalEditar(meta)">✏</button>
-                                        <button class="btn btn-sm btn-secondary" title="Archivar" @onclick="() => ArchivarMeta(meta)">📦</button>
-                                    </div>
-                                </td>
+                                <th>Nombre</th>
+                                <th>Objetivo</th>
+                                <th>Ahorrado</th>
+                                <th>Progreso</th>
+                                <th>Prioridad</th>
+                                <th>Acciones</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var meta in otrasMetasActivas)
+                            {
+                                <tr>
+                                    <td>@meta.Icono @meta.Nombre</td>
+                                    <td>@meta.MontoObjetivo.ToString("C")</td>
+                                    <td>@meta.AhorradoActual.ToString("C")</td>
+                                    <td>
+                                        <div class="progress" style="width: 100px;">
+                                            <div class="progress-bar @ClaseColorBarra(meta)" role="progressbar"
+                                                 style="width: @Porcentaje(meta)%;">
+                                                @Porcentaje(meta).ToString("F0")%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@meta.Prioridad</td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <button class="btn btn-sm btn-outline-light" title="Subir prioridad" @onclick="() => MoverMeta(meta, -1)">▲</button>
+                                            <button class="btn btn-sm btn-outline-light" title="Bajar prioridad" disabled="@(meta == otrasMetasActivas.Last())" @onclick="() => MoverMeta(meta, 1)">▼</button>
+                                            <button class="btn btn-sm btn-success" title="Completar" @onclick="() => CompletarMeta(meta)">✔</button>
+                                            <button class="btn btn-sm btn-warning" title="Editar" @onclick="() => AbrirModalEditar(meta)">✏</button>
+                                            <button class="btn btn-sm btn-secondary" title="Archivar" @onclick="() => ArchivarMeta(meta)">📦</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
 
-        <div class="d-block d-md-none">
-            @foreach (var meta in otrasMetasActivas)
-            {
-                <div class="card bg-dark text-white mb-3">
-                    <div class="card-body">
-                        <h6 class="card-title">@meta.Nombre</h6>
-                        <p>
-                            <strong>Objetivo:</strong> @meta.MontoObjetivo.ToString("C")<br />
-                            <strong>Ahorrado:</strong> @meta.AhorradoActual.ToString("C")<br />
-                            <strong>Prioridad:</strong> @meta.Prioridad
-                        </p>
-                        <div class="progress mb-2" style="height: 20px;">
-                            <div class="progress-bar bg-info" role="progressbar"
-                                 style="width: @Porcentaje(meta)%;">
-                                @Porcentaje(meta).ToString("F0")%
+            <div class="d-block d-md-none">
+                @foreach (var meta in otrasMetasActivas)
+                {
+                    <div class="card bg-dark text-white mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">@meta.Icono @meta.Nombre</h6>
+                            <p class="mb-2">
+                                <strong>Objetivo:</strong> @meta.MontoObjetivo.ToString("C")<br />
+                                <strong>Ahorrado:</strong> @meta.AhorradoActual.ToString("C")<br />
+                                <strong>Prioridad:</strong> @meta.Prioridad
+                            </p>
+
+                            <div class="p-2 rounded" style="background-color: @ColorFondoPanel(meta);">
+                                <div class="progress mb-1" style="height: 18px;">
+                                    <div class="progress-bar @ClaseColorBarra(meta)" role="progressbar"
+                                         style="width: @Porcentaje(meta)%; font-size:0.7rem;">
+                                        @Porcentaje(meta).ToString("F0")%
+                                    </div>
+                                </div>
+                                <div class="fw-bold text-center" style="font-size:0.75rem;">@MensajeMotivacional(meta)</div>
+                            </div>
+
+                            <p class="text-muted small mt-2 mb-2">@ProyeccionTexto(meta)</p>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-sm btn-outline-light" @onclick="() => MoverMeta(meta, -1)">▲ Subir</button>
+                                <button class="btn btn-sm btn-outline-light" disabled="@(meta == otrasMetasActivas.Last())" @onclick="() => MoverMeta(meta, 1)">▼ Bajar</button>
+                                <button class="btn btn-sm btn-success" @onclick="() => CompletarMeta(meta)">Completar</button>
+                                <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditar(meta)">Editar</button>
+                                <button class="btn btn-sm btn-secondary" @onclick="() => ArchivarMeta(meta)">Archivar</button>
                             </div>
                         </div>
-                        <div class="d-flex gap-2 flex-wrap">
-                            <button class="btn btn-sm btn-success" @onclick="() => CompletarMeta(meta)">Completar</button>
-                            <button class="btn btn-sm btn-warning" @onclick="() => AbrirModalEditar(meta)">Editar</button>
-                            <button class="btn btn-sm btn-secondary" @onclick="() => ArchivarMeta(meta)">Archivar</button>
-                        </div>
                     </div>
-                </div>
-            }
-        </div>
-    }
-    else
-    {
-        <p>No hay otras metas activas.</p>
+                }
+            </div>
+        }
+        else
+        {
+            <p>No hay otras metas activas.</p>
+        }
     }
 
     <!-- METAS COMPLETADAS -->
-    <h5 class="mt-4">Metas completadas</h5>
-    @if (metasCompletadas.Any())
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-3" style="cursor:pointer; user-select:none;" @onclick="() => mostrarCompletadas = !mostrarCompletadas">
+        <h5 class="mb-0">
+            <span class="oi @(mostrarCompletadas ? "oi-caret-bottom" : "oi-caret-right")" aria-hidden="true"></span>
+            Metas completadas
+            <span class="badge bg-secondary ms-1">@metasCompletadas.Count</span>
+        </h5>
+    </div>
+    @if (mostrarCompletadas)
     {
-        <div class="d-none d-md-block">
-            <div class="table-responsive">
-                <table class="table table-dark table-striped">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Objetivo</th>
-                            <th>Lograda el</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var meta in metasCompletadas)
-                        {
+        @if (metasCompletadas.Any())
+        {
+            <div class="d-none d-md-block">
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped">
+                        <thead>
                             <tr>
-                                <td>@meta.Nombre</td>
-                                <td>@meta.MontoObjetivo.ToString("C")</td>
-                                <td>@(meta.FechaCompletada?.ToString("dd/MM/yyyy") ?? "")</td>
-                                <td>
-                                    <button class="btn btn-sm btn-secondary" @onclick="() => ArchivarMeta(meta)">Archivar</button>
-                                </td>
+                                <th>Nombre</th>
+                                <th>Objetivo</th>
+                                <th>Lograda el</th>
+                                <th>Acciones</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="d-block d-md-none">
-            @foreach (var meta in metasCompletadas)
-            {
-                <div class="card bg-dark text-white mb-3">
-                    <div class="card-body">
-                        <h6 class="card-title">@meta.Nombre</h6>
-                        <p>
-                            <strong>Objetivo:</strong> @meta.MontoObjetivo.ToString("C")<br />
-                            <strong>Lograda el:</strong> @(meta.FechaCompletada?.ToString("dd/MM/yyyy") ?? "")
-                        </p>
-                        <button class="btn btn-sm btn-secondary" @onclick="() => ArchivarMeta(meta)">Archivar</button>
-                    </div>
+                        </thead>
+                        <tbody>
+                            @foreach (var meta in metasCompletadas)
+                            {
+                                <tr>
+                                    <td>@meta.Icono @meta.Nombre</td>
+                                    <td>@meta.MontoObjetivo.ToString("C")</td>
+                                    <td>@(meta.FechaCompletada?.ToString("dd/MM/yyyy") ?? "")</td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <button class="btn btn-sm btn-outline-light" title="Reactivar" @onclick="() => ReactivarMeta(meta)">↩ Reactivar</button>
+                                            <button class="btn btn-sm btn-secondary" @onclick="() => ArchivarMeta(meta)">Archivar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
-            }
-        </div>
-    }
-    else
-    {
-        <p>No hay metas completadas.</p>
+            </div>
+
+            <div class="d-block d-md-none">
+                @foreach (var meta in metasCompletadas)
+                {
+                    <div class="card bg-dark text-white mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">@meta.Icono @meta.Nombre</h6>
+                            <p>
+                                <strong>Objetivo:</strong> @meta.MontoObjetivo.ToString("C")<br />
+                                <strong>Lograda el:</strong> @(meta.FechaCompletada?.ToString("dd/MM/yyyy") ?? "")
+                            </p>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-sm btn-outline-light" @onclick="() => ReactivarMeta(meta)">↩ Reactivar</button>
+                                <button class="btn btn-sm btn-secondary" @onclick="() => ArchivarMeta(meta)">Archivar</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p>No hay metas completadas.</p>
+        }
     }
 
     <!-- METAS ARCHIVADAS -->
-    <h5 class="mt-4">Metas archivadas</h5>
-    @if (metasArchivadas.Any())
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-3" style="cursor:pointer; user-select:none;" @onclick="() => mostrarArchivadas = !mostrarArchivadas">
+        <h5 class="mb-0">
+            <span class="oi @(mostrarArchivadas ? "oi-caret-bottom" : "oi-caret-right")" aria-hidden="true"></span>
+            Metas archivadas
+            <span class="badge bg-secondary ms-1">@metasArchivadas.Count</span>
+        </h5>
+    </div>
+    @if (mostrarArchivadas)
     {
-        <div class="d-none d-md-block">
-            <div class="table-responsive">
-                <table class="table table-dark table-striped">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Objetivo</th>
-                            <th>Archivada el</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var meta in metasArchivadas)
-                        {
+        @if (metasArchivadas.Any())
+        {
+            <div class="d-none d-md-block">
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped">
+                        <thead>
                             <tr>
-                                <td>@meta.Nombre</td>
-                                <td>@meta.MontoObjetivo.ToString("C")</td>
-                                <td>@(meta.FechaArchivada?.ToString("dd/MM/yyyy") ?? "")</td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <button class="btn btn-sm btn-success" @onclick="() => RestaurarMeta(meta)">Restaurar</button>
-                                        <button class="btn btn-sm btn-danger" @onclick="() => EliminarMeta(meta)">Eliminar</button>
-                                    </div>
-                                </td>
+                                <th>Nombre</th>
+                                <th>Objetivo</th>
+                                <th>Archivada el</th>
+                                <th>Acciones</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var meta in metasArchivadas)
+                            {
+                                <tr>
+                                    <td>@meta.Icono @meta.Nombre</td>
+                                    <td>@meta.MontoObjetivo.ToString("C")</td>
+                                    <td>@(meta.FechaArchivada?.ToString("dd/MM/yyyy") ?? "")</td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <button class="btn btn-sm btn-success" @onclick="() => RestaurarMeta(meta)">Restaurar</button>
+                                            <button class="btn btn-sm btn-danger" @onclick="() => EliminarMeta(meta)">Eliminar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
 
-        <div class="d-block d-md-none">
-            @foreach (var meta in metasArchivadas)
-            {
-                <div class="card bg-dark text-white mb-3">
-                    <div class="card-body">
-                        <h6 class="card-title">@meta.Nombre</h6>
-                        <p>
-                            <strong>Objetivo:</strong> @meta.MontoObjetivo.ToString("C")<br />
-                            <strong>Archivada el:</strong> @(meta.FechaArchivada?.ToString("dd/MM/yyyy") ?? "")
-                        </p>
-                        <div class="d-flex gap-2 flex-wrap">
-                            <button class="btn btn-sm btn-success" @onclick="() => RestaurarMeta(meta)">Restaurar</button>
-                            <button class="btn btn-sm btn-danger" @onclick="() => EliminarMeta(meta)">Eliminar</button>
+            <div class="d-block d-md-none">
+                @foreach (var meta in metasArchivadas)
+                {
+                    <div class="card bg-dark text-white mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">@meta.Icono @meta.Nombre</h6>
+                            <p>
+                                <strong>Objetivo:</strong> @meta.MontoObjetivo.ToString("C")<br />
+                                <strong>Archivada el:</strong> @(meta.FechaArchivada?.ToString("dd/MM/yyyy") ?? "")
+                            </p>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-sm btn-success" @onclick="() => RestaurarMeta(meta)">Restaurar</button>
+                                <button class="btn btn-sm btn-danger" @onclick="() => EliminarMeta(meta)">Eliminar</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            }
-        </div>
-    }
-    else
-    {
-        <p>No hay metas archivadas.</p>
+                }
+            </div>
+        }
+        else
+        {
+            <p>No hay metas archivadas.</p>
+        }
     }
 }
 
@@ -257,6 +309,18 @@ else
                     <button type="button" class="btn-close btn-close-white" @onclick="CerrarModal"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Ícono</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            @foreach (var opcion in iconosDisponibles)
+                            {
+                                <button type="button" class="btn @(formulario.Icono == opcion ? "btn-primary" : "btn-outline-secondary")"
+                                        style="font-size:1.3rem; line-height:1;" @onclick="() => formulario.Icono = opcion">
+                                    @opcion
+                                </button>
+                            }
+                        </div>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Nombre</label>
                         <input type="text" class="form-control" @bind="formulario.Nombre" />
@@ -292,11 +356,18 @@ else
     private Meta? metaEditando = null;
     private MetaFormulario formulario = new();
 
+    private bool mostrarOtrasActivas = true;
+    private bool mostrarCompletadas = false;
+    private bool mostrarArchivadas = false;
+
+    private readonly string[] iconosDisponibles = { "🎯", "🏠", "✈️", "🚗", "💻", "🎓", "🎁", "💍", "🏥", "📱" };
+
     private class MetaFormulario
     {
         public string Nombre { get; set; } = "";
         public decimal MontoObjetivo { get; set; }
         public int Prioridad { get; set; } = 1;
+        public string Icono { get; set; } = "🎯";
     }
 
     protected override async Task OnInitializedAsync()
@@ -311,7 +382,7 @@ else
             cargando = true;
             var datos = await ArchivoService.CargarAsync();
             todasMetas = datos.Metas ?? new List<Meta>();
-            await CalcularAhorros(datos);
+            CalcularAhorros(datos);
             ClasificarMetas();
         }
         finally
@@ -321,7 +392,7 @@ else
         }
     }
 
-    private async Task CalcularAhorros(DatosApp datos)
+    private void CalcularAhorros(DatosApp datos)
     {
         var movimientos = datos.Movimientos ?? new List<Movimiento>();
         foreach (var meta in todasMetas)
@@ -349,12 +420,112 @@ else
         return (double)(meta.AhorradoActual / meta.MontoObjetivo) * 100;
     }
 
+    private string ClaseColorBarra(Meta meta)
+    {
+        double pct = Porcentaje(meta);
+        if (pct >= 90) return "bg-success";
+        if (pct >= 50) return "bg-info";
+        if (pct >= 25) return "bg-warning";
+        return "bg-danger";
+    }
+
+    // Fondo del panel de mensaje motivacional (translúcido, mismo umbral que la barra).
+    private string ColorFondoPanel(Meta meta)
+    {
+        double pct = Porcentaje(meta);
+        if (pct >= 90) return "rgba(25,135,84,0.25)";
+        if (pct >= 50) return "rgba(13,202,240,0.25)";
+        if (pct >= 25) return "rgba(255,193,7,0.25)";
+        return "rgba(220,53,69,0.25)";
+    }
+
+    // Borde sólido del panel — le da la definición de "caja" que tenía el
+    // badge verde original, ahora en las 4 fases.
+    private string ColorBordePanel(Meta meta)
+    {
+        double pct = Porcentaje(meta);
+        if (pct >= 90) return "#198754";
+        if (pct >= 50) return "#0dcaf0";
+        if (pct >= 25) return "#ffc107";
+        return "#dc3545";
+    }
+
+    // Mensajes placeholder por fase — cámbialos por tu chiste real.
+    private string MensajeMotivacional(Meta meta)
+    {
+        double pct = Porcentaje(meta);
+        if (pct >= 90) return "🔥 Hazlo todo y luego haz más.";
+        if (pct >= 50) return "💪 Vas mejor que muchos propósitos de año nuevo.";
+        if (pct >= 25) return "🌱 Trabajo muy duro como un esclavo.";
+        return "🐢 Apenas arrancando, pero algo es algo.";
+    }
+
+    private string ProyeccionTexto(Meta meta)
+    {
+        if (meta.AhorradoActual >= meta.MontoObjetivo)
+            return "¡Meta alcanzada! Márcala como completada.";
+
+        int mesesTranscurridos = Math.Max(1,
+            (DateTime.Today.Year - meta.FechaCreacion.Year) * 12 + DateTime.Today.Month - meta.FechaCreacion.Month);
+
+        if (meta.AhorradoActual <= 0)
+            return "Aún sin ahorros registrados para proyectar una fecha.";
+
+        decimal ritmoMensual = meta.AhorradoActual / mesesTranscurridos;
+        if (ritmoMensual <= 0)
+            return "Ritmo de ahorro insuficiente para proyectar una fecha.";
+
+        decimal faltante = meta.MontoObjetivo - meta.AhorradoActual;
+        int mesesFaltantes = (int)Math.Ceiling((double)(faltante / ritmoMensual));
+        var fechaEstimada = DateTime.Today.AddMonths(mesesFaltantes);
+        var cultura = CultureInfo.GetCultureInfo("es-MX");
+
+        return $"A este ritmo (~{ritmoMensual.ToString("C")}/mes), la alcanzarás en ~{mesesFaltantes} {(mesesFaltantes == 1 ? "mes" : "meses")} ({CapitalizarMes(fechaEstimada.ToString("MMM yyyy", cultura))}).";
+    }
+
+    private string CapitalizarMes(string texto)
+    {
+        if (string.IsNullOrEmpty(texto)) return texto;
+        return char.ToUpper(texto[0]) + texto.Substring(1);
+    }
+
+    private async Task MoverMeta(Meta meta, int direccion)
+    {
+        var activas = todasMetas.Where(m => !m.Completada && !m.Archivada)
+            .OrderBy(m => m.Prioridad).ThenBy(m => m.FechaCreacion).ToList();
+
+        int idx = activas.FindIndex(m => m.Id == meta.Id);
+        int nuevoIdx = idx + direccion;
+        if (idx == -1 || nuevoIdx < 0 || nuevoIdx >= activas.Count) return;
+
+        (activas[idx], activas[nuevoIdx]) = (activas[nuevoIdx], activas[idx]);
+
+        for (int i = 0; i < activas.Count; i++)
+        {
+            activas[i].Prioridad = i + 1;
+        }
+
+        await GuardarCambios();
+        await CargarDatos();
+    }
+
     private async Task CompletarMeta(Meta meta)
     {
         if (await JS.InvokeAsync<bool>("confirm", $"¿Completar la meta '{meta.Nombre}'?"))
         {
             meta.Completada = true;
             meta.FechaCompletada = DateTime.Now;
+            await GuardarCambios();
+            await CargarDatos();
+        }
+    }
+
+    private async Task ReactivarMeta(Meta meta)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", $"¿Reactivar la meta '{meta.Nombre}'? Volverá a la lista de metas activas."))
+        {
+            meta.Completada = false;
+            meta.FechaCompletada = null;
             await GuardarCambios();
             await CargarDatos();
         }
@@ -375,6 +546,8 @@ else
     {
         meta.Archivada = false;
         meta.FechaArchivada = null;
+        meta.Completada = false;
+        meta.FechaCompletada = null;
         await GuardarCambios();
         await CargarDatos();
     }
@@ -403,7 +576,8 @@ else
         {
             Nombre = meta.Nombre,
             MontoObjetivo = meta.MontoObjetivo,
-            Prioridad = meta.Prioridad
+            Prioridad = meta.Prioridad,
+            Icono = meta.Icono
         };
         modalVisible = true;
     }
@@ -425,7 +599,10 @@ else
 
         if (metaEditando == null)
         {
-            var nueva = new Meta(formulario.Nombre, formulario.MontoObjetivo, formulario.Prioridad);
+            var nueva = new Meta(formulario.Nombre, formulario.MontoObjetivo, formulario.Prioridad)
+            {
+                Icono = formulario.Icono
+            };
             todasMetas.Add(nueva);
         }
         else
@@ -433,6 +610,7 @@ else
             metaEditando.Nombre = formulario.Nombre;
             metaEditando.MontoObjetivo = formulario.MontoObjetivo;
             metaEditando.Prioridad = formulario.Prioridad;
+            metaEditando.Icono = formulario.Icono;
         }
 
         await GuardarCambios();

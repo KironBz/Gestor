@@ -4,6 +4,11 @@ using YESSMobilePWA.Models;
 
 namespace YESSMobilePWA.Services
 {
+    public class GuardadoFallidoException : Exception
+    {
+        public GuardadoFallidoException(string message, Exception inner) : base(message, inner) { }
+    }
+
     public class ArchivoService
     {
         private readonly IJSRuntime _jsRuntime;
@@ -16,8 +21,30 @@ namespace YESSMobilePWA.Services
 
         public async Task GuardarAsync(DatosApp datos)
         {
-            string json = JsonSerializer.Serialize(datos);
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", DatosKey, json);
+            string json;
+            try
+            {
+                json = JsonSerializer.Serialize(datos);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ArchivoService: error al serializar datos para guardar: {ex.Message}");
+                throw new GuardadoFallidoException(
+                    "No se pudieron preparar los datos para guardar. Ningún cambio se perdió en pantalla, pero no se guardó en el dispositivo.",
+                    ex);
+            }
+
+            try
+            {
+                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", DatosKey, json);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ArchivoService: error al escribir en localStorage: {ex.Message}");
+                throw new GuardadoFallidoException(
+                    "No se pudo guardar la información en este dispositivo. Es posible que el almacenamiento local esté lleno. Considera exportar un respaldo y liberar espacio.",
+                    ex);
+            }
         }
 
         public async Task<DatosApp> CargarAsync()
@@ -38,11 +65,6 @@ namespace YESSMobilePWA.Services
                 }
                 catch (Exception ex)
                 {
-                    // Al menos un valor del JSON viola las validaciones del modelo
-                    // (ej. un Movimiento con Monto <= 0), lo que hace fallar la
-                    // deserialización de TODO el documento de un solo golpe.
-                    // Se respalda el JSON crudo y se intenta rescatar elemento por
-                    // elemento en vez de perder todos los datos.
                     Console.WriteLine($"ArchivoService: error al deserializar datos guardados: {ex.Message}");
                     await RespaldarJsonCorrupto(json);
                     datos = RecuperarParcialmente(json);
@@ -50,17 +72,13 @@ namespace YESSMobilePWA.Services
                 }
             }
 
-            // Migración a versión 1 (si es necesario)
             if (datos.Version == 0)
             {
-                await MigrarV0aV1(datos);
-                await GuardarAsync(datos); // guarda después de migrar
+                MigrarV0aV1(datos);
+                await GuardarAsync(datos);
             }
             else if (seRecuperoParcialmente)
             {
-                // Aunque no requiera migración de versión, se guarda la versión
-                // ya "limpia" (sin los elementos corruptos descartados) para que
-                // el próximo CargarAsync no vuelva a tronar con los mismos datos.
                 await GuardarAsync(datos);
             }
 
@@ -81,12 +99,6 @@ namespace YESSMobilePWA.Services
             }
         }
 
-        /// <summary>
-        /// Parsea el JSON como árbol genérico y reconstruye cada colección elemento
-        /// por elemento, descartando solo los registros individuales que fallen su
-        /// propia deserialización (ej. por violar una validación del modelo), en vez
-        /// de perder el documento completo.
-        /// </summary>
         private DatosApp RecuperarParcialmente(string json)
         {
             var datos = new DatosApp();
@@ -127,8 +139,6 @@ namespace YESSMobilePWA.Services
             }
             catch (Exception ex)
             {
-                // El JSON ni siquiera es válido como texto JSON (corrupción total,
-                // no solo un valor fuera de rango) — no hay nada que rescatar.
                 Console.WriteLine($"ArchivoService: no se pudo recuperar nada, JSON ilegible: {ex.Message}");
             }
 
@@ -157,13 +167,12 @@ namespace YESSMobilePWA.Services
             return resultado;
         }
 
-        private async Task MigrarV0aV1(DatosApp datos)
+        private void MigrarV0aV1(DatosApp datos)
         {
-            // 1. Corregir datos inválidos en movimientos
             foreach (var mov in datos.Movimientos)
             {
                 if (mov.Monto <= 0)
-                    mov.Monto = Math.Abs(mov.Monto); // si es negativo, lo hacemos positivo
+                    mov.Monto = Math.Abs(mov.Monto);
 
                 if (mov.Plazos.HasValue && mov.Plazos <= 0)
                     mov.Plazos = null;
@@ -172,10 +181,6 @@ namespace YESSMobilePWA.Services
                     mov.MontoFinal = null;
             }
 
-            // 2. Asegurar que todas las metas tengan un Id (ya lo tienen por constructor)
-            // No hay conversión de MetasAhorro porque ya no existe.
-
-            // 3. Marcar versión migrada
             datos.Version = 1;
         }
     }

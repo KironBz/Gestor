@@ -2,10 +2,6 @@ html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-h1:focus {
-    outline: none;
-}
-
 a, .btn-link {
     color: #0071c1;
 }
@@ -120,30 +116,6 @@ html, body, #app {
     color: #f0f0f0 !important;
 }
 
-.navbar {
-    background-color: #0f0f0f !important;
-}
-.navbar .nav-link {
-    color: #ddd !important;
-}
-.navbar .nav-link:hover {
-    color: #fff !important;
-}
-
-/* Fuerza separación entre botones en la tabla */
-.table-movimientos td:last-child {
-    white-space: nowrap;
-    width: 150px;
-}
-.table-movimientos .btn-sm {
-    margin-left: 5px;
-    margin-right: 5px;
-}
-
-.page-content {
-    padding-bottom: 3rem;
-}
-
 /* ============================================
    BARRA INFERIOR DE NAVEGACIÓN (MÓVIL)
    ============================================ */
@@ -211,7 +183,7 @@ html, body, #app {
 }
 
 /* Asegurar que el contenido no quede oculto detrás de la barra inferior */
-@media (max-width: 700px) {
+@media (max-width: 767.98px) {
     .content {
         padding-bottom: 6rem !important;
     }

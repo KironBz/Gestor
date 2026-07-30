@@ -37,6 +37,9 @@ namespace YESSMobilePWA.Models
         [JsonPropertyName("prioridad")]
         public int Prioridad { get; set; } // 1 = más urgente
 
+        [JsonPropertyName("icono")]
+        public string Icono { get; set; } = "🎯";
+
         [JsonPropertyName("fechaCreacion")]
         public DateTime FechaCreacion { get; set; } = DateTime.Now;
 

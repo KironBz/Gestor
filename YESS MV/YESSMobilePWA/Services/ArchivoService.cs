@@ -1,187 +1,137 @@
 ﻿using Microsoft.JSInterop;
+using System;
 using System.Text.Json;
 using YESSMobilePWA.Models;
 
 namespace YESSMobilePWA.Services
 {
-    public class GuardadoFallidoException : Exception
-    {
-        public GuardadoFallidoException(string message, Exception inner) : base(message, inner) { }
-    }
-
     public class ArchivoService
     {
         private readonly IJSRuntime _jsRuntime;
         private const string DatosKey = "yes_gestor_data";
+        private const int SchemaVersionActual = 2;
 
         public ArchivoService(IJSRuntime jsRuntime)
         {
             _jsRuntime = jsRuntime;
         }
 
+        // ==========================================
+        // GUARDAR
+        // ==========================================
         public async Task GuardarAsync(DatosApp datos)
         {
-            string json;
-            try
-            {
-                json = JsonSerializer.Serialize(datos);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"ArchivoService: error al serializar datos para guardar: {ex.Message}");
-                throw new GuardadoFallidoException(
-                    "No se pudieron preparar los datos para guardar. Ningún cambio se perdió en pantalla, pero no se guardó en el dispositivo.",
-                    ex);
-            }
+            // Actualizar lastModified en cada guardado
+            datos.Metadata.LastModified = DateTime.UtcNow;
 
-            try
-            {
-                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", DatosKey, json);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"ArchivoService: error al escribir en localStorage: {ex.Message}");
-                throw new GuardadoFallidoException(
-                    "No se pudo guardar la información en este dispositivo. Es posible que el almacenamiento local esté lleno. Considera exportar un respaldo y liberar espacio.",
-                    ex);
-            }
+            // Limpiar campos legacy antes de serializar
+            // (ya están en __credentials y __metadata)
+            datos.LegacyGitHubToken = null;
+            datos.LegacyGitHubGistId = null;
+            datos.LegacyUltimaExportacion = null;
+            datos.LegacyVersion = null;
+
+            string json = JsonSerializer.Serialize(datos);
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", DatosKey, json);
         }
 
+        // ==========================================
+        // CARGAR + MIGRACIÓN AUTOMÁTICA
+        // ==========================================
         public async Task<DatosApp> CargarAsync()
         {
-            var json = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", DatosKey);
-            DatosApp datos;
-            bool seRecuperoParcialmente = false;
+            try
+            {
+                var json = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", DatosKey);
 
-            if (string.IsNullOrEmpty(json))
-            {
-                datos = new DatosApp();
-            }
-            else
-            {
-                try
+                DatosApp datos;
+
+                if (string.IsNullOrEmpty(json))
+                {
+                    // Primera vez — datos vacíos con estructura nueva
+                    datos = new DatosApp();
+                }
+                else
                 {
                     datos = JsonSerializer.Deserialize<DatosApp>(json) ?? new DatosApp();
+                    datos = MigrarSiNecesario(datos);
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"ArchivoService: error al deserializar datos guardados: {ex.Message}");
-                    await RespaldarJsonCorrupto(json);
-                    datos = RecuperarParcialmente(json);
-                    seRecuperoParcialmente = true;
-                }
-            }
 
-            if (datos.Version == 0)
-            {
-                MigrarV0aV1(datos);
-                await GuardarAsync(datos);
-            }
-            else if (seRecuperoParcialmente)
-            {
-                await GuardarAsync(datos);
-            }
-
-            return datos;
-        }
-
-        private async Task RespaldarJsonCorrupto(string json)
-        {
-            try
-            {
-                string backupKey = $"{DatosKey}_backup_corrupto_{DateTime.Now:yyyyMMdd_HHmmss}";
-                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", backupKey, json);
-            }
-            catch
-            {
-                // Si ni siquiera se puede respaldar, se prioriza que la app siga
-                // funcionando sobre preservar el respaldo — no se relanza el error.
-            }
-        }
-
-        private DatosApp RecuperarParcialmente(string json)
-        {
-            var datos = new DatosApp();
-
-            try
-            {
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-
-                if (root.TryGetProperty("version", out var versionEl) && versionEl.TryGetInt32(out var version))
-                    datos.Version = version;
-
-                if (root.TryGetProperty("ultimaExportacion", out var ultExpEl) &&
-                    ultExpEl.ValueKind != JsonValueKind.Null &&
-                    ultExpEl.TryGetDateTime(out var fecha))
-                    datos.UltimaExportacion = fecha;
-
-                if (root.TryGetProperty("gitHubToken", out var tokenEl) && tokenEl.ValueKind == JsonValueKind.String)
-                    datos.GitHubToken = tokenEl.GetString();
-
-                if (root.TryGetProperty("gitHubGistId", out var gistEl) && gistEl.ValueKind == JsonValueKind.String)
-                    datos.GitHubGistId = gistEl.GetString();
-
-                if (root.TryGetProperty("movimientos", out var movEl))
-                    datos.Movimientos = DeserializarListaConTolerancia<Movimiento>(movEl, "movimientos");
-
-                if (root.TryGetProperty("cuentas", out var cuentasEl))
-                    datos.Cuentas = DeserializarListaConTolerancia<Cuenta>(cuentasEl, "cuentas");
-
-                if (root.TryGetProperty("categorias", out var catEl))
-                    datos.Categorias = DeserializarListaConTolerancia<Categoria>(catEl, "categorias");
-
-                if (root.TryGetProperty("personas", out var persEl))
-                    datos.Personas = DeserializarListaConTolerancia<Persona>(persEl, "personas");
-
-                if (root.TryGetProperty("metas", out var metasEl))
-                    datos.Metas = DeserializarListaConTolerancia<Meta>(metasEl, "metas");
+                return datos;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ArchivoService: no se pudo recuperar nada, JSON ilegible: {ex.Message}");
+                Console.WriteLine($"Error cargando datos, devolviendo DatosApp vacío: {ex}");
+                return new DatosApp();
+            }
+        }
+
+        // ==========================================
+        // MIGRACIÓN
+        // ==========================================
+        private DatosApp MigrarSiNecesario(DatosApp datos)
+        {
+            // Detectar si viene del formato viejo (sin __metadata/__credentials)
+            bool esFormatoViejo = datos.Metadata.SchemaVersion < SchemaVersionActual
+                                  || (datos.Metadata.AppName != "yess");
+
+            if (esFormatoViejo)
+            {
+                datos = MigrarV1aV2(datos);
             }
 
             return datos;
         }
 
-        private List<T> DeserializarListaConTolerancia<T>(JsonElement arrayElement, string nombreColeccion)
+        private DatosApp MigrarV1aV2(DatosApp datos)
         {
-            var resultado = new List<T>();
-            if (arrayElement.ValueKind != JsonValueKind.Array) return resultado;
+            Console.WriteLine("Migrando datos de V1 a V2...");
 
-            int indice = 0;
-            foreach (var elemento in arrayElement.EnumerateArray())
+            // Migrar credenciales legacy → __credentials
+            if (!string.IsNullOrEmpty(datos.LegacyGitHubToken) &&
+                string.IsNullOrEmpty(datos.Credentials.Token))
             {
-                try
-                {
-                    var item = elemento.Deserialize<T>();
-                    if (item != null) resultado.Add(item);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"ArchivoService: se descartó un elemento inválido en '{nombreColeccion}' (índice {indice}): {ex.Message}");
-                }
-                indice++;
+                datos.Credentials.Token = datos.LegacyGitHubToken;
             }
-            return resultado;
-        }
 
-        private void MigrarV0aV1(DatosApp datos)
-        {
+            if (!string.IsNullOrEmpty(datos.LegacyGitHubGistId) &&
+                string.IsNullOrEmpty(datos.Credentials.GistId))
+            {
+                datos.Credentials.GistId = datos.LegacyGitHubGistId;
+            }
+
+            // Migrar última exportación → __metadata.lastSync
+            if (datos.LegacyUltimaExportacion.HasValue &&
+                !datos.Metadata.LastSync.HasValue)
+            {
+                datos.Metadata.LastSync = datos.LegacyUltimaExportacion;
+            }
+
+            // Limpiar campos legacy
+            datos.LegacyGitHubToken = null;
+            datos.LegacyGitHubGistId = null;
+            datos.LegacyUltimaExportacion = null;
+            datos.LegacyVersion = null;
+
+            // Corregir datos inválidos en movimientos (herencia de MigrarV0aV1)
             foreach (var mov in datos.Movimientos)
             {
                 if (mov.Monto <= 0)
                     mov.Monto = Math.Abs(mov.Monto);
-
                 if (mov.Plazos.HasValue && mov.Plazos <= 0)
                     mov.Plazos = null;
-
                 if (mov.MontoFinal.HasValue && mov.MontoFinal <= 0)
                     mov.MontoFinal = null;
             }
 
-            datos.Version = 1;
+            // Actualizar versión y metadata
+            datos.Metadata.SchemaVersion = SchemaVersionActual;
+            datos.Metadata.AppName = "yess";
+            datos.Metadata.LastModified = DateTime.UtcNow;
+            datos.SyncStatus.DataChanged = true; // Marcar como cambiado para que suba al Gist
+
+            Console.WriteLine("Migración V1→V2 completada.");
+            return datos;
         }
     }
 }

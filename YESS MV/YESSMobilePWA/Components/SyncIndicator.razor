@@ -1,0 +1,79 @@
+@using YESSMobilePWA.Services
+@inject ArchivoService ArchivoService
+@implements IDisposable
+
+@* Desktop: emoji + texto al lado de YESS *@
+@if (estado != SyncState.Inactivo)
+{
+    <div class="sync-indicator d-none d-md-inline-flex" title="@Tooltip">
+        <span class="@(Pulsa ? "dot-pulso" : "")">@Emoji</span>
+        <span class="sync-label">@Etiqueta</span>
+    </div>
+}
+
+@* Móvil: barra superior de color *@
+<div class="sync-barra-movil @BarraCssClass"></div>
+
+@code {
+    private SyncState estado = SyncState.Inactivo;
+
+    protected override void OnInitialized()
+    {
+        ArchivoService.OnSyncStateChanged += OnSyncStateChanged;
+    }
+
+    private void OnSyncStateChanged(SyncState nuevoEstado)
+    {
+        estado = nuevoEstado;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private string Emoji => estado switch
+    {
+        SyncState.Pendiente     => "🟠",
+        SyncState.Sincronizando => "🔵",
+        SyncState.Reintentando  => "🟠",
+        SyncState.Sincronizado  => "🟢",
+        SyncState.Error         => "🔴",
+        _                       => ""
+    };
+
+    private bool Pulsa => estado is
+        SyncState.Sincronizando or
+        SyncState.Reintentando;
+
+    private string Etiqueta => estado switch
+    {
+        SyncState.Pendiente     => "Pendiente",
+        SyncState.Sincronizando => "Sincronizando...",
+        SyncState.Reintentando  => "Reintentando...",
+        SyncState.Sincronizado  => "Sincronizado",
+        SyncState.Error         => "Error de sync",
+        _                       => ""
+    };
+
+    private string Tooltip => estado switch
+    {
+        SyncState.Pendiente     => "Cambios pendientes — se subirán en 1 minuto",
+        SyncState.Sincronizando => "Subiendo datos a GitHub Gist...",
+        SyncState.Reintentando  => "Falló la conexión, reintentando...",
+        SyncState.Sincronizado  => "Datos sincronizados con GitHub Gist",
+        SyncState.Error         => "No se pudo sincronizar — verifica token y conexión",
+        _                       => ""
+    };
+
+    private string BarraCssClass => estado switch
+    {
+        SyncState.Pendiente     => "barra-naranja",
+        SyncState.Sincronizando => "barra-azul barra-animada",
+        SyncState.Reintentando  => "barra-naranja barra-animada",
+        SyncState.Sincronizado  => "barra-verde",
+        SyncState.Error         => "barra-rojo",
+        _                       => "barra-oculta"
+    };
+
+    public void Dispose()
+    {
+        ArchivoService.OnSyncStateChanged -= OnSyncStateChanged;
+    }
+}

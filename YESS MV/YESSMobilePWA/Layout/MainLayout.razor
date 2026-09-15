@@ -1,18 +1,17 @@
 ﻿@inherits LayoutComponentBase
 @using YESSMobilePWA.Services
 @using YESSMobilePWA.Models
+@using YESSMobilePWA.Components
 @inject ArchivoService ArchivoService
 @inject IJSRuntime JS
 
 <div class="page">
-    <!-- Sidebar: solo visible en escritorio (md y superiores) -->
     <div class="sidebar d-none d-md-block">
         <NavMenu />
     </div>
 
     <main>
         <article class="content px-4" style="padding-bottom: 6rem;">
-            @* Banner de recordatorio de backup *@
             @if (mostrarBannerBackup)
             {
                 <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
@@ -24,9 +23,11 @@
             @Body
         </article>
     </main>
+
+    @* SyncIndicator sin wrapper — position:fixed y media query controlan visibilidad *@
+    <SyncIndicator />
 </div>
 
-<!-- Barra inferior para móvil (solo iconos con emojis) -->
 <div class="bottom-nav d-md-none">
     <div class="bottom-nav-scroll">
         <NavLink class="nav-item" href="resumen"><span>🏠</span></NavLink>
@@ -57,7 +58,8 @@
             datos = await ArchivoService.CargarAsync();
             if (datos == null) return;
 
-            if (datos.UltimaExportacion == null || (DateTime.Now - datos.UltimaExportacion.Value).Days >= 7)
+            if (datos.UltimaExportacion == null ||
+                (DateTime.Now - datos.UltimaExportacion.Value).Days >= 7)
             {
                 mostrarBannerBackup = true;
                 StateHasChanged();
@@ -72,15 +74,16 @@
     private async Task ExportarAhora()
     {
         if (datos == null) return;
-
-        var json = System.Text.Json.JsonSerializer.Serialize(datos, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
-        await JS.InvokeVoidAsync("downloadFile", $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.json", json);
+        var json = System.Text.Json.JsonSerializer.Serialize(datos,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        await JS.InvokeVoidAsync("downloadFile",
+            $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.json", json);
         datos.UltimaExportacion = DateTime.Now;
         await ArchivoService.GuardarAsync(datos);
         mostrarBannerBackup = false;
         StateHasChanged();
-
-        await JS.InvokeVoidAsync("alert", "¡Exportación completada! Recuerda guardar el archivo en un lugar seguro.");
+        await JS.InvokeVoidAsync("alert",
+            "¡Exportación completada! Recuerda guardar el archivo en un lugar seguro.");
     }
 
     private void CerrarBanner()

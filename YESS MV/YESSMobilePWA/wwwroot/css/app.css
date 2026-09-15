@@ -215,3 +215,91 @@ html, body, #app {
         -webkit-overflow-scrolling: touch;
     }
 }
+
+/* ============================================
+   SYNC INDICATOR
+   ============================================ */
+
+/* Desktop: emoji + texto en sidebar */
+.sync-indicator {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.sync-label {
+    color: #ccc;
+    font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+.dot-pulso {
+    animation: pulso 1s ease-in-out infinite;
+    display: inline-block;
+}
+
+@keyframes pulso {
+    0%   { opacity: 1;   transform: scale(1); }
+    50%  { opacity: 0.4; transform: scale(0.85); }
+    100% { opacity: 1;   transform: scale(1); }
+}
+
+/* Móvil: barra de 3px en la parte superior */
+.sync-barra-movil {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    height: 3px !important;
+    z-index: 10000 !important;
+    pointer-events: none;
+    transition: background-color 0.4s ease;
+}
+
+/* Ocultar en desktop — solo visible en móvil */
+@media (min-width: 768px) {
+    .sync-barra-movil {
+        display: none !important;
+    }
+}
+
+.barra-verde   { background-color: #28a745 !important; }
+.barra-naranja { background-color: #fd7e14 !important; }
+.barra-azul    { background-color: #0d6efd !important; }
+.barra-rojo    { background-color: #dc3545 !important; }
+.barra-oculta  { background-color: transparent !important; }
+
+.barra-animada {
+    animation: barraFlow 1.5s ease-in-out infinite;
+}
+
+.barra-azul.barra-animada {
+    background-image: linear-gradient(
+        90deg,
+        #0d6efd 0%,
+        #66a8ff 50%,
+        #0d6efd 100%
+    ) !important;
+    background-size: 200% 100%;
+    background-color: transparent !important;
+}
+
+.barra-naranja.barra-animada {
+    background-image: linear-gradient(
+        90deg,
+        #fd7e14 0%,
+        #ffb366 50%,
+        #fd7e14 100%
+    ) !important;
+    background-size: 200% 100%;
+    background-color: transparent !important;
+}
+
+@keyframes barraFlow {
+    0%   { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}

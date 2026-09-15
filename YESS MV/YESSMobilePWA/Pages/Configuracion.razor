@@ -183,7 +183,7 @@
         <h5>Respaldo en GitHub Gist (Nube)</h5>
         <p>Guarda automáticamente un respaldo en un Gist privado de GitHub.</p>
 
-        @* Indicador de estado del token actual *@
+        @* Indicador de estado *@
         @if (!string.IsNullOrEmpty(datosCache?.GitHubToken))
         {
             <div class="alert alert-success py-2 mb-2">
@@ -237,13 +237,12 @@
             Guardar Gist ID
         </button>
 
-        <div class="mb-3"></div>   <!-- 👈 separación consistente con el resto -->
-
-        <button class="btn btn-info" @onclick="SubirAGitHub"
+        <br />
+        <button class="btn btn-info mt-2" @onclick="SubirAGitHub"
                 disabled="@(string.IsNullOrEmpty(datosCache?.GitHubToken))">
             Subir respaldo a GitHub
         </button>
-        <button class="btn btn-secondary ms-2" @onclick="DescargarDesdeGitHub"
+        <button class="btn btn-secondary mt-2" @onclick="DescargarDesdeGitHub"
                 disabled="@(string.IsNullOrEmpty(datosCache?.GitHubGistId))">
             Restaurar desde GitHub
         </button>
@@ -738,7 +737,6 @@
         StateHasChanged();
     }
 
-    // Export completo — incluye token y gistId (para uso personal)
     private async Task ExportarArchivo()
     {
         if (datosCache == null) return;
@@ -749,23 +747,18 @@
         mensaje = "Exportación completa (con credenciales). Guárdala en un lugar seguro.";
     }
 
-    // Export seguro — sin token ni gistId (para compartir o archivar)
     private async Task ExportarArchivoSeguro()
     {
         if (datosCache == null) return;
 
-        // Copia profunda vía serialización/deserialización
         var jsonOriginal = JsonSerializer.Serialize(datosCache);
         var copia = JsonSerializer.Deserialize<DatosApp>(jsonOriginal);
         if (copia == null) return;
 
-        // Limpiar credenciales
         copia.Credentials.Token = null;
         copia.Credentials.GistId = null;
         copia.LegacyGitHubToken = null;
         copia.LegacyGitHubGistId = null;
-
-        // Resetear sync status (no relevante fuera de este dispositivo)
         copia.SyncStatus.DataChanged = false;
         copia.SyncStatus.IsSyncing = false;
         copia.SyncStatus.LastError = null;
@@ -774,7 +767,6 @@
 
         var jsonSeguro = JsonSerializer.Serialize(copia, new JsonSerializerOptions { WriteIndented = true });
 
-        // Verificación de seguridad: asegurar que no hay token en el JSON final
         if (jsonSeguro.Contains("ghp_") || jsonSeguro.Contains("gho_"))
         {
             mensaje = "⚠️ Error de seguridad: se detectaron credenciales en el archivo. Exportación cancelada.";
@@ -789,10 +781,8 @@
     private async Task GuardarTokenGitHub()
     {
         if (datosCache == null) return;
-
         tokenInvalido = false;
 
-        // Validación de formato antes de guardar
         if (!ValidarFormatoToken(gitHubTokenInput))
         {
             tokenInvalido = true;
@@ -808,12 +798,10 @@
     private async Task GuardarGistId()
     {
         if (datosCache == null) return;
-
         gistIdInvalido = false;
 
         var idLimpio = gitHubGistIdInput.Trim();
 
-        // Validación básica: mínimo 20 caracteres alfanuméricos
         if (idLimpio.Length < 20 || !idLimpio.All(c => char.IsLetterOrDigit(c)))
         {
             gistIdInvalido = true;
@@ -834,7 +822,6 @@
             return;
         }
 
-        // Preparar datos SIN credenciales para el Gist (seguridad)
         var datosParaGist = new
         {
             __metadata = new
@@ -853,7 +840,6 @@
 
         var json = JsonSerializer.Serialize(datosParaGist, new JsonSerializerOptions { WriteIndented = true });
 
-        // Verificación de seguridad
         if (json.Contains("ghp_") || json.Contains("gho_"))
         {
             mensajeGitHub = "⚠️ Error de seguridad: se detectaron credenciales en los datos. Operación cancelada.";
@@ -887,6 +873,7 @@
                     if (gistObj != null && !string.IsNullOrEmpty(gistObj.Id))
                     {
                         datosCache.GitHubGistId = gistObj.Id;
+                        gitHubGistIdInput = gistObj.Id;
                         datosCache.UltimaExportacion = DateTime.Now;
                         datosCache.SyncStatus.DataChanged = false;
                         datosCache.SyncStatus.LastError = null;
@@ -938,6 +925,7 @@
                 else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
                     datosCache.GitHubGistId = null;
+                    gitHubGistIdInput = "";
                     await PersistirDatos();
                     mensajeGitHub = "⚠ Gist no encontrado. Se ha limpiado el ID — vuelve a subir para crear uno nuevo.";
                 }
@@ -981,7 +969,6 @@
                     var nuevosDatos = JsonSerializer.Deserialize<DatosApp>(archivo.Content);
                     if (nuevosDatos != null)
                     {
-                        // Conservar credenciales locales siempre
                         var tokenActual = datosCache.GitHubToken;
                         var gistIdActual = datosCache.GitHubGistId;
                         nuevosDatos.GitHubToken = tokenActual;
@@ -1012,6 +999,7 @@
             else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 datosCache.GitHubGistId = null;
+                gitHubGistIdInput = "";
                 await PersistirDatos();
                 mensajeGitHub = "⚠ Gist no encontrado. Es posible que haya sido eliminado.";
             }

@@ -1,4 +1,5 @@
 using YESSMobilePWA.Models;
+using YESSMobilePWA.Models.Constants;
 
 namespace YESSMobilePWA.Services
 {
@@ -6,17 +7,15 @@ namespace YESSMobilePWA.Services
     /// Fuente única de verdad para calcular préstamos, cargos y su estado de pago/abono.
     /// Consumido por Prestamos.razor (detalle), Resumen.razor y Balance.razor (resumen).
     /// </summary>
-    public class DeudaCalculatorService
+    public class DeudaCalculatorService : IDeudaCalculatorService
     {
         /// <summary>
         /// Categorías que representan movimiento de deuda (préstamo, cargo, pago, abono),
         /// no ingreso/gasto real. Fuente única de verdad — consumida por Resumen.razor y
         /// Dashboard.razor para excluir flujo de deuda de sus métricas de ingreso/gasto.
+        /// Delegada a CategoriaConstants.cs (centralizado).
         /// </summary>
-        public readonly HashSet<string> CategoriasDeuda = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "Préstamo", "Cargo", "Pago", "Abono"
-        };
+        public IReadOnlySet<string> CategoriasDeuda => CategoriaConstants.CategoriasDeuda;
 
         /// <summary>
         /// Detalle completo por préstamo/cargo individual: acreedores (debo), deudores

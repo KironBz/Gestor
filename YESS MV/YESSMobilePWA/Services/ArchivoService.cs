@@ -6,10 +6,11 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using YESSMobilePWA.Models;
+using YESSMobilePWA.Models.Constants;
 
 namespace YESSMobilePWA.Services
 {
-    public class ArchivoService : IAsyncDisposable
+    public class ArchivoService : IArchivoService
     {
         private readonly IJSRuntime _jsRuntime;
         private const string DatosKey = "yes_gestor_data";

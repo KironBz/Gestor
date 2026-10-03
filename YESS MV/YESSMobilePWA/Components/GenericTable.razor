@@ -1,0 +1,184 @@
+@using System.Reflection
+@typeparam TItem
+
+<div class="table-wrapper">
+    <table class="generic-table">
+        <thead>
+            <tr>
+                @foreach (var column in Columns ?? new List<TableColumn<TItem>>())
+                {
+                    <th>@column.Header</th>
+                }
+                @if (ShowActions)
+                {
+                    <th>Acciones</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @if (Items == null || !Items.Any())
+            {
+                <tr>
+                    <td colspan="@((Columns?.Count ?? 0) + (ShowActions ? 1 : 0))" class="text-center text-muted">
+                        @(EmptyMessage ?? "No hay datos para mostrar")
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var item in Items)
+                {
+                    <tr>
+                        @foreach (var column in Columns ?? new List<TableColumn<TItem>>())
+                        {
+                            <td>
+                                @if (column.Template != null)
+                                {
+                                    @column.Template(item)
+                                }
+                                else
+                                {
+                                    @GetPropertyValue(item, column.PropertyName)
+                                }
+                            </td>
+                        }
+                        @if (ShowActions)
+                        {
+                            <td class="actions-cell">
+                                @if (OnEdit.HasDelegate)
+                                {
+                                    <button class="btn btn-sm btn-primary" @onclick="() => OnEdit.InvokeAsync(item)">
+                                        ✏️ Editar
+                                    </button>
+                                }
+                                @if (OnDelete.HasDelegate)
+                                {
+                                    <button class="btn btn-sm btn-danger" @onclick="() => OnDelete.InvokeAsync(item)">
+                                        🗑️ Eliminar
+                                    </button>
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    /// <summary>
+    /// Items a mostrar en la tabla.
+    /// </summary>
+    [Parameter]
+    public IEnumerable<TItem>? Items { get; set; }
+
+    /// <summary>
+    /// Definición de columnas (header, property, template opcional).
+    /// </summary>
+    [Parameter]
+    public List<TableColumn<TItem>>? Columns { get; set; }
+
+    /// <summary>
+    /// Mensaje cuando no hay datos.
+    /// </summary>
+    [Parameter]
+    public string? EmptyMessage { get; set; } = "No hay datos para mostrar";
+
+    /// <summary>
+    /// Mostrar columna de acciones (Edit/Delete).
+    /// </summary>
+    [Parameter]
+    public bool ShowActions { get; set; } = false;
+
+    /// <summary>
+    /// Callback cuando hace click en Editar.
+    /// </summary>
+    [Parameter]
+    public EventCallback<TItem> OnEdit { get; set; }
+
+    /// <summary>
+    /// Callback cuando hace click en Eliminar.
+    /// </summary>
+    [Parameter]
+    public EventCallback<TItem> OnDelete { get; set; }
+
+    /// <summary>
+    /// Obtener valor de propiedad de un objeto por nombre.
+    /// </summary>
+    private object? GetPropertyValue(TItem item, string propertyName)
+    {
+        if (item == null) return null;
+        
+        var property = typeof(TItem).GetProperty(propertyName, 
+            BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+        
+        return property?.GetValue(item);
+    }
+}
+
+<style>
+    .table-wrapper {
+        overflow-x: auto;
+        margin: 1rem 0;
+    }
+
+    .generic-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--color-bg-light, #2a2a2a);
+        border: 1px solid var(--color-border-dark, #444);
+        font-size: 0.95rem;
+    }
+
+    .generic-table thead {
+        background: var(--color-bg-darker, #1a1a1a);
+        border-bottom: 2px solid var(--color-border-dark, #444);
+    }
+
+    .generic-table th {
+        padding: 0.75rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--color-text-light, #f0f0f0);
+    }
+
+    .generic-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--color-border-dark, #444);
+        color: var(--color-text, #e0e0e0);
+    }
+
+    .generic-table tbody tr:hover {
+        background: var(--color-bg-darker, #1a1a1a);
+    }
+
+    .actions-cell {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .text-muted {
+        color: var(--color-text-muted, #888);
+    }
+
+    @@media (max-width: 768px) {
+        .generic-table {
+            font-size: 0.85rem;
+        }
+
+        .generic-table th,
+        .generic-table td {
+            padding: 0.5rem;
+        }
+
+        .actions-cell {
+            flex-direction: column;
+        }
+    }
+</style>

@@ -2,17 +2,31 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using YESSMobilePWA.Models;
 
 namespace YESSMobilePWA.Services
 {
-    public static class ExportService
+    /// <summary>
+    /// Servicio de exportación de datos en CSV.
+    /// Implementa IExportService (inyectable, testeable).
+    /// </summary>
+    public class ExportService : IExportService
     {
+        private readonly ILogger<ExportService> _logger;
+
+        public ExportService(ILogger<ExportService> logger)
+        {
+            _logger = logger;
+        }
+
         // ==========================================
         // CSV — todos los movimientos
         // ==========================================
-        public static string GenerarCSVCompleto(DatosApp datos)
+        public string GenerarCSVCompleto(DatosApp datos)
         {
+            if (datos == null) throw new ArgumentNullException(nameof(datos));
+
             var mapaCuentas = datos.Cuentas.ToDictionary(c => c.Id, c => c.Nombre);
             var mapaPersonas = datos.Personas.ToDictionary(p => p.Id, p => p.Nombre);
             return GenerarCSV(datos.Movimientos, mapaCuentas, mapaPersonas);
@@ -21,8 +35,16 @@ namespace YESSMobilePWA.Services
         // ==========================================
         // CSV — subconjunto filtrado por IDs
         // ==========================================
-        public static string GenerarCSVFiltrado(DatosApp datos, IEnumerable<string> ids)
+        public string GenerarCSVFiltrado(DatosApp datos, IEnumerable<string> ids)
         {
+            if (datos == null) throw new ArgumentNullException(nameof(datos));
+            
+            if (ids == null || !ids.Any())
+            {
+                _logger.LogWarning("GenerarCSVFiltrado: IDs vacío, retornando completo");
+                return GenerarCSVCompleto(datos);
+            }
+
             var mapaCuentas = datos.Cuentas.ToDictionary(c => c.Id, c => c.Nombre);
             var mapaPersonas = datos.Personas.ToDictionary(p => p.Id, p => p.Nombre);
             var idSet = ids.ToHashSet();
@@ -33,12 +55,15 @@ namespace YESSMobilePWA.Services
         // ==========================================
         // CORE — generador de CSV
         // ==========================================
-        private static string GenerarCSV(
+        private string GenerarCSV(
             IEnumerable<Movimiento> movimientos,
             Dictionary<string, string> mapaCuentas,
             Dictionary<string, string> mapaPersonas)
         {
             var sb = new StringBuilder();
+
+            // Agregar BOM UTF-8 para evitar corrupción en Excel
+            sb.Append(Encoding.UTF8.GetString(Encoding.UTF8.GetPreamble()));
 
             // Encabezados
             sb.AppendLine(
@@ -47,10 +72,15 @@ namespace YESSMobilePWA.Services
 
             foreach (var m in movimientos)
             {
-                var cuenta = mapaCuentas.GetValueOrDefault(m.CuentaId, m.CuentaId);
+                var cuenta = mapaCuentas.GetValueOrDefault(m.CuentaId, "[Desconocida]");
                 var persona = m.PersonaId != null
                     ? mapaPersonas.GetValueOrDefault(m.PersonaId, m.PersonaId)
                     : "";
+
+                if (!mapaCuentas.ContainsKey(m.CuentaId))
+                {
+                    _logger.LogWarning($"Cuenta no encontrada en export: {m.CuentaId}");
+                }
 
                 sb.AppendLine(string.Join(",", new[]
                 {
@@ -74,7 +104,7 @@ namespace YESSMobilePWA.Services
         }
 
         // ==========================================
-        // HELPER — escapa campos CSV
+        // HELPER — escapa campos CSV (RFC 4180)
         // ==========================================
         private static string Escapar(string valor)
         {
@@ -86,10 +116,10 @@ namespace YESSMobilePWA.Services
         // ==========================================
         // NOMBRE DE ARCHIVO — convención estándar
         // ==========================================
-        public static string NombreArchivoCompleto() =>
-            $"yess_movimientos_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+        public string NombreArchivoCompleto() =>
+            $"yess_movimientos_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
 
-        public static string NombreArchivoFiltrado() =>
-            $"yess_movimientos_filtrado_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+        public string NombreArchivoFiltrado() =>
+            $"yess_movimientos_filtrado_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
     }
 }

@@ -1,0 +1,171 @@
+<div class="modal-overlay @(IsOpen ? "show" : "")" @onclick="() => OnCancel.InvokeAsync()">
+    <div class="modal-dialog" @onclick:stopPropagation="true">
+        <div class="modal-header">
+            <h5 class="modal-title">@Title</h5>
+            <button type="button" class="btn-close" aria-label="Close"
+                @onclick="() => OnCancel.InvokeAsync()">
+                ✕
+            </button>
+        </div>
+
+        <div class="modal-body">
+            @if (BodyTemplate != null)
+            {
+                @BodyTemplate
+            }
+            else
+            {
+                <p>@Content</p>
+            }
+        </div>
+
+        <div class="modal-footer">
+            @if (FooterTemplate != null)
+            {
+                @FooterTemplate
+            }
+            else
+            {
+                <button type="button" class="btn btn-secondary" @onclick="() => OnCancel.InvokeAsync()">
+                    Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" @onclick="() => OnConfirm.InvokeAsync()">
+                    @(ConfirmButtonText ?? "Confirmar")
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// Controla si el modal está abierto.
+    /// </summary>
+    [Parameter]
+    public bool IsOpen { get; set; } = false;
+
+    /// <summary>
+    /// Título del modal.
+    /// </summary>
+    [Parameter]
+    public string? Title { get; set; } = "Confirmación";
+
+    /// <summary>
+    /// Contenido simple (si no usas BodyTemplate).
+    /// </summary>
+    [Parameter]
+    public string? Content { get; set; }
+
+    /// <summary>
+    /// Template de body personalizado.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? BodyTemplate { get; set; }
+
+    /// <summary>
+    /// Template de footer personalizado.
+    /// </summary>
+    [Parameter]
+    public RenderFragment? FooterTemplate { get; set; }
+
+    /// <summary>
+    /// Texto del botón de confirmar.
+    /// </summary>
+    [Parameter]
+    public string? ConfirmButtonText { get; set; } = "Confirmar";
+
+    /// <summary>
+    /// Callback cuando confirma.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    /// <summary>
+    /// Callback cuando cancela.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+}
+
+<style>
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-overlay.show {
+        display: flex;
+    }
+
+    .modal-dialog {
+        background: var(--color-bg-light, #2a2a2a);
+        border-radius: 0.5rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow: auto;
+    }
+
+    .modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--color-border-dark, #444);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--color-text-light, #f0f0f0);
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+        color: var(--color-text, #e0e0e0);
+    }
+
+    .modal-footer {
+        padding: 1.5rem;
+        border-top: 1px solid var(--color-border-dark, #444);
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+
+    .btn-close {
+        background: transparent;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--color-text-muted, #888);
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .btn-close:hover {
+        color: var(--color-text-light, #f0f0f0);
+    }
+
+    @@media (max-width: 768px) {
+        .modal-dialog {
+            width: 95%;
+        }
+
+        .modal-header,
+        .modal-body,
+        .modal-footer {
+            padding: 1rem;
+        }
+    }
+</style>

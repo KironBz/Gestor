@@ -1,0 +1,191 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div class="toast-container">
+    @foreach (var toast in Toasts)
+    {
+        <div class="toast @toast.Type" role="alert">
+            <div class="toast-body">
+                <span>@toast.Message</span>
+                <button type="button" class="btn-close" aria-label="Close"
+                    @onclick="() => RemoveToast(toast.Id)">
+                    ✕
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    public class Toast
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string Message { get; set; } = "";
+        public string Type { get; set; } = "info"; // "success", "danger", "warning", "info"
+        public int DurationMs { get; set; } = 3000;
+    }
+
+    private List<Toast> Toasts { get; set; } = new();
+
+    /// <summary>
+    /// Mostrar notificación de éxito (verde).
+    /// </summary>
+    public void Success(string message, int durationMs = 3000)
+    {
+        Show(message, "success", durationMs);
+    }
+
+    /// <summary>
+    /// Mostrar notificación de error (rojo).
+    /// </summary>
+    public void Error(string message, int durationMs = 5000)
+    {
+        Show(message, "danger", durationMs);
+    }
+
+    /// <summary>
+    /// Mostrar notificación de advertencia (amarillo).
+    /// </summary>
+    public void Warning(string message, int durationMs = 4000)
+    {
+        Show(message, "warning", durationMs);
+    }
+
+    /// <summary>
+    /// Mostrar notificación genérica (info).
+    /// </summary>
+    public void Info(string message, int durationMs = 3000)
+    {
+        Show(message, "info", durationMs);
+    }
+
+    /// <summary>
+    /// Mostrar notificación (método base).
+    /// </summary>
+    private void Show(string message, string type, int durationMs)
+    {
+        var toast = new Toast
+        {
+            Message = message,
+            Type = type,
+            DurationMs = durationMs
+        };
+
+        Toasts.Add(toast);
+        StateHasChanged();
+
+        // Auto-remover después de duración
+        _ = Task.Delay(durationMs).ContinueWith(_ =>
+        {
+            RemoveToast(toast.Id);
+        });
+    }
+
+    /// <summary>
+    /// Remover toast por ID.
+    /// </summary>
+    private void RemoveToast(string id)
+    {
+        Toasts.RemoveAll(t => t.Id == id);
+        StateHasChanged();
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        Toasts.Clear();
+        await Task.CompletedTask;
+    }
+}
+
+<style>
+    .toast-container {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-width: 400px;
+    }
+
+    .toast {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .toast.success {
+        background: #28a745;
+        color: white;
+        border-left: 4px solid #1e7e34;
+    }
+
+    .toast.danger {
+        background: #dc3545;
+        color: white;
+        border-left: 4px solid #a71d2a;
+    }
+
+    .toast.warning {
+        background: #ffc107;
+        color: #333;
+        border-left: 4px solid #e0a800;
+    }
+
+    .toast.info {
+        background: #17a2b8;
+        color: white;
+        border-left: 4px solid #0c5460;
+    }
+
+    .toast-body {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 1rem;
+    }
+
+    .btn-close {
+        background: transparent;
+        border: none;
+        color: inherit;
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+
+    .btn-close:hover {
+        opacity: 0.7;
+    }
+
+    @@keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .toast-container {
+            left: 0.5rem;
+            right: 0.5rem;
+            max-width: unset;
+        }
+
+        .toast {
+            font-size: 0.9rem;
+            padding: 0.75rem;
+        }
+    }
+</style>

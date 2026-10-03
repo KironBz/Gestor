@@ -6,6 +6,22 @@
 @inject IArchivoService ArchivoService
 @inject IDeudaCalculatorService DeudaCalculatorService
 
+<style>
+    @@media (max-width: 768px) {
+        .categoria-card {
+            margin-bottom: 1rem;
+        }
+    }
+    
+    .tabla-historial tbody tr:nth-child(even) {
+        background-color: rgba(255, 255, 255, 0.03);
+    }
+    
+    .tabla-historial tbody tr:hover {
+        background-color: rgba(255, 255, 255, 0.08);
+    }
+</style>
+
 <h3 class="text-center mb-4">Resumen Financiero</h3>
 
 @if (cargando)
@@ -18,13 +34,14 @@
 }
 else
 {
-    <!-- Tarjetas de totales -->
+    <!-- ========== PANEL 1: FLUJOS DEL MES ACTUAL ========== -->
     <div class="row g-3 mb-4">
         <div class="col-md-3">
             <div class="card text-white bg-success shadow">
                 <div class="card-body">
                     <h5 class="card-title">Ingresos</h5>
-                    <p class="card-text display-6">@totalIngresos.ToString("C")</p>
+                    <p class="card-text display-6">@totalIngresosEsteMes.ToString("C")</p>
+                    <small class="text-light">Este mes</small>
                 </div>
             </div>
         </div>
@@ -32,135 +49,225 @@ else
             <div class="card text-white bg-danger shadow">
                 <div class="card-body">
                     <h5 class="card-title">Egresos</h5>
-                    <p class="card-text display-6">@totalEgresos.ToString("C")</p>
+                    <p class="card-text display-6">@totalEgresosEsteMes.ToString("C")</p>
+                    <small class="text-light">Este mes</small>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="card text-white bg-info shadow">
                 <div class="card-body">
-                    <h5 class="card-title">Ahorro Neto</h5>
-                    <p class="card-text display-6">@ahorroNeto.ToString("C")</p>
+                    <h5 class="card-title">Diferencia</h5>
+                    <p class="card-text display-6">@ahorroNetoEsteMes.ToString("C")</p>
+                    <small class="text-light">Ingresos - Egresos</small>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-white bg-secondary shadow">
+            <div class="card text-white shadow" style="@GetEstiloIndicador()">
                 <div class="card-body">
-                    <h5 class="card-title">Patrimonio Neto</h5>
-                    <p class="card-text display-6">@patrimonioNeto.ToString("C")</p>
+                    <h5 class="card-title">Salud</h5>
+                    <p class="card-text display-6">@GetEtiquetaSalud()</p>
+                    <small class="text-light">@($"{ratioGastoIngreso:F0}% del ingreso")</small>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Últimos movimientos (ordenados correctamente) -->
-    <div class="card bg-dark text-white mb-4">
-        <div class="card-header">Últimos movimientos</div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-dark table-striped mb-0">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Cuenta</th>
-                            <th>Categoría</th>
-                            <th>Descripción</th>
-                            <th>Monto</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var mov in ultimosMovimientos)
-                        {
-                            <tr>
-                                <td>@mov.FechaOcurrido.ToString("dd/MM/yyyy")</td>
-                                <td>@mov.NombreCuenta</td>
-                                <td>@mov.Categoria</td>
-                                <td>@mov.Descripcion</td>
-                                <td class="@(mov.Tipo == "Ingreso" ? "text-success" : "text-danger")">
-                                    @(mov.Tipo == "Ingreso" ? "+" : "-")@mov.Monto.ToString("C")
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- Préstamos -->
+        <!-- ========== PANEL 3: COMPARATIVA MES ACTUAL VS MES ANTERIOR ========== -->
     <div class="row g-3 mb-4">
         <div class="col-md-6">
-            <div class="card bg-dark text-white">
-                <div class="card-header">Acreedores (debo)</div>
-                <div class="card-body p-0">
-                    @if (acreedoresResumen.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-dark table-striped mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Contraparte</th>
-                                        <th>Saldo pendiente</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in acreedoresResumen)
-                                    {
-                                        <tr>
-                                            <td>@item.Contraparte</td>
-                                            <td class="text-danger">@item.SaldoPendiente.ToString("C")</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="text-center p-3">Sin deudas activas</p>
-                    }
+            <div class="card text-white shadow border-0" style="background: linear-gradient(135deg, #2c3e50 0%, #4a6572 100%);">
+                <div class="card-header border-0" style="background-color: rgba(0,0,0,0.15);">
+                    📈 Comparativa: Egresos
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Este mes:</strong> @totalEgresosEsteMes.ToString("C")</p>
+                    <p class="mb-3"><strong>Mes anterior:</strong> @totalEgresosMetePasado.ToString("C")</p>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <span style="font-size: 1.5rem;">@GetTendenciaGasto()</span>
+                        @if (diferenciaMesesGasto > 0)
+                        {
+                            <span style="
+                                background-color: rgba(248, 113, 113, 0.15);
+                                color: #f87171;
+                                padding: 0.25rem 0.6rem;
+                                border-radius: 999px;
+                                font-weight: 600;
+                                border: 1px solid rgba(248, 113, 113, 0.4);
+                            ">
+                                ↑ Gastas @($"{Math.Abs(diferenciaMesesGasto):C}") más
+                            </span>
+                        }
+                        else if (diferenciaMesesGasto < 0)
+                        {
+                            <span style="
+                                background-color: rgba(74, 222, 128, 0.15);
+                                color: #4ade80;
+                                padding: 0.25rem 0.6rem;
+                                border-radius: 999px;
+                                font-weight: 600;
+                                border: 1px solid rgba(74, 222, 128, 0.4);
+                            ">
+                                ↓ Gastas @($"{Math.Abs(diferenciaMesesGasto):C}") menos
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="
+                                background-color: rgba(250, 204, 21, 0.15);
+                                color: #facc15;
+                                padding: 0.25rem 0.6rem;
+                                border-radius: 999px;
+                                font-weight: 600;
+                                border: 1px solid rgba(250, 204, 21, 0.4);
+                            ">
+                                → Igual que el mes anterior
+                            </span>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card bg-dark text-white">
-                <div class="card-header">Deudores (me deben)</div>
-                <div class="card-body p-0">
-                    @if (deudoresResumen.Any())
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-dark table-striped mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Contraparte</th>
-                                        <th>Saldo pendiente</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in deudoresResumen)
-                                    {
-                                        <tr>
-                                            <td>@item.Contraparte</td>
-                                            <td class="text-success">@item.SaldoPendiente.ToString("C")</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="text-center p-3">Sin préstamos activos</p>
-                    }
+            <div class="card text-white shadow border-0" style="background: linear-gradient(135deg, #1f3a5f 0%, #2e5c8a 100%);">
+                <div class="card-header border-0" style="background-color: rgba(0,0,0,0.15);">
+                    🔮 Proyección de gasto
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Gasto diario promedio:</strong> @gastoDiarioPromedio.ToString("C")</p>
+                    <p class="mb-3"><strong>Proyección si continúas así:</strong> @proyeccionGastoMes.ToString("C")</p>
+                    
+                    <small class="text-light">
+                        @if (proyeccionGastoMes > totalIngresosEsteMes)
+                        {
+                            <span style="
+                                background-color: rgba(248, 113, 113, 0.15);
+                                color: #f87171;
+                                padding: 0.25rem 0.6rem;
+                                border-radius: 999px;
+                                font-weight: 600;
+                                border: 1px solid rgba(248, 113, 113, 0.4);
+                                display: inline-block;
+                            ">
+                                ⚠️ Proyectarías gastar más de lo que ganas
+                            </span>
+                        }
+                        else
+                        {
+                            <span style="
+                                background-color: rgba(74, 222, 128, 0.15);
+                                color: #4ade80;
+                                padding: 0.25rem 0.6rem;
+                                border-radius: 999px;
+                                font-weight: 600;
+                                border: 1px solid rgba(74, 222, 128, 0.4);
+                                display: inline-block;
+                            ">
+                                ✅ Proyección dentro de ingresos
+                            </span>
+                        }
+                    </small>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Top 3 metas -->
+    <!-- ========== PANEL 2: DÓNDE GASTAS MÁS (MEJORADO) ========== -->
+    @if (topCategoriasGasto.Any())
+    {
+        <div class="card bg-dark text-white mb-4">
+            <div class="card-header">📊 Dónde gastas más (este mes)</div>
+            <div class="card-body">
+                <div class="row">
+                    @foreach (var cat in topCategoriasGasto)
+                    {
+                        var porcentajeGasto = totalEgresosEsteMes > 0 ? (cat.Total / totalEgresosEsteMes) * 100 : 0;
+                        <div class="col-12 mb-3 categoria-card">
+                            <div style="padding: 1rem; background-color: rgba(255,255,255,0.05); border-radius: 0.5rem; border-left: 4px solid @GetColorCategoria(cat.Categoria);">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">
+                                        <span style="font-size: 1.2rem;">@GetIconoCategoria(cat.Categoria)</span>
+                                        <strong>@cat.Categoria</strong>
+                                    </h6>
+                                    <div class="text-end">
+                                        <strong>@cat.Total.ToString("C")</strong><br />
+                                        <small class="text-light">@porcentajeGasto.ToString("F1")% del gasto</small>
+                                    </div>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar" role="progressbar" style="width: @porcentajeGasto%; background-color: @GetColorCategoria(cat.Categoria);" 
+                                         aria-valuenow="@((int)porcentajeGasto)" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- ========== HISTORIAL DE MOVIMIENTOS (TABLA MEJORADA) ========== -->
+    <div class="card bg-dark text-white mb-4">
+        <div class="card-header">📜 Historial de movimientos</div>
+        <div class="card-body p-0">
+            @if (ultimosMovimientos.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-dark table-striped mb-0 tabla-historial">
+                        <thead>
+                            <tr style="background-color: rgba(0,0,0,0.3);">
+                                <th>📅 Fecha</th>
+                                <th>🏦 Cuenta</th>
+                                <th>🏷️ Categoría</th>
+                                <th>📝 Descripción</th>
+                                <th class="text-end">💰 Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var mov in ultimosMovimientos)
+                            {
+                                <tr style="border-left: 3px solid @GetColorPorTipo(mov.Tipo);">
+                                    <td>@mov.FechaOcurrido.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span style="padding: 0.25rem 0.5rem; background-color: rgba(255,255,255,0.1); border-radius: 0.25rem;">
+                                            @mov.NombreCuenta
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span style="padding: 0.25rem 0.5rem; background-color: @GetColorCategoria(mov.Categoria); border-radius: 0.25rem; color: white; font-size: 0.85rem;">
+                                            @mov.Categoria
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(mov.Descripcion))
+                                        {
+                                            <span class="text-light">@mov.Descripcion</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                    <td class="text-end @(mov.Tipo == "Ingreso" ? "text-success" : "text-danger")">
+                                        <strong>@(mov.Tipo == "Ingreso" ? "+" : "-")@mov.Monto.ToString("C")</strong>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <p class="text-center p-3">No hay movimientos registrados</p>
+            }
+        </div>
+    </div>
+
+    <!-- ========== METAS ACTIVAS (MEJORADO) ========== -->
     <div class="card bg-dark text-white">
-        <div class="card-header">Metas de ahorro activas (top 3)</div>
+        <div class="card-header">🎯 Metas de ahorro activas (top 3)</div>
         <div class="card-body">
             @if (topMetas.Any())
             {
@@ -168,17 +275,18 @@ else
                     @foreach (var meta in topMetas)
                     {
                         <div class="col-md-4 mb-3">
-                            <div class="card h-100 bg-secondary text-white">
+                            <div class="card h-100 bg-secondary text-white" style="border-left: 4px solid #17a2b8;">
                                 <div class="card-body">
                                     <h5 class="card-title">@meta.Nombre</h5>
-                                    <p>
+                                    <p class="small mb-3">
                                         <strong>Objetivo:</strong> @meta.MontoObjetivo.ToString("C")<br />
                                         <strong>Ahorrado:</strong> @meta.AhorradoActual.ToString("C")
                                     </p>
-                                    <div class="progress" style="height: 20px;">
+                                    <div class="progress" style="height: 25px;">
                                         <div class="progress-bar bg-info" role="progressbar"
-                                             style="width: @PorcentajeMeta(meta)%;">
-                                            @PorcentajeMeta(meta).ToString("F0")%
+                                             style="width: @PorcentajeMeta(meta)%;"
+                                             aria-valuenow="@((int)PorcentajeMeta(meta))" aria-valuemin="0" aria-valuemax="100">
+                                            <strong>@PorcentajeMeta(meta).ToString("F0")%</strong>
                                         </div>
                                     </div>
                                 </div>
@@ -199,14 +307,18 @@ else
     private DatosApp? datos;
     private bool cargando = true;
 
-    private decimal totalIngresos;
-    private decimal totalEgresos;
-    private decimal ahorroNeto;
-    private decimal patrimonioNeto;
+    private decimal totalIngresosEsteMes;
+    private decimal totalEgresosEsteMes;
+    private decimal ahorroNetoEsteMes;
+    private decimal ratioGastoIngreso;
+
+    private decimal totalEgresosMetePasado;
+    private decimal diferenciaMesesGasto;
+    private decimal gastoDiarioPromedio;
+    private decimal proyeccionGastoMes;
 
     private List<MovimientoViewModel> ultimosMovimientos = new();
-    private List<ResumenDeuda> acreedoresResumen = new();
-    private List<ResumenDeuda> deudoresResumen = new();
+    private List<CategoriaGastoViewModel> topCategoriasGasto = new();
     private List<Meta> topMetas = new();
 
     private class MovimientoViewModel
@@ -218,6 +330,12 @@ else
         public string Descripcion { get; set; } = "";
         public decimal Monto { get; set; }
         public string Tipo { get; set; } = "";
+    }
+
+    private class CategoriaGastoViewModel
+    {
+        public string Categoria { get; set; } = "";
+        public decimal Total { get; set; }
     }
 
     protected override async Task OnInitializedAsync()
@@ -236,6 +354,10 @@ else
                 CalcularMetricas();
             }
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ERROR EN RESUMEN: {ex.Message}");
+        }
         finally
         {
             cargando = false;
@@ -247,49 +369,68 @@ else
     {
         if (datos?.Movimientos == null) return;
 
-        // Todos los movimientos con impacto real en efectivo (excluye Transferencia,
-        // ya que mover dinero entre tus propias cuentas no altera tu patrimonio).
-        var todosMovimientos = datos.Movimientos
+        // ========== RANGOS DE FECHAS CALENDARIO ==========
+        var ahora = DateTime.Now;
+        var primerDiaEsteMes = new DateTime(ahora.Year, ahora.Month, 1);
+        var ultimoDiaEsteMes = primerDiaEsteMes.AddMonths(1).AddDays(-1);
+
+        var primerDiaMetePasado = primerDiaEsteMes.AddMonths(-1);
+        var ultimoDiaMetePasado = primerDiaEsteMes.AddDays(-1);
+
+        // ========== MOVIMIENTOS REALES (excluye Transferencia y categorías deuda) ==========
+        var movimientosReales = datos.Movimientos
+            .Where(m => !string.IsNullOrEmpty(m.Categoria) 
+                && m.Categoria != "Transferencia"
+                && !DeudaCalculatorService.CategoriasDeuda.Contains(m.Categoria))
+            .ToList();
+
+        // ========== PANEL 1: FLUJOS DEL MES ACTUAL ==========
+        var movimientosEsteMes = movimientosReales
+            .Where(m => m.FechaOcurrido >= primerDiaEsteMes && m.FechaOcurrido <= ultimoDiaEsteMes)
+            .ToList();
+
+        totalIngresosEsteMes = movimientosEsteMes.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto);
+        totalEgresosEsteMes = movimientosEsteMes.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
+        ahorroNetoEsteMes = totalIngresosEsteMes - totalEgresosEsteMes;
+
+        // Ratio gasto/ingreso para indicador de salud
+        ratioGastoIngreso = totalIngresosEsteMes > 0 
+            ? (totalEgresosEsteMes / totalIngresosEsteMes) * 100 
+            : 0;
+
+        // ========== PANEL 2: GASTO POR CATEGORÍA (TOP 5) ==========
+        topCategoriasGasto = movimientosEsteMes
+            .Where(m => m.Tipo == "Egreso")
+            .GroupBy(m => m.Categoria)
+            .Select(g => new CategoriaGastoViewModel
+            {
+                Categoria = g.Key,
+                Total = g.Sum(m => m.Monto)
+            })
+            .OrderByDescending(c => c.Total)
+            .Take(5)
+            .ToList();
+
+        // ========== PANEL 3: COMPARATIVA CON MES ANTERIOR ==========
+        var movimientosMetePasado = movimientosReales
+            .Where(m => m.FechaOcurrido >= primerDiaMetePasado && m.FechaOcurrido <= ultimoDiaMetePasado)
+            .ToList();
+
+        totalEgresosMetePasado = movimientosMetePasado.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
+        diferenciaMesesGasto = totalEgresosEsteMes - totalEgresosMetePasado;
+
+        // ========== PROYECCIÓN ==========
+        var diasTranscurridos = (DateTime.Now - primerDiaEsteMes).Days + 1;
+        var diasEnMes = ultimoDiaEsteMes.Day;
+        gastoDiarioPromedio = diasTranscurridos > 0 ? totalEgresosEsteMes / diasTranscurridos : 0;
+        proyeccionGastoMes = gastoDiarioPromedio * diasEnMes;
+
+        // ========== ÚLTIMOS 7 MOVIMIENTOS (TABLA COMPLETA) ==========
+        var ultimos = datos.Movimientos
             .Where(m => !string.IsNullOrEmpty(m.Categoria) && m.Categoria != "Transferencia")
-            .ToList();
-
-        // Subconjunto de "ingreso/gasto real" — excluye préstamos, cargos, pagos y abonos,
-        // que son flujo de deuda, no ingreso o gasto genuino.
-        var movimientosReales = todosMovimientos
-            .Where(m => !DeudaCalculatorService.CategoriasDeuda.Contains(m.Categoria))
-            .ToList();
-
-        totalIngresos = movimientosReales.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto);
-        totalEgresos = movimientosReales.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
-        ahorroNeto = totalIngresos - totalEgresos;
-
-        // Patrimonio Neto: misma definición que Balance.razor — saldo real de cuentas
-        // Corriente + Oculto (SaldoInicial + todos sus movimientos, sin excluir ninguna
-        // categoría) + cuentas por cobrar - cuentas por pagar. Ahorro, Transporte y
-        // Ajeno quedan fuera a propósito.
-        var saldosPorCuenta = datos.Cuentas.ToDictionary(c => c.Id, c => c.SaldoInicial);
-        foreach (var mov in datos.Movimientos)
-        {
-            if (!saldosPorCuenta.ContainsKey(mov.CuentaId)) continue;
-            if (mov.Tipo == "Ingreso") saldosPorCuenta[mov.CuentaId] += mov.Monto;
-            else if (mov.Tipo == "Egreso") saldosPorCuenta[mov.CuentaId] -= mov.Monto;
-        }
-
-        decimal totalGlobalCuentas = datos.Cuentas
-            .Where(c => c.Visibilidad == "Corriente" || c.Visibilidad == "Oculto")
-            .Sum(c => saldosPorCuenta.GetValueOrDefault(c.Id, c.SaldoInicial));
-
-        var deudas = DeudaCalculatorService.CalcularDeudasResumen(datos);
-        decimal totalPorCobrar = deudas.Deudores.Sum(d => d.SaldoPendiente);
-        decimal totalPorPagar = deudas.Acreedores.Sum(d => d.SaldoPendiente);
-        patrimonioNeto = totalGlobalCuentas + (totalPorCobrar - totalPorPagar);
-
-        // Últimos 10 movimientos (se muestran todos, incluidos préstamos/pagos/abonos,
-        // porque esta tabla es un registro de actividad, no un indicador financiero)
-        var ultimos = todosMovimientos
             .OrderByDescending(m => m.FechaOcurrido)
             .ThenByDescending(m => m.FechaRegistro)
-            .Take(10)
+            .Take(7)
             .ToList();
 
         var mapaCuentas = datos.Cuentas.ToDictionary(c => c.Id, c => c.Nombre);
@@ -304,9 +445,7 @@ else
             Tipo = m.Tipo
         }).ToList();
 
-        acreedoresResumen = deudas.Acreedores;
-        deudoresResumen = deudas.Deudores;
-
+        // ========== METAS ACTIVAS (TOP 3) ==========
         var todasMetas = datos.Metas ?? new List<Meta>();
         var activas = todasMetas.Where(m => !m.Completada && !m.Archivada)
             .OrderBy(m => m.Prioridad)
@@ -326,5 +465,74 @@ else
     {
         if (meta.MontoObjetivo == 0) return 0;
         return (double)(meta.AhorradoActual / meta.MontoObjetivo) * 100;
+    }
+
+    private string GetEtiquetaSalud()
+    {
+        if (ratioGastoIngreso < 80) return "✅ Sano";
+        if (ratioGastoIngreso < 100) return "⚠️ Justo";
+        return "❌ Déficit";
+    }
+
+    private string GetEstiloIndicador()
+    {
+        if (ratioGastoIngreso < 80) return "background-color: #28a745;";
+        if (ratioGastoIngreso < 100) return "background-color: #ffc107;";
+        return "background-color: #dc3545;";
+    }
+
+    private string GetColorCategoria(string categoria)
+    {
+        var colores = new Dictionary<string, string>
+        {
+            { "Comida", "#dc3545" },
+            { "Transporte", "#fd7e14" },
+            { "Entretenimiento", "#9c27b0" },
+            { "Salud", "#e91e63" },
+            { "Educación", "#2196f3" },
+            { "Servicios", "#ff9800" },
+            { "Compras", "#f44336" },
+            { "Otros", "#795548" },
+            { "Abono", "#28a745" }
+        };
+
+        return colores.TryGetValue(categoria, out var color) ? color : "#666";
+    }
+
+    private string GetIconoCategoria(string categoria)
+    {
+        var iconos = new Dictionary<string, string>
+        {
+            { "Comida", "🍔" },
+            { "Transporte", "🚗" },
+            { "Entretenimiento", "🎮" },
+            { "Salud", "🏥" },
+            { "Educación", "📚" },
+            { "Servicios", "⚡" },
+            { "Compras", "🛍️" },
+            { "Otros", "📦" },
+            { "Abono", "💰" }
+        };
+
+        return iconos.TryGetValue(categoria, out var icono) ? icono : "📊";
+    }
+
+    private string GetColorPorTipo(string tipo)
+    {
+        return tipo == "Ingreso" ? "#28a745" : "#dc3545";
+    }
+
+    private string GetTendenciaGasto()
+    {
+        if (diferenciaMesesGasto > 0) return "📈";
+        if (diferenciaMesesGasto < 0) return "📉";
+        return "➡️";
+    }
+
+    private string GetColorTendencia()
+    {
+        if (diferenciaMesesGasto > 0) return "text-danger";
+        if (diferenciaMesesGasto < 0) return "text-success";
+        return "text-warning";
     }
 }

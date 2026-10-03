@@ -5,6 +5,44 @@
 @inject IArchivoService ArchivoService
 @inject IDeudaCalculatorService DeudaCalculatorService
 @inject IJSRuntime JS
+@inject EventService EventService
+@inject ValidationService ValidationService
+
+<style>
+    @@media (max-width: 768px) {
+        .modal-dialog {
+            max-height: 95vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-content {
+            display: flex;
+            flex-direction: column;
+            max-height: 95vh;
+            overflow: hidden;
+        }
+
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 1rem;
+        }
+
+        .modal-footer {
+            flex-shrink: 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 0.75rem;
+            gap: 0.5rem;
+        }
+
+        .modal-footer .btn {
+            flex: 1;
+            font-size: 0.9rem;
+            padding: 0.5rem 0.75rem;
+        }
+    }
+</style>
 
 <h3>Préstamos y deudas</h3>
 
@@ -517,7 +555,11 @@ else
     <ModalAgregarPersona OnPersonaAgregada="OnPersonaAgregada" OnCancelar="() => mostrarModalPersona = false" />
 }
 
+<!-- Toast notifications -->
+<ToastNotification @ref="toastNotification" />
+
 @code {
+    private ToastNotification? toastNotification;
     private List<DeudaPendiente>? acreedores;
     private List<DeudaPendiente>? deudores;
     private List<DeudaPendiente>? completados;
@@ -661,19 +703,19 @@ else
     {
         if (string.IsNullOrEmpty(cuentaIdPago))
         {
-            await JS.InvokeVoidAsync("alert", "Seleccione una cuenta.");
+            toastNotification?.Error("Seleccione una cuenta.");
             return;
         }
         if (montoPago <= 0)
         {
-            await JS.InvokeVoidAsync("alert", "El monto debe ser mayor a cero.");
+            toastNotification?.Error("El monto debe ser mayor a cero.");
             return;
         }
         if (deudaSeleccionada == null) return;
 
         if (montoPago > deudaSeleccionada.SaldoPendiente)
         {
-            if (!await JS.InvokeAsync<bool>("confirm", $"El monto ingresado ({montoPago:C}) es mayor al saldo pendiente ({deudaSeleccionada.SaldoPendiente:C}). ¿Desea registrarlo de todas formas? Esto podría sobrepagar la deuda."))
+            if (!await JS.InvokeAsync<bool>("confirm", $"El monto ingresado ({montoPago:C}) es mayor al saldo pendiente ({deudaSeleccionada.SaldoPendiente:C}). ¿Desea registrarlo de todas formas?"))
                 return;
         }
 
@@ -699,11 +741,12 @@ else
         movimiento.ReferenciaAuto = deudaSeleccionada.ReferenciaAuto;
 
         datos.Movimientos.Add(movimiento);
+        EventService.RaiseDeudaChanged("abonado", deudaSeleccionada);
         await ArchivoService.GuardarAsync(datos);
         await CargarDeudas();
         modalPagoVisible = false;
 
-        await JS.InvokeVoidAsync("alert", $"{categoria} registrado correctamente.");
+        toastNotification?.Success($"{categoria} registrado correctamente");
     }
 
     private void AbrirModalNuevoPrestamo()
@@ -722,17 +765,17 @@ else
     {
         if (string.IsNullOrEmpty(formularioPrestamo.PersonaId))
         {
-            await JS.InvokeVoidAsync("alert", "Seleccione una persona.");
+            toastNotification?.Error("Seleccione una persona.");
             return;
         }
         if (string.IsNullOrEmpty(formularioPrestamo.CuentaId))
         {
-            await JS.InvokeVoidAsync("alert", "Seleccione una cuenta.");
+            toastNotification?.Error("Seleccione una cuenta.");
             return;
         }
         if (formularioPrestamo.Monto <= 0)
         {
-            await JS.InvokeVoidAsync("alert", "El monto debe ser mayor a cero.");
+            toastNotification?.Error("El monto debe ser mayor a cero.");
             return;
         }
 
@@ -757,11 +800,12 @@ else
         );
 
         datos.Movimientos.Add(movimiento);
+        EventService.RaiseDeudaChanged("agregado", null);
         await ArchivoService.GuardarAsync(datos);
         await CargarDeudas();
         CerrarModalNuevoPrestamo();
 
-        await JS.InvokeVoidAsync("alert", "Préstamo/cargo registrado correctamente.");
+        toastNotification?.Success("Préstamo/cargo registrado correctamente");
     }
 
     private async Task OnCuentaAgregada(Cuenta nuevaCuenta)

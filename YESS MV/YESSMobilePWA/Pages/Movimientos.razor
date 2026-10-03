@@ -7,6 +7,8 @@
 @inject IArchivoService ArchivoService
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject EventService EventService
+@inject ValidationService ValidationService
 
 <h3>Movimientos</h3>
 
@@ -445,7 +447,11 @@ else
     <ModalAgregarPersona OnPersonaAgregada="OnPersonaAgregada" OnCancelar="() => mostrarModalPersona = false" />
 }
 
+<!-- Toast notifications -->
+<ToastNotification @ref="toastNotification" />
+
 @code {
+    private ToastNotification? toastNotification;
     private DatosApp datos = null!;
     private List<MovimientoViewModel> movimientos = null!;
     private bool modalVisible = false;
@@ -876,17 +882,17 @@ else
         {
             if (string.IsNullOrEmpty(formulario.CuentaOrigenId) || string.IsNullOrEmpty(formulario.CuentaDestinoId))
             {
-                await JS.InvokeVoidAsync("alert", "Debe seleccionar cuenta origen y destino.");
+                toastNotification?.Error("Debe seleccionar cuenta origen y destino.");
                 return;
             }
             if (formulario.CuentaOrigenId == formulario.CuentaDestinoId)
             {
-                await JS.InvokeVoidAsync("alert", "Las cuentas origen y destino no pueden ser iguales.");
+                toastNotification?.Error("Las cuentas origen y destino no pueden ser iguales.");
                 return;
             }
             if (formulario.Monto <= 0)
             {
-                await JS.InvokeVoidAsync("alert", "Monto inválido.");
+                toastNotification?.Error("Monto inválido.");
                 return;
             }
 
@@ -913,21 +919,23 @@ else
             datos.Movimientos.Add(movOrigen);
             datos.Movimientos.Add(movDestino);
         }
+        
+
         else
         {
             if (string.IsNullOrEmpty(formulario.CuentaId))
             {
-                await JS.InvokeVoidAsync("alert", "Seleccione una cuenta.");
+                toastNotification?.Error("Seleccione una cuenta.");
                 return;
             }
             if (string.IsNullOrEmpty(formulario.CategoriaId))
             {
-                await JS.InvokeVoidAsync("alert", "Seleccione una categoría.");
+                toastNotification?.Error("Seleccione una categoría.");
                 return;
             }
             if (formulario.Monto <= 0)
             {
-                await JS.InvokeVoidAsync("alert", "Monto inválido.");
+                toastNotification?.Error("Monto inválido.");
                 return;
             }
 
@@ -957,17 +965,21 @@ else
                     movimiento.Id = movimientoEditando.Id;
                     datos.Movimientos[idx] = movimiento;
                 }
+                EventService.RaiseMovimientoChanged("editado", movimiento);
+                toastNotification?.Success("Movimiento actualizado");
             }
             else
             {
                 datos.Movimientos.Add(movimiento);
+                EventService.RaiseMovimientoChanged("agregado", movimiento);
+                toastNotification?.Success("Movimiento agregado");
             }
         }
 
         await ArchivoService.GuardarAsync(datos);
         await CargarDatos();
         CerrarModal();
-        Navigation.NavigateTo(Navigation.Uri, forceLoad: false);
+
     }
 
     private async Task EliminarMovimiento(MovimientoViewModel mov)
@@ -978,9 +990,10 @@ else
             if (original != null)
             {
                 datos.Movimientos.Remove(original);
+                EventService.RaiseMovimientoChanged("eliminado", original);
                 await ArchivoService.GuardarAsync(datos);
                 await CargarDatos();
-                Navigation.NavigateTo(Navigation.Uri, forceLoad: false);
+                toastNotification?.Success("Movimiento eliminado");
             }
         }
     }

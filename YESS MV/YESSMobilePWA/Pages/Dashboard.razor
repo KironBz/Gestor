@@ -249,7 +249,7 @@ else
     // Categorías con menos de este % del total se agrupan en "Diversos" en los
     // pasteles de categoría, para que no queden rebanadas ilegibles. Ajustable
     // entre 10 y 15 según qué tan agresivo quieras el agrupamiento.
-    private const double UmbralAgrupacionCategoria = 10.0;
+    private const decimal UmbralAgrupacionCategoria = 10.0m;
 
     private string FormatearMonedaEje(object value)
     {
@@ -368,13 +368,15 @@ else
             return;
         }
 
+
+        
         decimal totalIngresos = movimientos.Where(m => m.Tipo == "Ingreso").Sum(m => m.Monto);
         decimal totalEgresos = movimientos.Where(m => m.Tipo == "Egreso").Sum(m => m.Monto);
 
         datosBarras = new List<TotalItem>
         {
-            new() { Categoria = "Ingresos", Monto = (double)totalIngresos },
-            new() { Categoria = "Egresos", Monto = (double)totalEgresos }
+            new() { Categoria = "Ingresos", Monto = totalIngresos },
+            new() { Categoria = "Egresos", Monto = totalEgresos }
         };
 
         datosPastelTotal = datosBarras
@@ -384,7 +386,7 @@ else
         var ingresosPorCategoria = movimientos
             .Where(m => m.Tipo == "Ingreso")
             .GroupBy(m => m.Categoria)
-            .Select(g => new CategoriaItem { Categoria = g.Key, Monto = (double)g.Sum(m => m.Monto) })
+            .Select(g => new CategoriaItem { Categoria = g.Key, Monto = g.Sum(m => m.Monto) })
             .OrderByDescending(x => x.Monto)
             .ToList();
         datosIngresosCategoria = AgruparCategoriasMenores(ingresosPorCategoria);
@@ -392,7 +394,7 @@ else
         var egresosPorCategoria = movimientos
             .Where(m => m.Tipo == "Egreso")
             .GroupBy(m => m.Categoria)
-            .Select(g => new CategoriaItem { Categoria = g.Key, Monto = (double)g.Sum(m => m.Monto) })
+            .Select(g => new CategoriaItem { Categoria = g.Key, Monto = g.Sum(m => m.Monto) })
             .OrderByDescending(x => x.Monto)
             .ToList();
         datosEgresosCategoria = AgruparCategoriasMenores(egresosPorCategoria);
@@ -402,7 +404,7 @@ else
 
     private List<CategoriaItem> AgruparCategoriasMenores(List<CategoriaItem> items)
     {
-        double total = items.Sum(x => x.Monto);
+        decimal total = items.Sum(x => x.Monto);
         if (total <= 0) return items;
 
         var principales = items.Where(x => (x.Monto / total * 100) >= UmbralAgrupacionCategoria).ToList();
@@ -413,6 +415,7 @@ else
             principales.Add(new CategoriaItem { Categoria = "Diversos", Monto = menores.Sum(x => x.Monto) });
         }
         else
+
         {
             principales.AddRange(menores);
         }
@@ -438,7 +441,7 @@ else
                 lineData.Add(new GastoMensual
                 {
                     Mes = CapitalizarMes(cultura.DateTimeFormat.GetAbbreviatedMonthName(mes)),
-                    Gasto = (double)gasto
+                    Gasto = gasto
                 });
             }
         }
@@ -467,7 +470,7 @@ else
                 lineData.Add(new GastoMensual
                 {
                     Mes = $"{etiquetaPeriodo} {anioConDatos}",
-                    Gasto = (double)gasto
+                    Gasto = gasto
                 });
             }
         }
@@ -491,7 +494,7 @@ else
                 lineData.Add(new GastoMensual
                 {
                     Mes = CapitalizarMes(fecha.ToString(formato, cultura)),
-                    Gasto = (double)gasto
+                    Gasto = gasto
                 });
                 fecha = fecha.AddMonths(1);
                 iteraciones++;

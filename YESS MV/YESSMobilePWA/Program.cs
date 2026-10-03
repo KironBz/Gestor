@@ -30,7 +30,8 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddScoped<IArchivoService, ArchivoService>();
 builder.Services.AddSingleton<IDeudaCalculatorService, DeudaCalculatorService>();
 builder.Services.AddScoped<IExportService, ExportService>();
-builder.Services.AddSingleton<EventService>();  // ← AGREGAR ESTA LÍNEA
+builder.Services.AddSingleton<EventService>();
+builder.Services.AddScoped<ValidationService>();  // ← AGREGAR ESTA LÍNEA
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 builder.Services.AddRadzenComponents();
 

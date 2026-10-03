@@ -1,0 +1,84 @@
+@using YESSMobilePWA.Services
+@implements IAsyncDisposable
+@inject EventService EventService
+
+@code {
+    /// <summary>
+    /// Callback cuando hay cambios en movimientos.
+    /// </summary>
+    [Parameter]
+    public EventCallback<MovimientoChangedEventArgs> OnMovimientoChanged { get; set; }
+
+    /// <summary>
+    /// Callback cuando hay cambios en metas.
+    /// </summary>
+    [Parameter]
+    public EventCallback<MetaChangedEventArgs> OnMetaChanged { get; set; }
+
+    /// <summary>
+    /// Callback cuando hay cambios en deudas.
+    /// </summary>
+    [Parameter]
+    public EventCallback<DeudaChangedEventArgs> OnDeudaChanged { get; set; }
+
+    /// <summary>
+    /// Callback cuando hay cambios en cuentas.
+    /// </summary>
+    [Parameter]
+    public EventCallback<CuentaChangedEventArgs> OnCuentaChanged { get; set; }
+
+    /// <summary>
+    /// Callback cuando se completa sincronización.
+    /// </summary>
+    [Parameter]
+    public EventCallback<SyncEventArgs> OnSyncCompleted { get; set; }
+
+    protected override void OnInitialized()
+    {
+        EventService.MovimientoChanged += HandleMovimientoChanged;
+        EventService.MetaChanged += HandleMetaChanged;
+        EventService.DeudaChanged += HandleDeudaChanged;
+        EventService.CuentaChanged += HandleCuentaChanged;
+        EventService.SyncCompleted += HandleSyncCompleted;
+    }
+
+    private void HandleMovimientoChanged(object? sender, MovimientoChangedEventArgs e)
+    {
+        if (OnMovimientoChanged.HasDelegate)
+            _ = OnMovimientoChanged.InvokeAsync(e);
+    }
+
+    private void HandleMetaChanged(object? sender, MetaChangedEventArgs e)
+    {
+        if (OnMetaChanged.HasDelegate)
+            _ = OnMetaChanged.InvokeAsync(e);
+    }
+
+    private void HandleDeudaChanged(object? sender, DeudaChangedEventArgs e)
+    {
+        if (OnDeudaChanged.HasDelegate)
+            _ = OnDeudaChanged.InvokeAsync(e);
+    }
+
+    private void HandleCuentaChanged(object? sender, CuentaChangedEventArgs e)
+    {
+        if (OnCuentaChanged.HasDelegate)
+            _ = OnCuentaChanged.InvokeAsync(e);
+    }
+
+    private void HandleSyncCompleted(object? sender, SyncEventArgs e)
+    {
+        if (OnSyncCompleted.HasDelegate)
+            _ = OnSyncCompleted.InvokeAsync(e);
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        EventService.MovimientoChanged -= HandleMovimientoChanged;
+        EventService.MetaChanged -= HandleMetaChanged;
+        EventService.DeudaChanged -= HandleDeudaChanged;
+        EventService.CuentaChanged -= HandleCuentaChanged;
+        EventService.SyncCompleted -= HandleSyncCompleted;
+        await Task.CompletedTask;
+    }
+}

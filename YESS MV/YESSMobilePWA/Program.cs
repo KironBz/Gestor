@@ -26,19 +26,14 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 // ============================================
 // SERVICIOS CON INTERFACES (INYECTABLE)
 // ============================================
+
 builder.Services.AddScoped<IArchivoService, ArchivoService>();
 builder.Services.AddSingleton<IDeudaCalculatorService, DeudaCalculatorService>();
 builder.Services.AddScoped<IExportService, ExportService>();
-
-// ============================================
-// LOGGING (CRÍTICO PARA OBSERVABILIDAD)
-// ============================================
+builder.Services.AddSingleton<EventService>();  // ← AGREGAR ESTA LÍNEA
 builder.Logging.SetMinimumLevel(LogLevel.Information);
-
-// ============================================
-// RADZEN COMPONENTS
-// ============================================
 builder.Services.AddRadzenComponents();
+
 
 // ============================================
 // BUILD Y RUN

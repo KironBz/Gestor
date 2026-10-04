@@ -1,0 +1,13 @@
+/* Ocultar el triángulo por defecto del <details> */
+details > summary {
+    list-style: none;
+}
+details > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Cambiar el símbolo ▼ a ▲ cuando está abierto */
+details[open] > summary span:last-child {
+    display: inline-block;
+    transform: rotate(180deg);
+}

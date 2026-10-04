@@ -20,6 +20,10 @@
     .tabla-historial tbody tr:hover {
         background-color: rgba(255, 255, 255, 0.08);
     }
+    .meta-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
 </style>
 
 <h3 class="text-center mb-4">Resumen Financiero</h3>
@@ -74,7 +78,7 @@ else
         </div>
     </div>
 
-        <!-- ========== PANEL 3: COMPARATIVA MES ACTUAL VS MES ANTERIOR ========== -->
+    <!-- ========== PANEL 3: COMPARATIVA MES ACTUAL VS MES ANTERIOR ========== -->
     <div class="row g-3 mb-4">
         <div class="col-md-6">
             <div class="card text-white shadow border-0" style="background: linear-gradient(135deg, #2c3e50 0%, #4a6572 100%);">
@@ -271,24 +275,123 @@ else
         <div class="card-body">
             @if (topMetas.Any())
             {
-                <div class="row">
+                <div class="row g-3">
                     @foreach (var meta in topMetas)
                     {
-                        <div class="col-md-4 mb-3">
-                            <div class="card h-100 bg-secondary text-white" style="border-left: 4px solid #17a2b8;">
-                                <div class="card-body">
-                                    <h5 class="card-title">@meta.Nombre</h5>
-                                    <p class="small mb-3">
-                                        <strong>Objetivo:</strong> @meta.MontoObjetivo.ToString("C")<br />
-                                        <strong>Ahorrado:</strong> @meta.AhorradoActual.ToString("C")
-                                    </p>
-                                    <div class="progress" style="height: 25px;">
-                                        <div class="progress-bar bg-info" role="progressbar"
-                                             style="width: @PorcentajeMeta(meta)%;"
-                                             aria-valuenow="@((int)PorcentajeMeta(meta))" aria-valuemin="0" aria-valuemax="100">
-                                            <strong>@PorcentajeMeta(meta).ToString("F0")%</strong>
+                        var pct = PorcentajeMeta(meta);
+                        var faltante = Math.Max(0, meta.MontoObjetivo - meta.AhorradoActual);
+                        <div class="col-md-4">
+                            <div class="meta-card h-100" style="
+                                background: linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+                                border-radius: 0.75rem;
+                                padding: 1.25rem;
+                                position: relative;
+                                overflow: hidden;
+                                border-top: 4px solid transparent;
+                                border-image: linear-gradient(90deg, @GetColorProgreso(pct) 0%, @GetColorProgresoSecundario(pct) 100%);
+                                border-image-slice: 1;
+                                transition: transform 0.2s ease, box-shadow 0.2s ease;
+                            ">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div style="font-size: 2rem; line-height: 1;">
+                                        @GetIconoMeta(meta.Nombre)
+                                    </div>
+                                    <div class="text-end">
+                                        <div style="font-size: 1.75rem; font-weight: 700; color: @GetColorProgreso(pct); line-height: 1;">
+                                            @pct.ToString("F0")%
                                         </div>
                                     </div>
+                                </div>
+
+                                <h5 class="mb-2" style="font-weight: 600;">@meta.Nombre</h5>
+
+                                <div class="d-flex justify-content-between mb-1" style="font-size: 0.85rem;">
+                                    <span class="text-light">Ahorrado</span>
+                                    <strong style="color: @GetColorProgreso(pct);">@meta.AhorradoActual.ToString("C")</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-3" style="font-size: 0.85rem;">
+                                    <span class="text-light">Objetivo</span>
+                                    <span>@meta.MontoObjetivo.ToString("C")</span>
+                                </div>
+
+                                <div class="progress mb-3" style="height: 10px; background-color: rgba(255,255,255,0.08); border-radius: 999px;">
+                                    <div class="progress-bar" role="progressbar"
+                                         style="width: @pct%; background: linear-gradient(90deg, @GetColorProgreso(pct) 0%, @GetColorProgresoSecundario(pct) 100%); border-radius: 999px; transition: width 0.6s ease;"
+                                         aria-valuenow="@((int)pct)" aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+
+                                <div class="text-center" style="font-size: 0.85rem;">
+                                    @if (pct >= 100)
+                                    {
+                                        <span style="
+                                            background-color: rgba(74, 222, 128, 0.15);
+                                            color: #4ade80;
+                                            padding: 0.25rem 0.6rem;
+                                            border-radius: 999px;
+                                            font-weight: 600;
+                                            border: 1px solid rgba(74, 222, 128, 0.4);
+                                            display: inline-block;
+                                        ">
+                                            🎉 ¡Meta completada!
+                                        </span>
+                                    }
+                                    else if (pct >= 75)
+                                    {
+                                        <span style="
+                                            background-color: rgba(74, 222, 128, 0.15);
+                                            color: #4ade80;
+                                            padding: 0.25rem 0.6rem;
+                                            border-radius: 999px;
+                                            font-weight: 600;
+                                            border: 1px solid rgba(74, 222, 128, 0.4);
+                                            display: inline-block;
+                                        ">
+                                            🔥 ¡Casi lo logras! Faltan @faltante.ToString("C")
+                                        </span>
+                                    }
+                                    else if (pct >= 50)
+                                    {
+                                        <span style="
+                                            background-color: rgba(250, 204, 21, 0.15);
+                                            color: #facc15;
+                                            padding: 0.25rem 0.6rem;
+                                            border-radius: 999px;
+                                            font-weight: 600;
+                                            border: 1px solid rgba(250, 204, 21, 0.4);
+                                            display: inline-block;
+                                        ">
+                                            💪 Vas por buen camino
+                                        </span>
+                                    }
+                                    else if (pct > 0)
+                                    {
+                                        <span style="
+                                            background-color: rgba(96, 165, 250, 0.15);
+                                            color: #60a5fa;
+                                            padding: 0.25rem 0.6rem;
+                                            border-radius: 999px;
+                                            font-weight: 600;
+                                            border: 1px solid rgba(96, 165, 250, 0.4);
+                                            display: inline-block;
+                                        ">
+                                            🚀 ¡A darle!
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span style="
+                                            background-color: rgba(148, 163, 184, 0.15);
+                                            color: #94a3b8;
+                                            padding: 0.25rem 0.6rem;
+                                            border-radius: 999px;
+                                            font-weight: 600;
+                                            border: 1px solid rgba(148, 163, 184, 0.4);
+                                            display: inline-block;
+                                        ">
+                                            ✨ Empieza hoy
+                                        </span>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -534,5 +637,44 @@ else
         if (diferenciaMesesGasto > 0) return "text-danger";
         if (diferenciaMesesGasto < 0) return "text-success";
         return "text-warning";
+    }
+
+        private string GetIconoMeta(string nombre)
+    {
+        var n = (nombre ?? "").ToLowerInvariant();
+        if (n.Contains("viaje") || n.Contains("vacacion")) return "✈️";
+        if (n.Contains("auto") || n.Contains("carro") || n.Contains("coche")) return "🚗";
+        if (n.Contains("casa") || n.Contains("depa") || n.Contains("hogar")) return "🏠";
+        if (n.Contains("emergencia")) return "🚨";
+        if (n.Contains("estudio") || n.Contains("curso") || n.Contains("educa")) return "🎓";
+        if (n.Contains("moto")) return "🏍️";
+        if (n.Contains("bici")) return "🚲";
+        if (n.Contains("celu") || n.Contains("telefono") || n.Contains("iphone")) return "📱";
+        if (n.Contains("compu") || n.Contains("laptop") || n.Contains("pc")) return "💻";
+        if (n.Contains("juego") || n.Contains("consola")) return "🎮";
+        if (n.Contains("ropa")) return "👕";
+        if (n.Contains("regalo")) return "🎁";
+        if (n.Contains("boda")) return "💍";
+        if (n.Contains("salud") || n.Contains("medic")) return "🏥";
+        if (n.Contains("inversion") || n.Contains("invertir")) return "📈";
+        return "🎯";
+    }
+
+    private string GetColorProgreso(double pct)
+    {
+        if (pct >= 100) return "#4ade80";
+        if (pct >= 75) return "#4ade80";
+        if (pct >= 50) return "#facc15";
+        if (pct > 0) return "#60a5fa";
+        return "#94a3b8";
+    }
+
+    private string GetColorProgresoSecundario(double pct)
+    {
+        if (pct >= 100) return "#22d3ee";
+        if (pct >= 75) return "#22d3ee";
+        if (pct >= 50) return "#fb923c";
+        if (pct > 0) return "#818cf8";
+        return "#64748b";
     }
 }

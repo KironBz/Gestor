@@ -20,111 +20,157 @@
 }
 else
 {
-    <!-- ========== FILA 1: DINERO DISPONIBLE Y OCULTO ========== -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-6">
-            <div class="card text-white bg-success shadow">
-                <div class="card-body">
-                    <h5 class="card-title">Dinero disponible</h5>
-                    <p class="card-text display-6">@totalCorriente.ToString("C")</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card text-white bg-primary shadow">
-                <div class="card-body">
-                    <h5 class="card-title">Dinero oculto</h5>
-                    <p class="card-text display-6">@totalOculto.ToString("C")</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- ========== FILA 2: TOTAL GLOBAL ========== -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-12">
-            <div class="card text-white shadow" style="background-color: #2F4F4F;">
-                <div class="card-body">
-                    <h5 class="card-title">Total global (efectivo disponible + oculto)</h5>
-                    <p class="card-text display-6">@totalGlobal.ToString("C")</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== FILA 3: CUENTAS POR COBRAR Y POR PAGAR ========== -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-6">
-            <div class="card text-white shadow" style="background-color: #CD853F;">
-                <div class="card-body">
-                    <h5 class="card-title">Cuentas por cobrar</h5>
-                    <p class="card-text display-6">@totalPorCobrar.ToString("C")</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card text-white shadow" style="background-color: #B22222;">
-                <div class="card-body">
-                    <h5 class="card-title">Cuentas por pagar</h5>
-                    <p class="card-text display-6">@totalPorPagar.ToString("C")</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== FILA 4: PATRIMONIO NETO ========== -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-12">
-            <div class="card text-white shadow" style="background-color: #6a0dad;">
-                <div class="card-body">
-                    <h5 class="card-title">Patrimonio Neto (Total Global + Cobrar - Pagar)</h5>
-                    <p class="card-text display-6">@patrimonioNeto.ToString("C")</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== FILA 5: AHORRO, TRANSPORTE Y AJENO ========== -->
-    <div class="row g-3 mb-5">
-        <div class="col-md-4">
-            <div class="card text-white shadow" style="background-color: #1a7f5a;">
-                <div class="card-body">
-                    <h5 class="card-title">Ahorros</h5>
-                    <p class="card-text display-6">@totalAhorro.ToString("C")</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-white shadow" style="background-color: #18278C;">
-                <div class="card-body">
-                    <h5 class="card-title">Saldo en Transporte</h5>
-                    <p class="card-text display-6">@totalTransporte.ToString("C")</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card text-white shadow" style="background-color: #D549E3;">
-                <div class="card-body">
-                    <h5 class="card-title">Ajeno</h5>
-                    <p class="card-text display-6">@totalAjeno.ToString("C")</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========== PANELES DE CUENTAS INDIVIDUALES ========== -->
-
-    <!-- Cuentas Corrientes -->
-    <div class="card bg-dark text-white mb-4" style="border: 2px solid #28a745;">
+    <!-- ========== PANEL 1: PATRIMONIO NETO ========== -->
+    <div class="card bg-dark text-white mb-4" style="border-top: 6px solid #6a0dad;">
         <div class="card-body">
-            <h5 class="card-title" style="color: #28a745;">Cuentas Corrientes</h5>
-            <div class="d-flex flex-wrap gap-3">
-                @foreach (var cuenta in cuentasCorrientes)
+            <div class="mb-4">
+                <h4 style="color: #b19cd9;">📊 Patrimonio Neto</h4>
+                <p class="text-light mb-0" style="font-size: 1rem;">
+                    Efectivo disponible (Corriente + Oculto) + Por cobrar − Por pagar
+                </p>
+            </div>
+
+            <!-- Número grande destacado -->
+            <div style="
+                background: linear-gradient(135deg, rgba(106, 13, 173, 0.25) 0%, rgba(106, 13, 173, 0.08) 100%);
+                border-left: 4px solid #6a0dad;
+                border-radius: 0.5rem;
+                padding: 1.5rem 1.75rem;
+                margin-bottom: 1.75rem;
+            ">
+                <small style="color: #b19cd9; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; font-size: 0.95rem;">
+                    Patrimonio Neto Total
+                </small>
+                <h2 class="mb-0 mt-2" style="color: #c79aff; font-weight: 700;">
+                    @patrimonioNeto.ToString("C")
+                </h2>
+            </div>
+
+            <!-- Mini-cards en grid -->
+            <div class="row g-3 mb-3">
+                @if (cuentasCorrientes.Any())
                 {
-                    <div class="card bg-secondary text-white" style="width: 10rem; border: 2px solid @cuenta.Color;">
-                        <div class="card-body">
-                            <h6 class="card-title">@cuenta.Nombre</h6>
-                            <p class="card-text">@cuenta.Saldo.ToString("C")</p>
+                    <div class="col-12 col-md-4">
+                        <div style="background-color: rgba(40, 167, 69, 0.12); border-left: 4px solid #28a745; border-radius: 0.5rem; padding: 1rem 1.15rem; height: 100%;">
+                            <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 1.15rem;">
+                                <strong class="text-light">🟢 Corriente</strong>
+                                <strong class="text-success">@totalCorriente.ToString("C")</strong>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var cuenta in cuentasCorrientes)
+                                {
+                                    <span style="
+                                        background-color: @(HexToRgba(cuenta.Color, 0.15));
+                                        border: 1px solid @(HexToRgba(cuenta.Color, 0.5));
+                                        border-radius: 999px;
+                                        padding: 0.35rem 0.85rem;
+                                        font-size: 0.9rem;
+                                        white-space: nowrap;
+                                    ">
+                                        <span class="text-light">@cuenta.Nombre</span>
+                                        <strong style="color: @(AclararColor(cuenta.Color)); margin-left: 0.5rem;">@cuenta.Saldo.ToString("C")</strong>
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (cuentasOcultas.Any())
+                {
+                    <div class="col-12 col-md-4">
+                        <div style="background-color: rgba(23, 162, 184, 0.12); border-left: 4px solid #17a2b8; border-radius: 0.5rem; padding: 1rem 1.15rem; height: 100%;">
+                            <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 1.15rem;">
+                                <strong class="text-light">🔵 Oculto</strong>
+                                <strong class="text-info">@totalOculto.ToString("C")</strong>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var cuenta in cuentasOcultas)
+                                {
+                                    <span style="
+                                        background-color: @(HexToRgba(cuenta.Color, 0.15));
+                                        border: 1px solid @(HexToRgba(cuenta.Color, 0.5));
+                                        border-radius: 999px;
+                                        padding: 0.35rem 0.85rem;
+                                        font-size: 0.9rem;
+                                        white-space: nowrap;
+                                    ">
+                                        <span class="text-light">@cuenta.Nombre</span>
+                                        <strong style="color: @(AclararColor(cuenta.Color)); margin-left: 0.5rem;">@cuenta.Saldo.ToString("C")</strong>
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="col-12 col-md-4">
+                    <div style="background-color: rgba(108, 117, 125, 0.15); border-left: 4px solid #6c757d; border-radius: 0.5rem; padding: 1rem 1.15rem; height: 100%;">
+                        <div class="d-flex justify-content-between align-items-center" style="font-size: 1.15rem;">
+                            <strong class="text-light">⚪ Total Global</strong>
+                            <strong>@((totalCorriente + totalOculto).ToString("C"))</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mini-cards de cobrar/pagar con contrapartes -->
+            <div class="row g-3">
+                @if (deudores.Any())
+                {
+                    <div class="col-12 col-md-6">
+                        <div style="background-color: rgba(253, 126, 20, 0.12); border-left: 4px solid #fd7e14; border-radius: 0.5rem; padding: 1rem 1.15rem; height: 100%;">
+                            <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 1.15rem;">
+                                <strong class="text-light">➕ Por cobrar</strong>
+                                <strong style="color: #fd7e14;">+@totalPorCobrar.ToString("C")</strong>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var deudor in deudores)
+                                {
+                                    var colorDeudor = GetColorPorNombre(deudor.Contraparte);
+                                    <span style="
+                                        background-color: @(HexToRgba(colorDeudor, 0.15));
+                                        border: 1px solid @(HexToRgba(colorDeudor, 0.5));
+                                        border-radius: 999px;
+                                        padding: 0.35rem 0.85rem;
+                                        font-size: 0.9rem;
+                                        white-space: nowrap;
+                                    ">
+                                        <span class="text-light">@deudor.Contraparte</span>
+                                        <strong style="color: @(AclararColor(colorDeudor)); margin-left: 0.5rem;">+@deudor.SaldoPendiente.ToString("C")</strong>
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (acreedores.Any())
+                {
+                    <div class="col-12 col-md-6">
+                        <div style="background-color: rgba(220, 53, 69, 0.12); border-left: 4px solid #dc3545; border-radius: 0.5rem; padding: 1rem 1.15rem; height: 100%;">
+                            <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 1.15rem;">
+                                <strong class="text-light">➖ Por pagar</strong>
+                                <strong class="text-danger">−@totalPorPagar.ToString("C")</strong>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var acreedor in acreedores)
+                                {
+                                    var colorAcreedor = GetColorPorNombre(acreedor.Contraparte);
+                                    <span style="
+                                        background-color: @(HexToRgba(colorAcreedor, 0.15));
+                                        border: 1px solid @(HexToRgba(colorAcreedor, 0.5));
+                                        border-radius: 999px;
+                                        padding: 0.35rem 0.85rem;
+                                        font-size: 0.9rem;
+                                        white-space: nowrap;
+                                    ">
+                                        <span class="text-light">@acreedor.Contraparte</span>
+                                        <strong style="color: @(AclararColor(colorAcreedor)); margin-left: 0.5rem;">−@acreedor.SaldoPendiente.ToString("C")</strong>
+                                    </span>
+                                }
+                            </div>
                         </div>
                     </div>
                 }
@@ -132,122 +178,462 @@ else
         </div>
     </div>
 
-    <!-- Cuentas Ocultas -->
-    <div class="card bg-dark text-white mb-4" style="border: 2px solid #007bff;">
+    <!-- ========== PANEL 2: DINERO DESTINADO (NO CUENTA EN PN) ========== -->
+    <div class="card bg-dark text-white mb-4" style="border-top: 6px solid #d4c500;">
         <div class="card-body">
-            <h5 class="card-title" style="color: #007bff;">Cuentas Ocultas</h5>
-            <div class="d-flex flex-wrap gap-3">
-                @foreach (var cuenta in cuentasOcultas)
+            <div class="mb-4">
+                <h4 style="color: #e6d84a;">💼 Dinero Destinado</h4>
+                <p class="text-light mb-0" style="font-size: 1rem;">
+                    Fondos separados. NO se incluyen en el Patrimonio Neto.
+                </p>
+            </div>
+
+            <!-- Total Destinado destacado -->
+            <div style="
+                background: linear-gradient(135deg, rgba(212, 197, 0, 0.22) 0%, rgba(212, 197, 0, 0.06) 100%);
+                border-left: 4px solid #d4c500;
+                border-radius: 0.5rem;
+                padding: 1.5rem 1.75rem;
+                margin-bottom: 1.75rem;
+            ">
+                <small style="color: #e6d84a; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; font-size: 0.95rem;">
+                    Total Destinado
+                </small>
+                <h2 class="mb-0 mt-2" style="color: #f0e05c; font-weight: 700;">
+                    @((totalAhorro + totalTransporte).ToString("C"))
+                </h2>
+            </div>
+
+            <!-- Mini-cards con pastillas -->
+            <div class="row g-3">
+                @if (cuentasAhorro.Any())
                 {
-                    <div class="card bg-secondary text-white" style="width: 10rem; border: 2px solid @cuenta.Color;">
-                        <div class="card-body">
-                            <h6 class="card-title">@cuenta.Nombre</h6>
-                            <p class="card-text">@cuenta.Saldo.ToString("C")</p>
+                    <div class="col-12 col-md-6">
+                        <div style="background-color: rgba(26, 127, 90, 0.12); border-left: 4px solid #1a7f5a; border-radius: 0.5rem; padding: 1rem 1.15rem; height: 100%;">
+                            <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 1.15rem;">
+                                <strong class="text-light">🏦 Ahorro</strong>
+                                <strong style="color: #3fb98a;">@totalAhorro.ToString("C")</strong>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var cuenta in cuentasAhorro)
+                                {
+                                    <span style="
+                                        background-color: @(HexToRgba(cuenta.Color, 0.15));
+                                        border: 1px solid @(HexToRgba(cuenta.Color, 0.5));
+                                        border-radius: 999px;
+                                        padding: 0.35rem 0.85rem;
+                                        font-size: 0.9rem;
+                                        white-space: nowrap;
+                                    ">
+                                        <span class="text-light">@cuenta.Nombre</span>
+                                        <strong style="color: @(AclararColor(cuenta.Color)); margin-left: 0.5rem;">@cuenta.Saldo.ToString("C")</strong>
+                                    </span>
+                                }
+                            </div>
                         </div>
+                    </div>
+                }
+
+                @if (cuentasTransporte.Any())
+                {
+                    <div class="col-12 col-md-6">
+                        <div style="background-color: rgba(24, 39, 140, 0.15); border-left: 4px solid #18278c; border-radius: 0.5rem; padding: 1rem 1.15rem; height: 100%;">
+                            <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 1.15rem;">
+                                <strong class="text-light">🚇 Transporte</strong>
+                                <strong style="color: #5b6fe0;">@totalTransporte.ToString("C")</strong>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var cuenta in cuentasTransporte)
+                                {
+                                    <span style="
+                                        background-color: @(HexToRgba(cuenta.Color, 0.15));
+                                        border: 1px solid @(HexToRgba(cuenta.Color, 0.5));
+                                        border-radius: 999px;
+                                        padding: 0.35rem 0.85rem;
+                                        font-size: 0.9rem;
+                                        white-space: nowrap;
+                                    ">
+                                        <span class="text-light">@cuenta.Nombre</span>
+                                        <strong style="color: @(AclararColor(cuenta.Color)); margin-left: 0.5rem;">@cuenta.Saldo.ToString("C")</strong>
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (!cuentasAhorro.Any() && !cuentasTransporte.Any())
+                {
+                    <div class="col-12">
+                        <p class="text-center text-light mb-0">No hay cuentas de ahorro ni transporte</p>
                     </div>
                 }
             </div>
         </div>
     </div>
 
-    <!-- Cuentas Ahorro -->
-    <div class="card bg-dark text-white mb-4" style="border: 2px solid #1a7f5a;">
-        <div class="card-body">
-            <h5 class="card-title" style="color: #1a7f5a;">Cuentas de Ahorro</h5>
-            <div class="d-flex flex-wrap gap-3">
-                @foreach (var cuenta in cuentasAhorro)
-                {
-                    <div class="card bg-secondary text-white" style="width: 10rem; border: 2px solid @cuenta.Color;">
-                        <div class="card-body">
-                            <h6 class="card-title">@cuenta.Nombre</h6>
-                            <p class="card-text">@cuenta.Saldo.ToString("C")</p>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
 
-    <!-- Cuentas Ajenas -->
-    <div class="card bg-dark text-white mb-4" style="border: 2px solid #D549E3;">
-        <div class="card-body">
-            <h5 class="card-title" style="color: #D549E3;">Cuentas Ajenas</h5>
-            <div class="d-flex flex-wrap gap-3">
-                @foreach (var cuenta in cuentasAjenas)
-                {
-                    <div class="card bg-secondary text-white" style="width: 10rem; border: 2px solid @cuenta.Color;">
-                        <div class="card-body">
-                            <h6 class="card-title">@cuenta.Nombre</h6>
-                            <p class="card-text">@cuenta.Saldo.ToString("C")</p>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
 
-    <!-- Cuentas Transporte -->
-    <div class="card bg-dark text-white mb-4" style="border: 2px solid #18278C;">
-        <div class="card-body">
-            <h5 class="card-title" style="color: #18278C;">Cuentas Transporte</h5>
-            <div class="d-flex flex-wrap gap-3">
-                @foreach (var cuenta in cuentasTransporte)
-                {
-                    <div class="card bg-secondary text-white" style="width: 10rem; border: 2px solid @cuenta.Color;">
-                        <div class="card-body">
-                            <h6 class="card-title">@cuenta.Nombre</h6>
-                            <p class="card-text">@cuenta.Saldo.ToString("C")</p>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
+    
+    
 
-    <!-- Acreedores (debo) -->
-    <div class="card bg-dark text-white mb-4" style="border: 2px solid #dc3545;">
-        <div class="card-body">
-            <h5 class="card-title" style="color: #dc3545;">Acreedores (debo)</h5>
-            <div class="d-flex flex-wrap gap-3">
-                @foreach (var acreedor in acreedores)
-                {
-                    <div class="card bg-secondary text-white" style="width: 12rem;">
-                        <div class="card-body">
-                            <h6 class="card-title">@acreedor.Contraparte</h6>
-                            <p class="card-text">@acreedor.SaldoPendiente.ToString("C")</p>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
 
-    <!-- Deudores (me deben) -->
-    <div class="card bg-dark text-white mb-4" style="border: 2px solid #fd7e14;">
+    <!-- ========== PANEL 3: DINERO AJENO ========== -->
+    <div class="card bg-dark text-white mb-4" style="border-top: 6px solid #B641BF;">
         <div class="card-body">
-            <h5 class="card-title" style="color: #fd7e14;">Deudores (me deben)</h5>
-            <div class="d-flex flex-wrap gap-3">
-                @foreach (var deudor in deudores)
+            <div class="mb-4">
+                <h4 style="color: #d97ddd;">👤 Dinero Ajeno</h4>
+                <p class="text-light mb-0" style="font-size: 1rem;">
+                    Dinero de otros, no es tuyo - se mantiene separado
+                </p>
+            </div>
+
+            <!-- Total Ajeno destacado -->
+            <div style="
+                background: linear-gradient(135deg, rgba(182, 65, 191, 0.22) 0%, rgba(182, 65, 191, 0.06) 100%);
+                border-left: 4px solid #B641BF;
+                border-radius: 0.5rem;
+                padding: 1.5rem 1.75rem;
+                margin-bottom: 1.75rem;
+            ">
+                <small style="color: #d97ddd; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; font-size: 0.95rem;">
+                    Total Ajeno
+                </small>
+                <h2 class="mb-0 mt-2" style="color: #e79ceb; font-weight: 700;">
+                    @totalAjeno.ToString("C")
+                </h2>
+            </div>
+
+            <!-- Mini-card de Cuentas Ajenas con pastillas -->
+            <div class="row g-3">
+                @if (cuentasAjenas.Any())
                 {
-                    <div class="card bg-secondary text-white" style="width: 12rem;">
-                        <div class="card-body">
-                            <h6 class="card-title">@deudor.Contraparte</h6>
-                            <p class="card-text">@deudor.SaldoPendiente.ToString("C")</p>
+                    <div class="col-12">
+                        <div style="background-color: rgba(182, 65, 191, 0.10); border-left: 4px solid #B641BF; border-radius: 0.5rem; padding: 1rem 1.15rem;">
+                            <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 1.15rem;">
+                                <strong class="text-light">👤 Cuentas Ajenas</strong>
+                                <strong style="color: #e79ceb;">@totalAjeno.ToString("C")</strong>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var cuenta in cuentasAjenas)
+                                {
+                                    <span style="
+                                        background-color: @(HexToRgba(cuenta.Color, 0.15));
+                                        border: 1px solid @(HexToRgba(cuenta.Color, 0.5));
+                                        border-radius: 999px;
+                                        padding: 0.35rem 0.85rem;
+                                        font-size: 0.9rem;
+                                        white-space: nowrap;
+                                    ">
+                                        <span class="text-light">@cuenta.Nombre</span>
+                                        <strong style="color: @(AclararColor(cuenta.Color)); margin-left: 0.5rem;">@cuenta.Saldo.ToString("C")</strong>
+                                    </span>
+                                }
+                            </div>
                         </div>
                     </div>
                 }
+                else
+                {
+                    <div class="col-12">
+                        <p class="text-center text-light mb-0">No hay cuentas ajenas registradas</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Nota de advertencia -->
+            <div style="
+                background-color: rgba(181, 141, 89, 0.12);
+                border-left: 4px solid #B58D59;
+                border-radius: 0.5rem;
+                padding: 0.85rem 1.15rem;
+                margin-top: 1rem;
+                font-size: 0.95rem;
+                color: #d4b88a;
+            ">
+                ⚠️ No lo uses para gastos personales.
             </div>
         </div>
     </div>
+    
+    <!-- ========== PANEL 4: INVENTARIO DE CUENTAS (COLAPSABLE) ========== -->
+    <details class="card bg-dark text-white mb-4" style="border-top: 6px solid #6c757d;">
+        <summary style="
+            cursor: pointer;
+            padding: 1.25rem 1.5rem;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        ">
+            <div>
+                <h4 class="mb-0" style="color: #cbd5e1;">📋 Inventario de cuentas</h4>
+                <small class="text-light">Toca para ver todas tus cuentas</small>
+            </div>
+            <span style="font-size: 1.5rem; color: #cbd5e1;">▼</span>
+        </summary>
+
+        
+        <div class="card-body" style="padding-top: 0;">
+
+            <!-- CORRIENTES -->
+            @if (cuentasCorrientes.Any())
+            {
+                <div style="border-left: 4px solid #28a745; padding-left: 1rem; margin-bottom: 1.5rem;">
+                    <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 1.1rem;">
+                        <strong class="text-light">🟢 Corrientes (@cuentasCorrientes.Count)</strong>
+                        <strong class="text-success">@totalCorriente.ToString("C")</strong>
+                    </div>
+
+                    <!-- Lista simple (móvil) -->
+                    <div class="d-block d-md-none">
+                        @foreach (var cuenta in cuentasCorrientes)
+                        {
+                            <div class="d-flex justify-content-between align-items-center py-2">
+                                <span class="text-light">
+                                    <span style="display: inline-block; width: 10px; height: 10px; background-color: @cuenta.Color; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle;"></span>
+                                    @cuenta.Nombre
+                                </span>
+                                <strong style="color: @(AclararColor(cuenta.Color));">@cuenta.Saldo.ToString("C")</strong>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Grid de mini-cards (desktop) -->
+                    <div class="d-none d-md-block">
+                        <div class="row g-2">
+                            @foreach (var cuenta in cuentasCorrientes)
+                            {
+                                <div class="col-md-6">
+                                    <div style="
+                                        background-color: @(HexToRgba(cuenta.Color, 0.10));
+                                        border: 1px solid @(HexToRgba(cuenta.Color, 0.4));
+                                        border-radius: 0.5rem;
+                                        padding: 0.65rem 0.9rem;
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                    ">
+                                        <span class="text-light">
+                                            <span style="display: inline-block; width: 10px; height: 10px; background-color: @cuenta.Color; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle;"></span>
+                                            @cuenta.Nombre
+                                        </span>
+                                        <strong style="color: @(AclararColor(cuenta.Color));">@cuenta.Saldo.ToString("C")</strong>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- OCULTAS -->
+            @if (cuentasOcultas.Any())
+            {
+                <div style="border-left: 4px solid #17a2b8; padding-left: 1rem; margin-bottom: 1.5rem;">
+                    <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 1.1rem;">
+                        <strong class="text-light">🔵 Ocultas (@cuentasOcultas.Count)</strong>
+                        <strong class="text-info">@totalOculto.ToString("C")</strong>
+                    </div>
+
+                    <div class="d-block d-md-none">
+                        @foreach (var cuenta in cuentasOcultas)
+                        {
+                            <div class="d-flex justify-content-between align-items-center py-2">
+                                <span class="text-light">
+                                    <span style="display: inline-block; width: 10px; height: 10px; background-color: @cuenta.Color; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle;"></span>
+                                    @cuenta.Nombre
+                                </span>
+                                <strong style="color: @(AclararColor(cuenta.Color));">@cuenta.Saldo.ToString("C")</strong>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-none d-md-block">
+                        <div class="row g-2">
+                            @foreach (var cuenta in cuentasOcultas)
+                            {
+                                <div class="col-md-6">
+                                    <div style="
+                                        background-color: @(HexToRgba(cuenta.Color, 0.10));
+                                        border: 1px solid @(HexToRgba(cuenta.Color, 0.4));
+                                        border-radius: 0.5rem;
+                                        padding: 0.65rem 0.9rem;
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                    ">
+                                        <span class="text-light">
+                                            <span style="display: inline-block; width: 10px; height: 10px; background-color: @cuenta.Color; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle;"></span>
+                                            @cuenta.Nombre
+                                        </span>
+                                        <strong style="color: @(AclararColor(cuenta.Color));">@cuenta.Saldo.ToString("C")</strong>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- AHORRO -->
+            @if (cuentasAhorro.Any())
+            {
+                <div style="border-left: 4px solid #1a7f5a; padding-left: 1rem; margin-bottom: 1.5rem;">
+                    <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 1.1rem;">
+                        <strong class="text-light">🏦 Ahorro (@cuentasAhorro.Count)</strong>
+                        <strong style="color: #3fb98a;">@totalAhorro.ToString("C")</strong>
+                    </div>
+
+                    <div class="d-block d-md-none">
+                        @foreach (var cuenta in cuentasAhorro)
+                        {
+                            <div class="d-flex justify-content-between align-items-center py-2">
+                                <span class="text-light">
+                                    <span style="display: inline-block; width: 10px; height: 10px; background-color: @cuenta.Color; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle;"></span>
+                                    @cuenta.Nombre
+                                </span>
+                                <strong style="color: @(AclararColor(cuenta.Color));">@cuenta.Saldo.ToString("C")</strong>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-none d-md-block">
+                        <div class="row g-2">
+                            @foreach (var cuenta in cuentasAhorro)
+                            {
+                                <div class="col-md-6">
+                                    <div style="
+                                        background-color: @(HexToRgba(cuenta.Color, 0.10));
+                                        border: 1px solid @(HexToRgba(cuenta.Color, 0.4));
+                                        border-radius: 0.5rem;
+                                        padding: 0.65rem 0.9rem;
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                    ">
+                                        <span class="text-light">
+                                            <span style="display: inline-block; width: 10px; height: 10px; background-color: @cuenta.Color; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle;"></span>
+                                            @cuenta.Nombre
+                                        </span>
+                                        <strong style="color: @(AclararColor(cuenta.Color));">@cuenta.Saldo.ToString("C")</strong>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- TRANSPORTE -->
+            @if (cuentasTransporte.Any())
+            {
+                <div style="border-left: 4px solid #18278c; padding-left: 1rem; margin-bottom: 1.5rem;">
+                    <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 1.1rem;">
+                        <strong class="text-light">🚇 Transporte (@cuentasTransporte.Count)</strong>
+                        <strong style="color: #5b6fe0;">@totalTransporte.ToString("C")</strong>
+                    </div>
+
+                    <div class="d-block d-md-none">
+                        @foreach (var cuenta in cuentasTransporte)
+                        {
+                            <div class="d-flex justify-content-between align-items-center py-2">
+                                <span class="text-light">
+                                    <span style="display: inline-block; width: 10px; height: 10px; background-color: @cuenta.Color; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle;"></span>
+                                    @cuenta.Nombre
+                                </span>
+                                <strong style="color: @(AclararColor(cuenta.Color));">@cuenta.Saldo.ToString("C")</strong>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-none d-md-block">
+                        <div class="row g-2">
+                            @foreach (var cuenta in cuentasTransporte)
+                            {
+                                <div class="col-md-6">
+                                    <div style="
+                                        background-color: @(HexToRgba(cuenta.Color, 0.10));
+                                        border: 1px solid @(HexToRgba(cuenta.Color, 0.4));
+                                        border-radius: 0.5rem;
+                                        padding: 0.65rem 0.9rem;
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                    ">
+                                        <span class="text-light">
+                                            <span style="display: inline-block; width: 10px; height: 10px; background-color: @cuenta.Color; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle;"></span>
+                                            @cuenta.Nombre
+                                        </span>
+                                        <strong style="color: @(AclararColor(cuenta.Color));">@cuenta.Saldo.ToString("C")</strong>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- AJENAS -->
+            @if (cuentasAjenas.Any())
+            {
+                <div style="border-left: 4px solid #B641BF; padding-left: 1rem;">
+                    <div class="d-flex justify-content-between align-items-center mb-3" style="font-size: 1.1rem;">
+                        <strong class="text-light">👤 Ajenas (@cuentasAjenas.Count)</strong>
+                        <strong style="color: #e79ceb;">@totalAjeno.ToString("C")</strong>
+                    </div>
+
+                    <div class="d-block d-md-none">
+                        @foreach (var cuenta in cuentasAjenas)
+                        {
+                            <div class="d-flex justify-content-between align-items-center py-2">
+                                <span class="text-light">
+                                    <span style="display: inline-block; width: 10px; height: 10px; background-color: @cuenta.Color; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle;"></span>
+                                    @cuenta.Nombre
+                                </span>
+                                <strong style="color: @(AclararColor(cuenta.Color));">@cuenta.Saldo.ToString("C")</strong>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-none d-md-block">
+                        <div class="row g-2">
+                            @foreach (var cuenta in cuentasAjenas)
+                            {
+                                <div class="col-md-6">
+                                    <div style="
+                                        background-color: @(HexToRgba(cuenta.Color, 0.10));
+                                        border: 1px solid @(HexToRgba(cuenta.Color, 0.4));
+                                        border-radius: 0.5rem;
+                                        padding: 0.65rem 0.9rem;
+                                        display: flex;
+                                        justify-content: space-between;
+                                        align-items: center;
+                                    ">
+                                        <span class="text-light">
+                                            <span style="display: inline-block; width: 10px; height: 10px; background-color: @cuenta.Color; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle;"></span>
+                                            @cuenta.Nombre
+                                        </span>
+                                        <strong style="color: @(AclararColor(cuenta.Color));">@cuenta.Saldo.ToString("C")</strong>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+
+    </details>
 }
-
 @code {
     private DatosApp? datos;
     private decimal totalCorriente;
     private decimal totalOculto;
     private decimal totalPorCobrar;
     private decimal totalPorPagar;
-    private decimal totalGlobal;
     private decimal totalAjeno;
     private decimal totalTransporte;
     private decimal totalAhorro;
@@ -310,7 +696,6 @@ else
             totalAjeno = cuentasAjenas.Sum(c => c.Saldo);
             totalTransporte = cuentasTransporte.Sum(c => c.Saldo);
             totalAhorro = cuentasAhorro.Sum(c => c.Saldo);
-            totalGlobal = totalCorriente + totalOculto;
 
             var deudas = DeudaCalculatorService.CalcularDeudasResumen(datos);
             acreedores = deudas.Acreedores;
@@ -318,7 +703,8 @@ else
             totalPorCobrar = deudores.Sum(d => d.SaldoPendiente);
             totalPorPagar = acreedores.Sum(d => d.SaldoPendiente);
 
-            patrimonioNeto = totalGlobal + (totalPorCobrar - totalPorPagar);
+            // PATRIMONIO NETO = Corriente + Oculto + Por Cobrar - Por Pagar
+            patrimonioNeto = totalCorriente + totalOculto + totalPorCobrar - totalPorPagar;
         }
         catch (Exception ex)
         {
@@ -334,5 +720,76 @@ else
         public string Visibilidad { get; set; } = "";
         public decimal Saldo { get; set; }
         public string Color { get; set; } = "#FFFFFF";
+    }
+
+        private string GetColorPorNombre(string nombre)
+    {
+        if (string.IsNullOrEmpty(nombre)) return "#94a3b8";
+        
+        // Paleta de colores agradables para contrapartes
+        var paleta = new[]
+        {
+            "#60a5fa", // azul
+            "#f472b6", // rosa
+            "#a78bfa", // violeta
+            "#34d399", // verde menta
+            "#fbbf24", // ámbar
+            "#fb923c", // naranja
+            "#22d3ee", // cyan
+            "#c084fc", // púrpura
+            "#4ade80", // verde
+            "#f87171", // coral
+            "#818cf8", // índigo
+            "#e879f9"  // magenta
+        };
+        
+        // Hash determinista: mismo nombre → mismo color siempre
+        int hash = 0;
+        foreach (var c in nombre)
+            hash = (hash * 31 + c) & 0x7FFFFFFF;
+        
+        return paleta[hash % paleta.Length];
+    }
+
+    private string HexToRgba(string hex, double alpha)
+    {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7)
+            return $"rgba(148, 163, 184, {alpha})";
+        
+        try
+        {
+            var r = Convert.ToInt32(hex.Substring(1, 2), 16);
+            var g = Convert.ToInt32(hex.Substring(3, 2), 16);
+            var b = Convert.ToInt32(hex.Substring(5, 2), 16);
+            return $"rgba({r}, {g}, {b}, {alpha})";
+        }
+        catch
+        {
+            return $"rgba(148, 163, 184, {alpha})";
+        }
+    }
+
+    private string AclararColor(string hex)
+    {
+        if (string.IsNullOrEmpty(hex) || !hex.StartsWith("#") || hex.Length != 7)
+            return "#cbd5e1";
+        
+        try
+        {
+            var r = Convert.ToInt32(hex.Substring(1, 2), 16);
+            var g = Convert.ToInt32(hex.Substring(3, 2), 16);
+            var b = Convert.ToInt32(hex.Substring(5, 2), 16);
+            
+            // Mezclar con blanco al 40% para aclarar el color
+            r = (int)(r + (255 - r) * 0.4);
+            g = (int)(g + (255 - g) * 0.4);
+            b = (int)(b + (255 - b) * 0.4);
+            
+            return $"#{r:X2}{g:X2}{b:X2}";
+        }
+        catch
+        {
+            return "#cbd5e1";
+        }
     }
 }

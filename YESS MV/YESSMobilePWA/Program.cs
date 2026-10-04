@@ -27,6 +27,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 // SERVICIOS CON INTERFACES (INYECTABLE)
 // ============================================
 
+builder.Services.AddScoped<IEventService, EventService>(); 
 builder.Services.AddScoped<IArchivoService, ArchivoService>();
 builder.Services.AddSingleton<IDeudaCalculatorService, DeudaCalculatorService>();
 builder.Services.AddScoped<IExportService, ExportService>();

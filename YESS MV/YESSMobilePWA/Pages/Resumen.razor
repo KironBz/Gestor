@@ -5,6 +5,8 @@
 @using System.Globalization
 @inject IArchivoService ArchivoService
 @inject IDeudaCalculatorService DeudaCalculatorService
+@inject IEventService EventService
+@implements IAsyncDisposable
 
 <style>
     @@media (max-width: 768px) {
@@ -444,6 +446,11 @@ else
     protected override async Task OnInitializedAsync()
     {
         await CargarDatos();
+        EventService.OnMovimientoChanged += Recargar;
+        EventService.OnCuentaChanged += Recargar;
+        EventService.OnSaldoActualizado += Recargar;
+        EventService.OnMetaChanged += Recargar;
+        EventService.OnDatosRefreshCompleto += Recargar;
     }
 
     private async Task CargarDatos()
@@ -676,5 +683,22 @@ else
         if (pct >= 50) return "#fb923c";
         if (pct > 0) return "#818cf8";
         return "#64748b";
+    }
+
+    private async Task Recargar()
+    {
+        await CargarDatos();
+        StateHasChanged();
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        EventService.OnMovimientoChanged -= Recargar;
+        EventService.OnCuentaChanged -= Recargar;
+        EventService.OnSaldoActualizado -= Recargar;
+        EventService.OnMetaChanged -= Recargar;
+        EventService.OnDatosRefreshCompleto -= Recargar;
+        
+        await ValueTask.CompletedTask;
     }
 }

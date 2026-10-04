@@ -5,6 +5,8 @@
 @using System.Globalization
 @inject IArchivoService ArchivoService
 @inject IDeudaCalculatorService DeudaCalculatorService
+@inject IEventService EventService
+@implements IAsyncDisposable
 
 <h3 class="text-center mb-4">Dashboard Financiero</h3>
 
@@ -301,6 +303,12 @@ else
         {
             estaCargando = false;
         }
+        
+        EventService.OnMovimientoChanged += Recargar;
+        EventService.OnCuentaChanged += Recargar;
+        EventService.OnSaldoActualizado += Recargar;
+        EventService.OnDeudaChanged += Recargar;
+        EventService.OnDatosRefreshCompleto += Recargar;
     }
 
     private void OnAnioChanged(ChangeEventArgs e)
@@ -510,5 +518,35 @@ else
         datosIngresosCategoria = new List<CategoriaItem>();
         datosEgresosCategoria = new List<CategoriaItem>();
         datosLinea = new List<GastoMensual>();
+    }
+
+    private async Task Recargar()
+    {
+        try
+        {
+            datos = await ArchivoService.CargarAsync();
+            
+            if (datos != null && hayDatos)
+            {
+                CalcularMetricas();  // Tu método existente
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error en Recargar Dashboard: {ex.Message}");
+        }
+    }
+
+async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        EventService.OnMovimientoChanged -= Recargar;
+        EventService.OnCuentaChanged -= Recargar;
+        EventService.OnSaldoActualizado -= Recargar;
+        EventService.OnDeudaChanged -= Recargar;
+        EventService.OnDatosRefreshCompleto -= Recargar;
+        
+        await ValueTask.CompletedTask;
     }
 }

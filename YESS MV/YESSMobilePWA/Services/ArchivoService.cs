@@ -12,7 +12,7 @@ namespace YESSMobilePWA.Services
 {
     public class ArchivoService : IArchivoService
     {
-        private readonly IJSRuntime _jsRuntime;
+        private readonly IEventService _eventService;
         private const string DatosKey = "yes_gestor_data";
         private const int SchemaVersionActual = 2;
 
@@ -22,9 +22,10 @@ namespace YESSMobilePWA.Services
 
         public event Action<SyncState>? OnSyncStateChanged;
 
-        public ArchivoService(IJSRuntime jsRuntime)
+        public ArchivoService(IJSRuntime jsRuntime, IEventService eventService)
         {
             _jsRuntime = jsRuntime;
+            _eventService = eventService;
         }
 
         public async Task GuardarAsync(DatosApp datos)
@@ -39,7 +40,7 @@ namespace YESSMobilePWA.Services
 
             string json = JsonSerializer.Serialize(datos);
             await _jsRuntime.InvokeVoidAsync("localStorage.setItem", DatosKey, json);
-
+            await _eventService.NotifySaldoActualizadoAsync();
             IniciarDebounce(datos);
         }
 

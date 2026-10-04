@@ -4,6 +4,8 @@
 @inject IArchivoService ArchivoService
 @inject IDeudaCalculatorService DeudaCalculatorService
 @inject NavigationManager Navigation
+@inject IEventService EventService
+@implements IAsyncDisposable
 
 <h3 class="text-center mb-4">Balance General</h3>
 
@@ -651,6 +653,11 @@ else
     protected override async Task OnInitializedAsync()
     {
         await CargarDatos();
+        EventService.OnMovimientoChanged += Recargar;
+        EventService.OnCuentaChanged += Recargar;
+        EventService.OnSaldoActualizado += Recargar;
+        EventService.OnMetaChanged += Recargar;
+        EventService.OnDatosRefreshCompleto += Recargar;
     }
 
     public async Task Recargar()
@@ -791,5 +798,22 @@ else
         {
             return "#cbd5e1";
         }
+    }
+
+    private async Task Recargar()
+    {
+        await CargarDatos();
+        StateHasChanged();
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        EventService.OnMovimientoChanged -= Recargar;
+        EventService.OnCuentaChanged -= Recargar;
+        EventService.OnSaldoActualizado -= Recargar;
+        EventService.OnMetaChanged -= Recargar;
+        EventService.OnDatosRefreshCompleto -= Recargar;
+        
+        await ValueTask.CompletedTask;
     }
 }

@@ -1,141 +1,170 @@
-using YESSMobilePWA.Models;
-
 namespace YESSMobilePWA.Services
 {
     /// <summary>
-    /// Servicio de eventos para comunicación inter-pages.
-    /// Permite que Pages se suscriban y reaccionen a cambios sin reload manual.
+    /// Implementación centralizada de eventos
+    /// Permite que Resumen, Balance, Metas, Dashboard se actualicen sin refresh
     /// </summary>
-    public class EventService
+    public class EventService : IEventService
     {
-        /// <summary>
-        /// Se dispara cuando se agrega/edita un movimiento.
-        /// </summary>
-        public event EventHandler<MovimientoChangedEventArgs>? MovimientoChanged;
+        public event Func<Task>? OnMovimientoChanged;
+        public event Func<Task>? OnMovimientoBorrado;
+        public event Func<Task>? OnCuentaChanged;
+        public event Func<Task>? OnSaldoActualizado;
+        public event Func<Task>? OnMetaChanged;
+        public event Func<Task>? OnPagoRegistrado;
+        public event Func<Task>? OnDeudaChanged;
+        public event Func<Task>? OnDatosRefreshCompleto;
 
-        /// <summary>
-        /// Se dispara cuando se agrega/edita una meta.
-        /// </summary>
-        public event EventHandler<MetaChangedEventArgs>? MetaChanged;
-
-        /// <summary>
-        /// Se dispara cuando se agrega/edita una deuda.
-        /// </summary>
-        public event EventHandler<DeudaChangedEventArgs>? DeudaChanged;
-
-        /// <summary>
-        /// Se dispara cuando se agrega/edita una cuenta.
-        /// </summary>
-        public event EventHandler<CuentaChangedEventArgs>? CuentaChanged;
-
-        /// <summary>
-        /// Se dispara cuando hay sincronización con GitHub.
-        /// </summary>
-        public event EventHandler<SyncEventArgs>? SyncCompleted;
-
-        /// <summary>
-        /// Notificar que un movimiento cambió.
-        /// </summary>
-        public void RaiseMovimientoChanged(string accion, Movimiento? movimiento = null)
+        /// <summary>Dispara OnMovimientoChanged a todos los suscritos</summary>
+        public async Task NotifyMovimientoChangedAsync()
         {
-            MovimientoChanged?.Invoke(this, new MovimientoChangedEventArgs 
-            { 
-                Accion = accion, 
-                Movimiento = movimiento 
-            });
+            if (OnMovimientoChanged != null)
+            {
+                foreach (Func<Task> handler in OnMovimientoChanged.GetInvocationList().Cast<Func<Task>>())
+                {
+                    try
+                    {
+                        await handler.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en OnMovimientoChanged: {ex.Message}");
+                    }
+                }
+            }
         }
 
-        /// <summary>
-        /// Notificar que una meta cambió.
-        /// </summary>
-        public void RaiseMetaChanged(string accion, Meta? meta = null)
+        /// <summary>Dispara OnMovimientoBorrado a todos los suscritos</summary>
+        public async Task NotifyMovimientoBorradoAsync()
         {
-            MetaChanged?.Invoke(this, new MetaChangedEventArgs 
-            { 
-                Accion = accion, 
-                Meta = meta 
-            });
+            if (OnMovimientoBorrado != null)
+            {
+                foreach (Func<Task> handler in OnMovimientoBorrado.GetInvocationList().Cast<Func<Task>>())
+                {
+                    try
+                    {
+                        await handler.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en OnMovimientoBorrado: {ex.Message}");
+                    }
+                }
+            }
         }
 
-        /// <summary>
-        /// Notificar que una deuda cambió.
-        /// </summary>
-        public void RaiseDeudaChanged(string accion, DeudaPendiente? deuda = null)
+        /// <summary>Dispara OnCuentaChanged a todos los suscritos</summary>
+        public async Task NotifyCuentaChangedAsync()
         {
-            DeudaChanged?.Invoke(this, new DeudaChangedEventArgs 
-            { 
-                Accion = accion, 
-                Deuda = deuda 
-            });
+            if (OnCuentaChanged != null)
+            {
+                foreach (Func<Task> handler in OnCuentaChanged.GetInvocationList().Cast<Func<Task>>())
+                {
+                    try
+                    {
+                        await handler.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en OnCuentaChanged: {ex.Message}");
+                    }
+                }
+            }
         }
 
-        /// <summary>
-        /// Notificar que una cuenta cambió.
-        /// </summary>
-        public void RaiseCuentaChanged(string accion, Cuenta? cuenta = null)
+        /// <summary>Dispara OnSaldoActualizado a todos los suscritos</summary>
+        public async Task NotifySaldoActualizadoAsync()
         {
-            CuentaChanged?.Invoke(this, new CuentaChangedEventArgs 
-            { 
-                Accion = accion, 
-                Cuenta = cuenta 
-            });
+            if (OnSaldoActualizado != null)
+            {
+                foreach (Func<Task> handler in OnSaldoActualizado.GetInvocationList().Cast<Func<Task>>())
+                {
+                    try
+                    {
+                        await handler.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en OnSaldoActualizado: {ex.Message}");
+                    }
+                }
+            }
         }
 
-        /// <summary>
-        /// Notificar que la sincronización completó.
-        /// </summary>
-        public void RaiseSyncCompleted(bool exitoso, string mensaje = "")
+        /// <summary>Dispara OnMetaChanged a todos los suscritos</summary>
+        public async Task NotifyMetaChangedAsync()
         {
-            SyncCompleted?.Invoke(this, new SyncEventArgs 
-            { 
-                Exitoso = exitoso, 
-                Mensaje = mensaje 
-            });
+            if (OnMetaChanged != null)
+            {
+                foreach (Func<Task> handler in OnMetaChanged.GetInvocationList().Cast<Func<Task>>())
+                {
+                    try
+                    {
+                        await handler.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en OnMetaChanged: {ex.Message}");
+                    }
+                }
+            }
         }
-    }
 
-    /// <summary>
-    /// Args para evento MovimientoChanged.
-    /// </summary>
-    public class MovimientoChangedEventArgs : EventArgs
-    {
-        public string Accion { get; set; } = "";  // "agregado", "editado", "eliminado"
-        public Movimiento? Movimiento { get; set; }
-    }
+        /// <summary>Dispara OnPagoRegistrado a todos los suscritos</summary>
+        public async Task NotifyPagoRegistradoAsync()
+        {
+            if (OnPagoRegistrado != null)
+            {
+                foreach (Func<Task> handler in OnPagoRegistrado.GetInvocationList().Cast<Func<Task>>())
+                {
+                    try
+                    {
+                        await handler.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en OnPagoRegistrado: {ex.Message}");
+                    }
+                }
+            }
+        }
 
-    /// <summary>
-    /// Args para evento MetaChanged.
-    /// </summary>
-    public class MetaChangedEventArgs : EventArgs
-    {
-        public string Accion { get; set; } = "";
-        public Meta? Meta { get; set; }
-    }
+        /// <summary>Dispara OnDeudaChanged a todos los suscritos</summary>
+        public async Task NotifyDeudaChangedAsync()
+        {
+            if (OnDeudaChanged != null)
+            {
+                foreach (Func<Task> handler in OnDeudaChanged.GetInvocationList().Cast<Func<Task>>())
+                {
+                    try
+                    {
+                        await handler.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en OnDeudaChanged: {ex.Message}");
+                    }
+                }
+            }
+        }
 
-    /// <summary>
-    /// Args para evento DeudaChanged.
-    /// </summary>
-    public class DeudaChangedEventArgs : EventArgs
-    {
-        public string Accion { get; set; } = "";
-        public DeudaPendiente? Deuda { get; set; }
-    }
-
-    /// <summary>
-    /// Args para evento CuentaChanged.
-    /// </summary>
-    public class CuentaChangedEventArgs : EventArgs
-    {
-        public string Accion { get; set; } = "";
-        public Cuenta? Cuenta { get; set; }
-    }
-
-    /// <summary>
-    /// Args para evento SyncCompleted.
-    /// </summary>
-    public class SyncEventArgs : EventArgs
-    {
-        public bool Exitoso { get; set; }
-        public string Mensaje { get; set; } = "";
+        /// <summary>Dispara OnDatosRefreshCompleto a todos los suscritos</summary>
+        public async Task NotifyDatosRefreshCompletoAsync()
+        {
+            if (OnDatosRefreshCompleto != null)
+            {
+                foreach (Func<Task> handler in OnDatosRefreshCompleto.GetInvocationList().Cast<Func<Task>>())
+                {
+                    try
+                    {
+                        await handler.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error en OnDatosRefreshCompleto: {ex.Message}");
+                    }
+                }
+            }
+        }
     }
 }

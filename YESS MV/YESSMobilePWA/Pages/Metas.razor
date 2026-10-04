@@ -4,6 +4,8 @@
 @using System.Globalization
 @inject IArchivoService ArchivoService
 @inject IJSRuntime JS
+@inject IEventService EventService
+@implements IAsyncDisposable
 
 <h3>Metas de ahorro</h3>
 
@@ -382,6 +384,11 @@ else
     protected override async Task OnInitializedAsync()
     {
         await CargarDatos();
+        EventService.OnMovimientoChanged += Recargar;
+        EventService.OnCuentaChanged += Recargar;
+        EventService.OnSaldoActualizado += Recargar;
+        EventService.OnMetaChanged += Recargar;
+        EventService.OnDatosRefreshCompleto += Recargar;
     }
 
     private async Task CargarDatos()
@@ -645,5 +652,22 @@ else
         modalVisible = false;
         metaEditando = null;
         formulario = new MetaFormulario();
+    }
+
+    private async Task Recargar()
+    {
+        await CargarDatos();
+        StateHasChanged();
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        EventService.OnMovimientoChanged -= Recargar;
+        EventService.OnCuentaChanged -= Recargar;
+        EventService.OnSaldoActualizado -= Recargar;
+        EventService.OnMetaChanged -= Recargar;
+        EventService.OnDatosRefreshCompleto -= Recargar;
+        
+        await ValueTask.CompletedTask;
     }
 }
